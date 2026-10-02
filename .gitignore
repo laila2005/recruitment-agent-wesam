@@ -1,0 +1,20 @@
+# Dependencies & environment
+node_modules/
+.env
+.env.*
+!.env.example
+
+# Vercel deployment cache
+.vercel/
+
+# Editor & OS artifacts
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+
+# Cache & build outputs
+dist/
+build/
+.cache/
+.lovable/

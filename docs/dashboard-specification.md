@@ -1,7 +1,8 @@
-# TalentScout AI — Lovable.dev Dashboard Prompt
+# TalentScout AI — Executive Recruiter Dashboard Specification
 
-> **Tool:** [Lovable.dev](https://lovable.dev)  
-> **Use Case:** Interactive Web Comparison Dashboard with Autonomous Email Dispatch & Task Execution
+> **Component:** Interactive Web Candidate Triage Dashboard  
+> **Deployment:** [Vercel](https://lili-hr-agent.vercel.app) | **Database:** [Supabase](https://supabase.com)  
+> **Use Case:** Candidate Evaluation Matrix, Bulk CV Ingestion, Autonomous Email Dispatch & Rubric Management
 
 ---
 

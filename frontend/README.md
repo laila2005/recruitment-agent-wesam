@@ -1,26 +1,18 @@
-# Pixel Perfect Replica
+# TalentScout AI — Frontend UI Package
 
-Implement exactly the screenshot and nothing else
+> Modern, responsive React application built with TanStack Router, Tailwind CSS, and Lucide icons.
 
-This project was built with [Lovable](https://lovable.dev).
-
-**Live app**: https://pixel-perfect-render-84515.lovable.app
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/3cb3aadf-7d9c-4d14-8dc0-d89e7f02de8c).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+## Features
+- **Mozilla PDF.js & Mammoth.js Document Extractor:** 100% in-browser parsing of PDF, Word, and text resumes.
+- **⚡ Bulk CV Ingestion Engine:** Multi-file drag & drop, real-time progress bar, and automated tier assignment.
+- **Interactive Triage Matrix:** Candidate leaderboard across Fast-Track, Bench, and Below Bar.
+- **Dynamic Role Lifecycle:** In-place role creation, calibrated rubric sliders, and deletion.
+- **EEOC Bias-Free Mode:** 1-click anonymization toggle.
+- **Editable Outreach Studio:** Connected inbox communication and 1-click Gmail launcher.
+- **Supabase Cloud Sync:** Realtime PostgREST synchronization with offline local fallback.
 
 ## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+npm install
 npm run dev
 ```
