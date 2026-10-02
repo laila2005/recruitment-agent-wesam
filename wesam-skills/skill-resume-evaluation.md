@@ -33,7 +33,7 @@ EVALUATION STEPS:
 7. Identify transferable experience where the underlying competency is genuinely comparable.
 8. Flag unclear dates, unexplained gaps, or inconsistencies as Verification Questions — not accusations.
 9. Calculate a 0–100 fit score using a weighted rubric biased toward must-have requirements.
-10. Apply a score cap if a mandatory requirement is Not Demonstrated — state the cap reason explicitly.
+10. Apply score caps and state the reason explicitly: fewer years than the JD minimum → max 69/100 (Tier 3); any mandatory must-have Not Demonstrated → max 74/100. Tiers: 85–100 Tier 1, 70–84 Tier 2, < 70 Tier 3.
 11. Assign confidence: High (full evidence), Medium (partial), Low (sparse or unverifiable).
 
 OUTPUT FORMAT (follow exactly, with blank lines around tables for visual rendering):

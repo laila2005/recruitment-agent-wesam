@@ -71,10 +71,10 @@ Apply score caps when hard requirements are Not Demonstrated:
 
 | Condition | Score Cap |
 |---|---|
-| Mandatory technical skill missing (e.g., JD requires Python, not shown) | Max 60/100 |
-| Required years of experience not met (< 50% of stated requirement) | Max 65/100 |
-| Required certification or credential missing | Max 70/100 |
-| No relevant industry experience whatsoever | Max 55/100 |
+| Required years of experience not met (any shortfall vs. the JD minimum) | Max 69/100 (Tier 3) |
+| Any mandatory must-have (skill, certification, credential) Not Demonstrated | Max 74/100 (cannot be Tier 1) |
+
+When both apply, the lower cap (69) wins. These are the only caps; the dashboard and the database use the same numbers.
 
 > ⚠️ Caps are **non-negotiable** and must be stated explicitly in the output alongside the reason.
 
@@ -82,12 +82,11 @@ Apply score caps when hard requirements are Not Demonstrated:
 
 ## 📊 Disposition Thresholds
 
-| Score Range | Disposition | Action |
-|---|---|---|
-| 80–100 | ✅ **ADVANCE** | Schedule technical screen immediately |
-| 65–79 | ⏸ **HOLD** | Advance if pool is thin; verify 1–2 key gaps first |
-| 50–64 | 🔶 **CONDITIONAL** | Strong gap — advance only if JD requirements flex |
-| 0–49 | ❌ **DO NOT ADVANCE** | Fundamental mismatch with role requirements |
+| Score Range | Tier | Disposition | Action |
+|---|---|---|---|
+| 85–100 | 🟢 Tier 1 Fast-Track | ✅ **ADVANCE** | Schedule technical screen immediately |
+| 70–84 | 🟡 Tier 2 Bench / Review | ⏸ **HOLD** | Advance if pool is thin; verify 1–2 key gaps first |
+| 0–69 | 🔴 Tier 3 Below Bar | ❌ **DO NOT ADVANCE** | Send evidence-based feedback |
 
 ---
 
@@ -108,7 +107,7 @@ Communication & Clarity   10%    [X]/10   [Y]     [Met/Partial/ND]
 ─────────────────────────────────────────────────────
 TOTAL FIT SCORE:                         [Z]/100
 SCORE CAP APPLIED: [Yes — Reason / No]
-DISPOSITION: [ADVANCE / HOLD / CONDITIONAL / DO NOT ADVANCE]
+TIER / DISPOSITION: [Tier 1 ADVANCE / Tier 2 HOLD / Tier 3 DO NOT ADVANCE]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -121,9 +120,9 @@ When scoring multiple candidates, produce a ranking table:
 ```
 Rank | Candidate ID | Tech  | Exp  | Impact | Leadership | Comms | TOTAL | Disposition
 ─────┼──────────────┼───────┼──────┼────────┼────────────┼───────┼───────┼─────────────
-  1  | Candidate A  | 31.5  | 22.5 | 18.0   |  9.0       |  8.0  | 89.0  | ✅ ADVANCE
-  2  | Candidate B  | 28.0  | 20.0 | 14.0   |  7.0       |  7.5  | 76.5  | ⏸ HOLD
-  3  | Candidate C  | 21.0  | 15.0 | 10.0   |  5.0       |  6.0  | 57.0  | ❌ DO NOT ADVANCE
+  1  | Candidate A  | 31.5  | 22.5 | 18.0   |  9.0       |  8.0  | 89.0  | ✅ ADVANCE (Tier 1)
+  2  | Candidate B  | 28.0  | 20.0 | 14.0   |  7.0       |  7.5  | 76.5  | ⏸ HOLD (Tier 2)
+  3  | Candidate C  | 21.0  | 15.0 | 10.0   |  5.0       |  6.0  | 57.0  | ❌ DO NOT ADVANCE (Tier 3)
 ```
 
 ---

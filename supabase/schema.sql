@@ -1,6 +1,7 @@
 -- ==============================================================================
 -- TalentScout AI (Agent: Lili) — Supabase Database Schema
 -- Project: Lili-HR-agent (https://ppjxzlepqstqvcrkqscz.supabase.co)
+-- Fresh install: run this file, then supabase/migrations/002_auth_private_rows.sql.
 -- ==============================================================================
 
 -- 1. Create JOB_ROLES table
@@ -44,65 +45,22 @@ CREATE TABLE IF NOT EXISTS public.candidates (
 ALTER TABLE public.job_roles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.candidates ENABLE ROW LEVEL SECURITY;
 
--- 4. Create Public Access Policies (Allow Dashboard CRUD without Auth barriers)
-DROP POLICY IF EXISTS "Public access for job_roles" ON public.job_roles;
-CREATE POLICY "Public access for job_roles"
-    ON public.job_roles
-    FOR ALL
-    TO anon, authenticated
-    USING (true)
-    WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Public access for candidates" ON public.candidates;
-CREATE POLICY "Public access for candidates"
-    ON public.candidates
-    FOR ALL
-    TO anon, authenticated
-    USING (true)
-    WITH CHECK (true);
-
--- 5. Seed Initial Default Job Roles
-INSERT INTO public.job_roles (id, title, department, company, min_exp, mandatory, weights, full_text)
-VALUES
-(
-    'fe_lead',
-    'Frontend Lead Engineer',
-    'Frontend / Web',
-    'Venture Studio Portfolio',
-    5.0,
-    '["React", "TypeScript", "Next.js", "State Management", "Tailwind CSS"]'::jsonb,
-    '{"tech": 40, "exp": 25, "impact": 20, "lead": 15}'::jsonb,
-    'Requirements: 5+ years experience building production React/TypeScript web apps at scale. Strong focus on design systems and cross-functional team leadership.'
-),
-(
-    'be_senior',
-    'Senior Backend Engineer',
-    'Backend / Platform',
-    'Cloud Infrastructure Team',
-    5.0,
-    '["Python", "FastAPI", "PostgreSQL", "Docker", "RESTful APIs", "Redis"]'::jsonb,
-    '{"tech": 40, "exp": 25, "impact": 20, "lead": 15}'::jsonb,
-    'Requirements: 5+ years building scalable, high-throughput backend services. Proficiency in Python (FastAPI/Django), relational database optimization, and cloud containers.'
-),
-(
-    'ai_eng',
-    'AI / ML Systems Engineer',
-    'AI & Automation',
-    'Applied AI Labs',
-    3.0,
-    '["Python", "PyTorch", "LangChain", "Vector DB", "LLM Fine-Tuning"]'::jsonb,
-    '{"tech": 45, "exp": 20, "impact": 20, "lead": 15}'::jsonb,
-    'Requirements: 3+ years production ML engineering. Hands-on experience deploying LLM pipelines, vector databases (Qdrant/Pinecone), and retrieval-augmented generation.'
-)
-ON CONFLICT (id) DO UPDATE SET
-    title = EXCLUDED.title,
-    min_exp = EXCLUDED.min_exp,
-    mandatory = EXCLUDED.mandatory,
-    weights = EXCLUDED.weights,
-    full_text = EXCLUDED.full_text;
+-- 4. Access policies, ownership, and default roles live in migrations/002_auth_private_rows.sql
+--    (owner-only RLS). Do not add anon/public policies here: re-running this file must never
+--    reopen candidate data. Default roles are created per recruiter by the dashboard on first sign-in.
 
 -- 6. Enable Realtime Publications
-BEGIN;
-  DROP PUBLICATION IF EXISTS supabase_realtime;
-  CREATE PUBLICATION supabase_realtime FOR TABLE public.job_roles, public.candidates;
-COMMIT;
+-- Add tables to Supabase's existing publication instead of dropping it
+-- (DROP PUBLICATION removes realtime for every other table in the project).
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+    CREATE PUBLICATION supabase_realtime;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'job_roles') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.job_roles;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'candidates') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.candidates;
+  END IF;
+END $$;

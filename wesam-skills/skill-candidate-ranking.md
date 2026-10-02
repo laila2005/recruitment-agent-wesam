@@ -24,7 +24,8 @@ EVALUATION PROTOCOL:
 2. Segment candidates into 3 distinct operational tiers:
    - 🟢 TIER 1: FAST-TRACK (Scores 85–100) — Schedule screening call immediately.
    - 🟡 TIER 2: QUALIFIED BENCH (Scores 70–84) — Strong backups; hold until Tier 1 screens finish.
-   - 🔴 TIER 3: ARCHIVE / PASS (Scores < 70 or mandatory requirement unmet) — Clear reason for pass.
+   - 🔴 TIER 3: ARCHIVE / PASS (Scores < 70) — Clear reason for pass.
+   Score caps (non-negotiable): fewer years than the JD minimum → max 69 (always Tier 3); any must-have Not Demonstrated → max 74 (can never be Tier 1).
 3. Generate a 1-Sentence "Executive Takeaway" for every applicant.
 4. Highlight head-to-head differentiators for close scores (within 5 points).
 

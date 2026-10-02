@@ -49,7 +49,7 @@ TalentScout AI combines an **autonomous recruiting agent on Wesam.ai (Lili)** wi
 │  • 1-Click EEOC Bias-Free Anonymize Mode (Candidate C-01)                   │
 │  • Connected Inbox & Candidate Drawer (Editable Email + Gmail Launcher)     │
 └──────────────────────────────────────┬──────────────────────────────────────┘
-                                       │ Realtime Cloud Sync (PostgREST)
+                                       │ Realtime Cloud Sync (Supabase Realtime + owner-only RLS)
                                        ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                 CLOUD DATABASE: SUPABASE POSTGRESQL                         │
@@ -63,7 +63,7 @@ TalentScout AI combines an **autonomous recruiting agent on Wesam.ai (Lili)** wi
 │                 BACKEND: WESAM.AI AUTONOMOUS AGENT (LILI)                   │
 │  • Core Intelligence: GPT-5.5 with Evidence-Referenced Guardrails           │
 │  • Universal Role Ingestion: Automatically decomposes any ad-hoc JD         │
-│  • Mathematical Score Caps: <60/100 if under min exp; <75/100 if missing tech│
+│  • Mathematical Score Caps: ≤69 if under min exp; ≤74 if missing a must-have│
 │  • MCP Integrations: GitMCP (GitHub Code Inspection) & Tavily Search        │
 │  • Autonomous Workflow: Daily 8:00 AM Hiring Market & Salary Brief          │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -89,9 +89,10 @@ TalentScout AI combines an **autonomous recruiting agent on Wesam.ai (Lili)** wi
 * **Lili Adapts On The Fly:** Whether on the dashboard or chatting on Wesam.ai, Lili parses any ad-hoc JD and calibrates her evaluation criteria dynamically.
 
 ### 4. 🛡️ Defensible Scoring & Strict Hard Bar Score Caps
-* **Mandatory Minimum Experience Hard Bar:** If a candidate has fewer years of experience than the mandatory requirement, their total score is **strictly capped at $\le 59/100$** (Tier 3: Does Not Meet Bar / Archive).
+* **Mandatory Minimum Experience Hard Bar:** If a candidate has fewer years of experience than the mandatory requirement, their total score is **strictly capped at $\le 69/100$** (Tier 3: Does Not Meet Bar / Archive).
 * **Missing Core Stack Cap:** If a candidate lacks a mandatory must-have, their score is **capped at $\le 74/100$** (Tier 2: Bench / Review).
 * **Tier 1 Fast-Track ($\ge 85/100$):** Requires verified production evidence, measurable scale, and progression.
+* **Tier 2 Bench / Review (70–84)** and **Tier 3 Below Bar (< 70)**. The same four numbers are used by the dashboard (`SCORING` in `index.html`), Lili's prompts, and the database function that records her verdict.
 
 ### 5. ⚖️ 1-Click Bias-Free Screening Mode (EEOC Compliant)
 * Strips all demographic proxies: names, age indicators, graduation dates, universities, photos, gender, and nationality.
@@ -145,12 +146,13 @@ recruitment-agent-wesam/
 │   ├── architecture.md                # System prompt hierarchy & MCP integration design
 │   ├── impact-slides-content.md       # Complete 3-slide deck content (Problem, Solution, ROI)
 │   ├── demo-script.md                 # 2.5-minute video walkthrough script
-│   └── lovable-dashboard-prompt.md    # Frontend architectural specification
+│   ├── dashboard-specification.md     # Frontend architectural specification
+│   └── hackathon-readiness.md         # End-to-end test plan & demo checklist
 │
 ├── dashboard/
-│   └── index.html                     # Standalone executive dashboard replica
+│   └── index.html                     # Byte-identical copy of index.html (served at /dashboard)
 │
-├── frontend/                          # React + TanStack Router application
+├── frontend/                          # ARCHIVED Lovable prototype (not deployed; index.html is the live app)
 │   ├── package.json
 │   ├── vite.config.ts
 │   └── src/
@@ -158,14 +160,17 @@ recruitment-agent-wesam/
 │       └── lib/candidates.ts          # Core data models, initial roles, and types
 │
 ├── supabase/
-│   └── schema.sql                     # Complete PostgreSQL schema, RLS policies & seed roles
+│   ├── schema.sql                     # Base PostgreSQL schema
+│   └── migrations/
+│       └── 002_auth_private_rows.sql  # Recruiter login, owner-only RLS, realtime, Lili's DB functions
 │
 ├── wesam-skills/
 │   ├── skill-resume-evaluation.md     # Resume-to-Job evaluation skill specification
 │   ├── skill-portfolio-assessment.md  # Technical GitHub inspection & code quality vetting
 │   ├── skill-candidate-ranking.md     # High-throughput candidate triage & comparison matrix
 │   ├── skill-screening-guide.md       # Behavioral screening interview generator
-│   └── skill-candidate-outreach.md    # Automated candidate outreach & follow-up drafts
+│   ├── skill-candidate-outreach.md    # Automated candidate outreach & follow-up drafts
+│   └── skill-ats-sync.md              # Reads a candidate from Supabase, writes Lili's verdict back live
 │
 └── sample-data/
     ├── evaluation_rubric_standards.md # Formal scoring rubric & dynamic ingestion protocol
@@ -196,11 +201,19 @@ cd recruitment-agent-wesam
 start index.html
 ```
 
-### 2. Configure Supabase Cloud Database (Optional, 30 Seconds)
-1. Open your project on [Supabase.com](https://supabase.com).
-2. Go to the **SQL Editor** (`>_` on the left sidebar).
-3. Copy and run [`supabase/schema.sql`](supabase/schema.sql).
-4. Open the live app at [https://lili-hr-agent.vercel.app](https://lili-hr-agent.vercel.app), click **`☁️ Connect Supabase`**, and paste your `anon` public key.
+### 2. Configure Supabase (recruiter login + private cloud pipeline)
+Signed out, the dashboard runs in **local demo mode** (browser storage only). Signed in, every recruiter gets a private pipeline that syncs live across devices.
+1. Open your project on [Supabase.com](https://supabase.com) → **SQL Editor**.
+2. Run [`supabase/schema.sql`](supabase/schema.sql), then [`supabase/migrations/002_auth_private_rows.sql`](supabase/migrations/002_auth_private_rows.sql).
+3. **Authentication → Providers → Email:** turn off *Confirm email* for demos (or confirm once by email). **URL Configuration → Site URL:** `https://lili-hr-agent.vercel.app`.
+4. Open the app, click **Sign in · Local mode** in the navbar → **Create account**. The project URL and public anon key are built in (`SUPABASE_ANON_KEY` in `index.html`).
+
+### Security & privacy
+- **Owner-only Row Level Security:** each table row carries `owner_id`; policies only let the signed-in recruiter read or change their own candidates and roles. The anon key alone returns nothing.
+- **Lili can't be impersonated from the browser:** her verdict is written only through `lili_submit_evaluation()`, which is not executable by `anon`/`authenticated` users.
+- **Signing out clears** that recruiter's cached candidate data from the browser.
+- **Wesam connection:** Wesam's Supabase integration needs the project's `service_role` key, which bypasses RLS. Keep the Wesam workspace private, rotate the key after the hackathon, and use fake CVs in public demos.
+- **Scoring is two-layered and labelled honestly:** the dashboard shows an *instant pre-screen* (rule-based, in your browser); **Lili's evidence-cited deep evaluation** (LLM, on Wesam) arrives separately as a "Lili verified" badge.
 
 ### 3. Deploy to Vercel (1 Command)
 ```bash
@@ -209,9 +222,11 @@ vercel --prod
 
 ### 4. Deploy Lili on Wesam.ai
 1. Create a new agent named **Lili** on [Wesam.ai](https://wesam.ai).
-2. Paste the contents of [`agent-instructions/lili-system-prompt.md`](agent-instructions/lili-system-prompt.md) into the Instructions box.
-3. Upload the skills from `wesam-skills/` and reference benchmarks from `sample-data/`.
-4. Click **Publish**!
+2. Paste the contents of [`agent-instructions/lili-system-prompt.md`](agent-instructions/lili-system-prompt.md) into the Instructions box. This is the canonical system prompt; there is no separate `lili-wesam-prompt.md`.
+3. Upload the skills from `wesam-skills/` (including `skill-ats-sync.md`) and reference benchmarks from `sample-data/`. `agent-instructions/skill-*.md` are the detailed rubric modules the system prompt routes to.
+4. **Integrations → Supabase → Connect** with your project URL and `service_role` key, and enable it for Lili.
+5. Paste Lili's chat link into the dashboard's **Inbox settings → Lili agent link**. In any candidate drawer, **Deep evaluate** copies `Evaluate candidate C-XXXX` and opens Lili; her verdict appears on the dashboard within a second.
+6. Click **Publish**!
 
 ---
 

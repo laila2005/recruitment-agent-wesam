@@ -22,14 +22,31 @@
       }
     }
   </script>
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/lucide@1.50.0/dist/umd/lucide.min.js"></script>
   <!-- PDF.js for in-browser PDF parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <!-- Mammoth.js for in-browser DOCX parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script id="supabase-js" async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     body { font-family: 'Inter', sans-serif; }
+    /* Lili activity: compositor-only animations (transform/opacity) */
+    @keyframes lili-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.8); opacity: .35; } }
+    @keyframes lili-fade-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+    .lili-busy .lili-dot { animation: lili-pulse 1.2s ease-in-out infinite; }
+    .lili-fade { animation: lili-fade-in .25s ease-out; }
+    #lili-feed { transform: translateY(12px); opacity: 0; pointer-events: none; transition: transform .2s ease-out, opacity .2s ease-out; }
+    #lili-feed.lili-feed-open { transform: none; opacity: 1; pointer-events: auto; }
+    .stage-chip { transition: background-color .2s ease-out, color .2s ease-out, border-color .2s ease-out; }
+    .stage-chip:nth-child(2) { transition-delay: 70ms; }
+    .stage-chip:nth-child(3) { transition-delay: 140ms; }
+    .stage-chip:nth-child(4) { transition-delay: 210ms; }
+    .stage-chip:nth-child(5) { transition-delay: 280ms; }
+    @media (prefers-reduced-motion: reduce) {
+      .lili-busy .lili-dot, .lili-fade { animation: none; }
+      #lili-feed, .stage-chip { transition: none; }
+    }
   </style>
 </head>
 <body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col antialiased">
@@ -43,10 +60,11 @@
         </div>
         <span class="font-bold text-lg tracking-tight">TalentScout <span class="text-emerald-400">AI</span></span>
       </div>
-      <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-        Lili Agent Live
-      </span>
+      <button id="lili-badge" onclick="toggleLiliFeed()" aria-controls="lili-feed" title="Show what Lili is doing" class="relative inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition">
+        <span class="lili-dot w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+        <span id="lili-badge-text">Lili Agent Live</span>
+        <span id="lili-unread" class="hidden absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-emerald-500 text-zinc-950 text-[10px] font-bold leading-4 text-center">0</span>
+      </button>
       <div class="h-4 w-px bg-zinc-800 mx-1"></div>
 
       <!-- ROLE SELECTOR & POST ROLE BUTTON -->
@@ -179,6 +197,10 @@
           <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
           Import Sample Pipeline CSV
         </button>
+        <button onclick="exportPipelineCsv()" class="px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium transition flex items-center gap-1.5">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          Export CSV
+        </button>
         <div class="relative w-full sm:w-64">
           <i data-lucide="search" class="w-4 h-4 text-zinc-500 absolute left-3 top-2.5"></i>
           <input type="text" id="search-input" oninput="renderTable()" placeholder="Search skill or candidate..." class="w-full bg-zinc-900/60 border border-zinc-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-zinc-700">
@@ -196,7 +218,7 @@
                 <input type="checkbox" id="select-all" onchange="toggleSelectAll()" class="rounded bg-zinc-800 border-zinc-700 text-emerald-500 focus:ring-0 cursor-pointer">
               </th>
               <th class="p-3">Rank & Candidate</th>
-              <th class="p-3 text-center">Fit Score</th>
+              <th class="p-3 text-center" title="Instant rule-based pre-screen. Lili's deep evaluation appears as a separate badge.">Pre-screen</th>
               <th class="p-3">Status</th>
               <th class="p-3">Core Stack Match</th>
               <th class="p-3">Exp</th>
@@ -231,6 +253,15 @@
     </div>
   </main>
 
+  <!-- LILI ACTIVITY LOG (toggled from the navbar badge) -->
+  <section id="lili-feed" aria-label="Lili activity log" aria-hidden="true" class="fixed bottom-6 left-6 z-40 w-80 max-w-[calc(100vw-3rem)] bg-zinc-900/95 border border-zinc-700/80 rounded-xl shadow-2xl backdrop-blur text-xs">
+    <div class="flex items-center justify-between px-3 py-2 border-b border-zinc-800">
+      <span class="font-semibold text-zinc-200 flex items-center gap-1.5"><i data-lucide="activity" class="w-3.5 h-3.5 text-emerald-400"></i> Lili's activity</span>
+      <button onclick="toggleLiliFeed(false)" class="text-zinc-500 hover:text-zinc-300" aria-label="Close activity log"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+    </div>
+    <ul id="lili-feed-list" class="px-3 py-1 max-h-64 overflow-y-auto divide-y divide-zinc-800/60" aria-live="polite"></ul>
+  </section>
+
   <!-- FLOATING BATCH ACTION BAR -->
   <div id="batch-bar" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-zinc-900 border border-zinc-700/80 shadow-2xl rounded-full px-5 py-2.5 flex items-center gap-4 z-40 transition-all duration-300 translate-y-24 opacity-0">
     <span class="text-xs font-medium text-zinc-300 flex items-center gap-1.5">
@@ -238,6 +269,10 @@
       selected
     </span>
     <div class="h-4 w-px bg-zinc-800"></div>
+    <button onclick="openCompareModal()" class="px-3.5 py-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 text-xs font-semibold flex items-center gap-1.5 transition">
+      <i data-lucide="columns-3" class="w-3.5 h-3.5"></i>
+      Compare
+    </button>
     <button onclick="triggerDispatch('accept')" class="px-3.5 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-semibold flex items-center gap-1.5 transition">
       <i data-lucide="mail" class="w-3.5 h-3.5"></i>
       Accept & Send Invites
@@ -271,12 +306,12 @@
 
       <!-- FILE UPLOAD DROPZONE -->
       <div id="drop-zone" onclick="document.getElementById('file-input').click()" class="border-2 border-dashed border-zinc-700 hover:border-emerald-500/60 rounded-xl p-5 text-center cursor-pointer bg-zinc-800/20 hover:bg-zinc-800/40 transition">
-        <input type="file" id="file-input" accept=".pdf,.docx,.doc,.txt" onchange="handleFileSelect(event)" class="hidden">
+        <input type="file" id="file-input" accept=".pdf,.docx,.txt,.md" onchange="handleFileSelect(event)" class="hidden">
         <div class="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto text-emerald-400 mb-2">
           <i data-lucide="upload-cloud" class="w-5 h-5"></i>
         </div>
         <p class="text-xs text-zinc-200 font-semibold">Drop PDF or Word document here, or <span class="text-emerald-400 underline">browse</span></p>
-        <p class="text-[10px] text-zinc-500 mt-1">Supports .PDF, .DOCX, .DOC, .TXT (Auto-extracts name, stack, and experience)</p>
+        <p class="text-[10px] text-zinc-500 mt-1">Supports .PDF, .DOCX, .TXT (Auto-extracts name, stack, and experience)</p>
         <div id="parsing-status" class="hidden mt-2 text-xs font-medium text-emerald-400 flex items-center justify-center gap-1.5">
           <i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i>
           <span>Extracting text & matching criteria...</span>
@@ -352,12 +387,12 @@
 
       <!-- BULK DROPZONE -->
       <div id="bulk-drop-zone" onclick="document.getElementById('bulk-file-input').click()" class="border-2 border-dashed border-zinc-700 hover:border-emerald-500/60 rounded-xl p-6 text-center cursor-pointer bg-zinc-800/20 hover:bg-zinc-800/40 transition">
-        <input type="file" id="bulk-file-input" multiple accept=".pdf,.docx,.doc,.txt" onchange="handleBulkFileSelect(event)" class="hidden">
+        <input type="file" id="bulk-file-input" multiple accept=".pdf,.docx,.txt,.md" onchange="handleBulkFileSelect(event)" class="hidden">
         <div class="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto text-emerald-400 mb-2">
           <i data-lucide="upload-cloud" class="w-5 h-5"></i>
         </div>
         <p class="text-xs text-zinc-200 font-semibold" id="bulk-drop-title">Drop multiple PDF or Word CVs here, or <span class="text-emerald-400 underline">browse files</span></p>
-        <p class="text-[10px] text-zinc-500 mt-1">Select multiple resumes at once (.pdf, .docx, .txt). Lili will analyze all candidates in parallel.</p>
+        <p class="text-[10px] text-zinc-500 mt-1">Select multiple resumes at once (.pdf, .docx, .txt). Lili screens 3 CVs at a time, in parallel, right in your browser.</p>
       </div>
 
       <!-- PROGRESS & STATS -->
@@ -396,49 +431,60 @@
 
   <!-- DIRECT SUPABASE CONNECTION & CLOUD SYNC MODAL -->
   <div id="supabase-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
       <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
         <div class="flex items-center gap-2.5">
           <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-            <i data-lucide="database" class="w-4 h-4"></i>
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
           </div>
           <div>
-            <h3 class="font-bold text-sm text-zinc-100">Supabase Cloud Database</h3>
-            <p class="text-[11px] text-zinc-400">Direct zero-dependency cloud synchronization</p>
+            <h3 class="font-bold text-sm text-zinc-100">Recruiter sign-in</h3>
+            <p class="text-[11px] text-zinc-400">Private cloud pipeline · only you can see your candidates</p>
           </div>
         </div>
-        <button onclick="closeSupabaseModal()" class="text-zinc-500 hover:text-zinc-300">
+        <button onclick="closeSupabaseModal()" class="text-zinc-500 hover:text-zinc-300" aria-label="Close">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
 
-      <div class="space-y-3 text-xs">
+      <!-- Signed-out view -->
+      <form id="auth-signed-out" class="space-y-3 text-xs" onsubmit="event.preventDefault(); handleSignIn();">
         <div>
-          <label class="block text-zinc-400 mb-1 font-medium">Supabase Project URL</label>
-          <input type="text" id="supabase-url-input" value="https://ppjxzlepqstqvcrkqscz.supabase.co" class="w-full bg-zinc-800/80 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 font-mono text-xs focus:outline-none focus:border-emerald-500">
-          <p class="text-[10px] text-zinc-500 mt-1">Pre-filled with your <code>Lili-HR-agent</code> project URL</p>
+          <label for="auth-email" class="block text-zinc-400 mb-1 font-medium">Work email</label>
+          <input type="email" id="auth-email" autocomplete="username" placeholder="name@company.com" class="w-full bg-zinc-800/80 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 text-xs focus:outline-none focus:border-emerald-500">
         </div>
-
         <div>
-          <label class="block text-zinc-400 mb-1 font-medium">Supabase Anon Public API Key</label>
-          <input type="password" id="supabase-key-input" placeholder="Paste your anon/public key here (eyJh...)" class="w-full bg-zinc-800/80 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 font-mono text-xs focus:outline-none focus:border-emerald-500">
-          <p class="text-[10px] text-zinc-500 mt-1">Find this in your Supabase dashboard ➔ <strong>API Keys</strong> ➔ <code>anon</code> / <code>public</code></p>
+          <label for="auth-password" class="block text-zinc-400 mb-1 font-medium">Password</label>
+          <input type="password" id="auth-password" autocomplete="current-password" placeholder="At least 8 characters" class="w-full bg-zinc-800/80 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 text-xs focus:outline-none focus:border-emerald-500">
         </div>
-
+        <details class="text-[11px] text-zinc-500">
+          <summary class="cursor-pointer hover:text-zinc-300">Project settings</summary>
+          <div class="space-y-2 pt-2">
+            <input type="text" id="supabase-url-input" class="w-full bg-zinc-800/80 border border-zinc-700 rounded-lg px-3 py-1.5 text-zinc-100 font-mono text-[11px] focus:outline-none focus:border-emerald-500" aria-label="Supabase project URL">
+            <input type="password" id="supabase-key-input" placeholder="anon / public key (eyJh...)" class="w-full bg-zinc-800/80 border border-zinc-700 rounded-lg px-3 py-1.5 text-zinc-100 font-mono text-[11px] focus:outline-none focus:border-emerald-500" aria-label="Supabase anon key">
+            <p>The anon key is safe to expose: row-level security only returns rows owned by the signed-in recruiter.</p>
+          </div>
+        </details>
         <div id="supabase-test-result" class="hidden p-3 rounded-lg text-xs"></div>
-      </div>
-
-      <div class="flex items-center justify-between border-t border-zinc-800 pt-3">
-        <button onclick="disconnectSupabase()" class="text-xs text-rose-400 hover:underline">
-          Disconnect
-        </button>
-        <div class="flex gap-2">
-          <button onclick="closeSupabaseModal()" class="px-4 py-2 rounded-lg bg-zinc-800 text-zinc-300 hover:text-white text-xs font-medium transition">
-            Close
+        <div class="flex items-center justify-between border-t border-zinc-800 pt-3">
+          <button type="button" onclick="handleSignUp()" class="text-xs text-zinc-400 hover:text-zinc-200">Create account</button>
+          <button type="submit" id="btn-save-supabase" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-semibold transition flex items-center gap-1.5">
+            <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
+            Sign in
           </button>
-          <button onclick="saveAndSyncSupabase()" id="btn-save-supabase" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-semibold transition flex items-center gap-1.5">
+        </div>
+      </form>
+
+      <!-- Signed-in view -->
+      <div id="auth-signed-in" class="hidden space-y-3 text-xs">
+        <div class="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
+          Signed in as <span id="auth-user-email" class="font-semibold"></span>. Candidates and roles sync live across your devices.
+        </div>
+        <div class="flex items-center justify-between border-t border-zinc-800 pt-3">
+          <button onclick="handleSignOut()" class="text-xs text-rose-400 hover:underline">Sign out</button>
+          <button onclick="fullCloudResync()" class="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium transition flex items-center gap-1.5">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-            Save & Sync Now
+            Sync now
           </button>
         </div>
       </div>
@@ -483,6 +529,10 @@
             <label class="block text-zinc-400 mb-1 text-[11px]">Calendar Booking Link (for Invitations)</label>
             <input type="url" id="inbox-booking-link" value="https://cal.com/laila-recruiter/30min" class="w-full bg-zinc-800/80 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 font-mono text-xs focus:outline-none focus:border-emerald-500">
           </div>
+          <div>
+            <label for="inbox-wesam-url" class="block text-zinc-400 mb-1 text-[11px]">Lili agent link on Wesam (for deep evaluations)</label>
+            <input type="url" id="inbox-wesam-url" placeholder="https://prod.wesam.ai/w/..." class="w-full bg-zinc-800/80 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 font-mono text-xs focus:outline-none focus:border-emerald-500">
+          </div>
         </div>
 
         <!-- Dispatch Methods -->
@@ -508,21 +558,23 @@
               </div>
             </label>
 
-            <!-- Mode 2: Resend API -->
+            <!-- Mode 2: Brevo / Resend API (provider detected from the key prefix) -->
             <label class="block p-3 rounded-xl border border-zinc-700 bg-zinc-800/40 hover:bg-zinc-800/60 cursor-pointer transition">
               <div class="flex items-start gap-2.5">
                 <input type="radio" name="email_delivery_mode" id="delivery-mode-resend" value="resend" class="mt-0.5 accent-emerald-500">
                 <div class="space-y-1">
                   <div class="flex items-center gap-1.5 font-semibold text-zinc-200">
-                    <span>Autonomous Background Email (Resend API)</span>
-                    <span class="px-1.5 py-0.2 rounded text-[9px] bg-zinc-700 text-zinc-300">3,000 Free / mo</span>
+                    <span>Autonomous Background Email (Brevo or Resend)</span>
+                    <span class="px-1.5 py-0.2 rounded text-[9px] bg-zinc-700 text-zinc-300">Brevo: 300 free / day</span>
                   </div>
                   <p class="text-[11px] text-zinc-400 leading-normal">
                     Dispatches real emails directly into candidate inboxes in the background without opening browser tabs.
                   </p>
                   <div class="pt-1">
-                    <input type="password" id="inbox-resend-key" placeholder="Enter Resend API Key (re_123...)" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-zinc-100 font-mono text-[11px] focus:outline-none focus:border-emerald-500">
-                    <p class="text-[10px] text-zinc-500 mt-1">Get a free API key at <a href="https://resend.com" target="_blank" class="text-emerald-400 underline">resend.com</a> (Optional)</p>
+                    <input type="password" id="inbox-resend-key" placeholder="Brevo API key (xkeysib-...) or Resend key (re_...)" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-zinc-100 font-mono text-[11px] focus:outline-none focus:border-emerald-500">
+                    <p class="text-[10px] text-zinc-500 mt-1">
+                      Recommended: free <a href="https://www.brevo.com" target="_blank" rel="noopener" class="text-emerald-400 underline">Brevo</a> account → SMTP &amp; API → <strong>API Keys</strong> (not the SMTP key). Your Sender Email above must be verified under Brevo → Senders.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -583,7 +635,7 @@
           <div>
             <label class="block text-zinc-400 mb-1">Mandatory Min. Experience (Years) *</label>
             <input type="number" id="job-minexp" value="5" min="0" max="20" class="w-full bg-zinc-800/80 border border-zinc-700 rounded-lg px-3 py-1.5 text-zinc-100 focus:outline-none focus:border-emerald-500">
-            <p class="text-[10px] text-zinc-500 mt-0.5">Enforces automatic score cap (&lt;60/100) if unmet.</p>
+            <p class="text-[10px] text-zinc-500 mt-0.5">Enforces automatic score cap (max 69/100, Tier 3) if unmet.</p>
           </div>
           <div>
             <label class="block text-zinc-400 mb-1">Mandatory Must-Haves (comma-separated) *</label>
@@ -708,13 +760,17 @@
       <div id="panel-scorecard" class="space-y-4">
         <div>
           <div class="flex justify-between text-zinc-400 mb-1">
-            <span>Overall Fit Score</span>
+            <span title="Rule-based, runs instantly in your browser">Instant pre-screen score</span>
             <span class="font-mono text-zinc-200" id="ds-score">90/100</span>
           </div>
           <div class="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
             <div id="dbar-score" class="bg-emerald-500 h-full w-[90%]"></div>
           </div>
         </div>
+
+        <div id="drawer-lili" class="pt-3 border-t border-zinc-800"></div>
+
+        <div id="drawer-breakdown" class="pt-3 border-t border-zinc-800 space-y-2"></div>
 
         <div class="pt-3 border-t border-zinc-800">
           <h4 class="font-semibold text-zinc-200 mb-2">💪 Evidence-Referenced Strengths</h4>
@@ -822,19 +878,19 @@
       <div id="dispatch-steps" class="space-y-2.5 border-y border-zinc-800/80 py-4 text-xs font-mono">
         <div id="step-1" class="flex items-center gap-2 text-zinc-500">
           <i data-lucide="circle" class="w-3.5 h-3.5 text-zinc-600"></i>
-          <span>Synthesizing candidate profile with JD criteria...</span>
+          <span>Reading each candidate's scorecard and gaps</span>
         </div>
         <div id="step-2" class="flex items-center gap-2 text-zinc-500">
           <i data-lucide="circle" class="w-3.5 h-3.5 text-zinc-600"></i>
-          <span>Generating individualized, evidence-based email...</span>
+          <span>Drafting individualized, evidence-based emails</span>
         </div>
         <div id="step-3" class="flex items-center gap-2 text-zinc-500">
           <i data-lucide="circle" class="w-3.5 h-3.5 text-zinc-600"></i>
-          <span>Attaching 30-min calendar booking links...</span>
+          <span id="step-3-label">Sending</span>
         </div>
         <div id="step-4" class="flex items-center gap-2 text-zinc-500">
           <i data-lucide="circle" class="w-3.5 h-3.5 text-zinc-600"></i>
-          <span>Syncing status to ATS Pipeline Database (CSV)...</span>
+          <span>Saving status to your pipeline</span>
         </div>
       </div>
 
@@ -886,26 +942,181 @@
       }
     ];
 
-    let jobs = JSON.parse(localStorage.getItem('talentscout_jobs')) || defaultJobs;
-    let currentJobId = 'frontend';
+    // Single source of truth for tier thresholds (keep in sync with agent-instructions/)
+    const SCORING = { tier1Min: 85, tier2Min: 70, minExpCap: 69, missingMustHaveCap: 74 };
 
-    // INITIAL CANDIDATES DATA (Empty by default for real evaluations)
-    const defaultCandidates = [];
-
-    let candidates = JSON.parse(localStorage.getItem('talentscout_real_candidates_v3')) || [];
-    let currentFilter = 'all';
-
-    function saveJobs() {
-      localStorage.setItem('talentscout_jobs', JSON.stringify(jobs));
-      populateRoleDropdown();
+    // SAFE STORAGE HELPERS (corrupt JSON or blocked storage must not kill the app)
+    function loadJSON(key, fallback) {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(key));
+        return parsed ?? fallback;
+      } catch (e) {
+        console.warn(`Ignoring unreadable localStorage key "${key}"`, e);
+        return fallback;
+      }
     }
 
-    function saveCandidates() {
-      localStorage.setItem('talentscout_real_candidates_v3', JSON.stringify(candidates));
-      renderTable();
-      if (typeof syncAllLocalCandidatesToSupabase === 'function') {
-        syncAllLocalCandidatesToSupabase();
+    function persistJSON(key, value) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+        return true;
+      } catch (e) {
+        console.warn(`Could not persist "${key}"`, e);
+        showToast('Browser storage is full or blocked. Changes are kept for this session only.', 'error');
+        return false;
       }
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+
+    function newCandidateId() {
+      let id;
+      do {
+        id = 'C-' + Math.random().toString(36).slice(2, 7).toUpperCase();
+      } while (candidates.some(c => c.id === id));
+      return id;
+    }
+
+    function isValidEmail(value) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(value || '').trim());
+    }
+
+    let jobs = loadJSON('talentscout_jobs', defaultJobs);
+    if (!Array.isArray(jobs) || jobs.length === 0) jobs = defaultJobs;
+    let currentJobId = jobs.some(j => j.id === 'frontend') ? 'frontend' : jobs[0].id;
+
+    let candidates = loadJSON('talentscout_real_candidates_v3', []);
+    if (!Array.isArray(candidates)) candidates = [];
+    let currentFilter = 'all';
+
+    // changes: { upsert: job } or { remove: jobId } is pushed to the cloud when signed in
+    function saveJobs(changes = {}) {
+      persistJSON(storageKey('talentscout_jobs'), jobs);
+      populateRoleDropdown();
+      if (changes.upsert) upsertJobToSupabase(changes.upsert);
+      if (changes.remove) deleteJobFromSupabase(changes.remove);
+    }
+
+    // Persist locally, re-render, and push only the candidates that changed to the cloud.
+    // Pushing the whole local list on every save would overwrite newer edits made on another device.
+    function saveCandidates(changed = []) {
+      persistJSON(storageKey('talentscout_real_candidates_v3'), candidates);
+      renderTable();
+      if (changed.length > 0) upsertCandidatesToSupabase(changed);
+    }
+
+    // RULE-BASED PRE-SCREEN SCORER (uses the role's rubric weights)
+    const COMMON_TECH = [
+      'React', 'Next.js', 'TypeScript', 'JavaScript', 'Python', 'FastAPI', 'Django', 'Flask',
+      'PostgreSQL', 'MySQL', 'Node.js', 'MongoDB', 'Redis', 'Docker', 'Kubernetes', 'AWS',
+      'GCP', 'Azure', 'Storybook', 'Tailwind', 'GraphQL', 'LangChain', 'LlamaIndex',
+      'Pinecone', 'Qdrant', 'Weaviate', 'pgvector', 'Redux', 'Terraform', 'CI/CD', 'Git',
+      'C#', 'ASP.NET', '.NET', 'Java', 'Spring', 'PyTorch', 'TensorFlow', 'Microservices',
+      'RAG', 'LLM', 'Vue', 'Angular', 'Kafka', 'REST'
+    ];
+
+    // A mandatory requirement is also satisfied by any of these concrete tools
+    const SKILL_ALIASES = {
+      'vector db': ['pinecone', 'qdrant', 'weaviate', 'pgvector', 'chroma', 'milvus', 'faiss'],
+      'state management': ['redux', 'zustand', 'mobx', 'recoil'],
+      'restful apis': ['rest', 'fastapi', 'express'],
+      'llm fine-tuning': ['lora', 'qlora', 'peft']
+    };
+
+    function escapeRegex(s) {
+      return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // Whole-term, case-insensitive match that works for "C#", ".NET", "Next.js", "CI/CD"
+    function containsTerm(haystack, term) {
+      return new RegExp(`(^|[^a-z0-9+#])${escapeRegex(term.toLowerCase())}($|[^a-z0-9+#])`).test(haystack.toLowerCase());
+    }
+
+    function detectSkills(text, job) {
+      const terms = [...new Set([...COMMON_TECH, ...(job ? job.mandatory : [])])];
+      return terms.filter(t => containsTerm(text, t));
+    }
+
+    function skillSatisfies(skill, requirement) {
+      const s = skill.toLowerCase().trim();
+      const r = requirement.toLowerCase().trim();
+      if (!s || !r) return false;
+      if (s === r || containsTerm(r, s) || containsTerm(s, r)) return true;
+      return (SKILL_ALIASES[r] || []).includes(s);
+    }
+
+    function scoreCandidate(job, skills, exp, text = '') {
+      const mandatory = job.mandatory || [];
+      const matched = mandatory.filter(m => skills.some(s => skillSatisfies(s, m)));
+      const missing = mandatory.filter(m => !matched.includes(m));
+
+      const minExp = job.minExp || 1;
+      const techScore = mandatory.length ? (matched.length / mandatory.length) * 100 : 50;
+      // Meeting the bar = 75, twice the bar = 100, below the bar scales down from 60
+      const expScore = exp >= minExp
+        ? 75 + 25 * Math.min((exp - minExp) / minExp, 1)
+        : 60 * (exp / minExp);
+
+      // Impact/leadership need resume text; without it stay neutral instead of guessing
+      let impactScore = 50;
+      let leadScore = 50;
+      if (text.trim().length > 50) {
+        const metrics = text.match(/\b\d+(\.\d+)?\s*(%|x\b|ms\b|k\b|m\b|million|users|customers|requests|txns|transactions)/gi) || [];
+        impactScore = 30 + 70 * Math.min(metrics.length / 4, 1);
+        const leadership = text.match(/\b(led|lead|mentored|managed|architected|owned|spearheaded|principal|staff engineer|tech lead|cross-functional)\b/gi) || [];
+        leadScore = 30 + 70 * Math.min(leadership.length / 3, 1);
+      }
+
+      const w = job.weights || { tech: 40, exp: 25, impact: 20, lead: 15 };
+      const totalWeight = (w.tech + w.exp + w.impact + w.lead) || 1;
+      const breakdown = [
+        { key: 'tech', label: 'Technical Stack Match', weight: w.tech, score: Math.round(techScore) },
+        { key: 'exp', label: 'Experience Depth', weight: w.exp, score: Math.round(expScore) },
+        { key: 'impact', label: 'Production Impact', weight: w.impact, score: Math.round(impactScore) },
+        { key: 'lead', label: 'Leadership & Communication', weight: w.lead, score: Math.round(leadScore) }
+      ];
+
+      let score = Math.round(breakdown.reduce((sum, d) => sum + d.score * d.weight, 0) / totalWeight);
+      const belowExpBar = exp < job.minExp;
+      if (belowExpBar) score = Math.min(score, SCORING.minExpCap);
+      if (missing.length > 0) score = Math.min(score, SCORING.missingMustHaveCap);
+
+      const tier = score >= SCORING.tier1Min ? 'tier1' : score >= SCORING.tier2Min ? 'tier2' : 'tier3';
+      const status = tier === 'tier1' ? 'Fast-Track' : tier === 'tier2' ? 'Bench / Review' : 'Does Not Meet Bar';
+
+      const gaps = [];
+      if (belowExpBar) gaps.push(`Under mandatory ${job.minExp}-year bar for this role (${exp} yrs found). Score capped at ${SCORING.minExpCap}.`);
+      if (missing.length > 0) gaps.push(`Missing must-have${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}. Score capped at ${SCORING.missingMustHaveCap} (cannot be Fast-Track).`);
+      if (gaps.length === 0) gaps.push('No hard-requirement gaps detected. Verify depth in technical screen.');
+
+      return { score, tier, status, breakdown, matched, missing, gaps, belowExpBar };
+    }
+
+    function buildCandidate({ name, email, exp, skills, text, job }) {
+      const result = scoreCandidate(job, skills, exp, text);
+      return {
+        id: newCandidateId(),
+        name,
+        email: isValidEmail(email) ? email.trim() : '',
+        roleId: job.id,
+        score: result.score,
+        tier: result.tier,
+        status: result.status,
+        skills,
+        exp,
+        breakdown: result.breakdown,
+        missing: result.missing,
+        takeaway: `${skills.slice(0, 3).join(', ') || 'General'} experience (${exp.toFixed(1)} yrs). Matched ${result.matched.length}/${job.mandatory.length} mandatory skills${result.belowExpBar ? `; below ${job.minExp}+ yr bar` : ''}.`,
+        strengths: [
+          result.matched.length ? `Demonstrated mandatory skills: ${result.matched.join(', ')}.` : `Detected skills: ${skills.join(', ') || 'none detected'}.`,
+          `${exp.toFixed(1)} years total professional experience.`
+        ],
+        gaps: result.gaps,
+        emailDraft: '',
+        cvText: (text || '').slice(0, 60000)
+      };
     }
 
     function populateRoleDropdown() {
@@ -934,15 +1145,19 @@
       document.getElementById('upload-role-context').textContent = `Evaluating against ${job.title} requirements`;
     }
 
-    function toggleClearDemoData() {
+    async function toggleClearDemoData() {
       if (candidates.length === 0) {
-        candidates = [...defaultCandidates];
-        document.getElementById('btn-clear-demo').textContent = "Clear Demo Data";
-      } else {
-        candidates = [];
-        document.getElementById('btn-clear-demo').textContent = "Restore Demo Data";
+        showToast('Pipeline is already empty.');
+        return;
       }
+      const cloud = isCloud();
+      if (!confirm(`Remove all ${candidates.length} candidates from this pipeline${cloud ? ' and from your cloud account' : ''}? This cannot be undone.`)) return;
+
+      const ids = candidates.map(c => c.id);
+      candidates = [];
       saveCandidates();
+      if (cloud) await deleteCandidatesFromSupabase(ids);
+      showToast('Pipeline cleared.');
     }
 
     function renderTable() {
@@ -956,9 +1171,9 @@
 
       const filtered = roleCandidates.filter(c => {
         const matchesFilter = currentFilter === 'all' || c.tier === currentFilter;
-        const matchesSearch = c.name.toLowerCase().includes(search) || 
-                              c.skills.some(s => s.toLowerCase().includes(search)) ||
-                              c.takeaway.toLowerCase().includes(search);
+        const matchesSearch = (c.name || '').toLowerCase().includes(search) ||
+                              (c.skills || []).some(s => s.toLowerCase().includes(search)) ||
+                              (c.takeaway || '').toLowerCase().includes(search);
         return matchesFilter && matchesSearch;
       });
 
@@ -1003,34 +1218,35 @@
 
         tr.innerHTML = `
           <td class="p-3 pl-4">
-            <input type="checkbox" class="candidate-check rounded bg-zinc-800 border-zinc-700 text-emerald-500 focus:ring-0 cursor-pointer" data-id="${c.id}" onchange="updateBatchBar()">
+            <input type="checkbox" class="candidate-check rounded bg-zinc-800 border-zinc-700 text-emerald-500 focus:ring-0 cursor-pointer" data-id="${escapeHtml(c.id)}" onchange="updateBatchBar()">
           </td>
           <td class="p-3">
             <div class="font-medium text-zinc-100 flex items-center gap-2">
               <span class="text-zinc-500 font-mono text-[11px]">#${idx + 1}</span>
-              <span>${isAnon ? c.id : c.name}</span>
+              <span>${escapeHtml(isAnon ? c.id : c.name)}</span>
             </div>
-            <div class="text-[11px] text-zinc-500">${isAnon ? 'Confidential Applicant' : c.email}</div>
+            <div class="text-[11px] text-zinc-500">${isAnon ? 'Confidential Applicant' : (escapeHtml(c.email) || '<span class="text-amber-400">No email found</span>')}</div>
           </td>
           <td class="p-3 text-center">
             <div class="inline-flex items-center justify-center w-8 h-8 rounded-full border ${circleColor} font-bold font-mono">
-              ${c.score}
+              ${Number(c.score) || 0}
             </div>
+            ${c.liliScore !== null && c.liliScore !== undefined ? `<div class="mt-1 inline-flex items-center gap-0.5 px-1.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/30 text-[10px] font-semibold" title="Lili's deep evaluation on Wesam"><i data-lucide="sparkles" class="w-2.5 h-2.5"></i>Lili ${Number(c.liliScore)}</div>` : ''}
           </td>
           <td class="p-3">
             <span class="status-badge px-2 py-0.5 rounded text-[11px] font-medium border ${badgeColor}">
-              ${c.status}
+              ${escapeHtml(c.status)}
             </span>
           </td>
           <td class="p-3">
             <div class="flex flex-wrap gap-1 max-w-xs">
-              ${c.skills.map(s => `<span class="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 text-[10px]">${s}</span>`).join('')}
+              ${(c.skills || []).map(s => `<span class="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 text-[10px]">${escapeHtml(s)}</span>`).join('')}
             </div>
           </td>
-          <td class="p-3 font-mono text-zinc-300">${c.exp} yrs</td>
-          <td class="p-3 text-zinc-400 max-w-sm">${c.takeaway}</td>
+          <td class="p-3 font-mono text-zinc-300">${Number(c.exp) || 0} yrs</td>
+          <td class="p-3 text-zinc-400 max-w-sm">${escapeHtml(c.takeaway)}</td>
           <td class="p-3 text-right pr-4 space-x-1">
-            <button onclick="openDrawer('${c.id}')" class="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition font-medium">
+            <button data-id="${escapeHtml(c.id)}" onclick="openDrawer(this.dataset.id)" class="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition font-medium">
               Scorecard
             </button>
           </td>
@@ -1138,9 +1354,11 @@
       const job = jobs.find(j => j.id === currentJobId) || jobs[0];
       if (!confirm(`Are you sure you want to remove the role "${job.title}"?`)) return;
 
-      jobs = jobs.filter(j => j.id !== currentJobId);
+      const removedId = currentJobId;
+      jobs = jobs.filter(j => j.id !== removedId);
       currentJobId = jobs[0].id;
-      saveJobs();
+      saveJobs({ remove: removedId });
+      liliLog('trash-2', `Role "${job.title}" removed`, 'warn');
       closeViewJdModal();
       alert(`✅ Role "${job.title}" deleted.`);
     }
@@ -1194,7 +1412,8 @@
       }
 
       currentJobId = id;
-      saveJobs();
+      saveJobs({ upsert: savedJob });
+      liliLog('briefcase', `${editingJobId ? 'Updated' : 'Published'} role "${title}" with rubric ${savedJob.weights.tech}/${savedJob.weights.exp}/${savedJob.weights.impact}/${savedJob.weights.lead}`);
       closeJobModal();
 
       document.getElementById('job-title').value = '';
@@ -1212,7 +1431,7 @@
       document.getElementById('vjd-minexp').textContent = `${job.minExp}+ Years (Strict Bar)`;
       
       const mDiv = document.getElementById('vjd-mandatory');
-      mDiv.innerHTML = job.mandatory.map(m => `<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs">${m}</span>`).join('');
+      mDiv.innerHTML = job.mandatory.map(m => `<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs">${escapeHtml(m)}</span>`).join('');
 
       const rDiv = document.getElementById('vjd-rubric');
       rDiv.innerHTML = `
@@ -1249,10 +1468,8 @@
       const iconName = isErr ? 'alert-circle' : isWarn ? 'alert-triangle' : 'check-circle';
 
       toast.className = `flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-2xl text-xs font-medium backdrop-blur-md transition-all duration-300 transform translate-y-3 opacity-0 pointer-events-auto ${borderClass}`;
-      toast.innerHTML = `
-        <i data-lucide="${iconName}" class="w-4 h-4 shrink-0"></i>
-        <span>${message}</span>
-      `;
+      toast.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 shrink-0"></i><span></span>`;
+      toast.querySelector('span').textContent = message;
 
       container.appendChild(toast);
       if (window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -1271,171 +1488,513 @@
       }, 3500);
     }
 
-    // SUPABASE DIRECT POSTGREST CLIENT
-    const SUPABASE_CONFIG = {
-      get url() { return localStorage.getItem('supabase_url') || 'https://ppjxzlepqstqvcrkqscz.supabase.co'; },
-      get anonKey() { return localStorage.getItem('supabase_anon_key') || ''; }
-    };
+    // LILI ACTIVITY LOG (what the agent is doing, in real time; cheap: one rAF-batched render)
+    const liliFeed = [];
+    let liliBusy = 0;
+    let liliUnread = 0;
+    let liliFeedOpen = false;
+    let liliRenderQueued = false;
+
+    function liliLog(icon, text, level = 'info') {
+      liliFeed.push({ icon, text, level, time: new Date() });
+      if (liliFeed.length > 100) liliFeed.shift();
+      if (!liliFeedOpen) liliUnread++;
+      scheduleLiliRender();
+    }
+
+    // Marks Lili busy (pulsing dot) until the returned done() is called
+    function liliTask(text, icon = 'loader') {
+      liliBusy++;
+      if (text) liliLog(icon, text);
+      let finished = false;
+      return () => {
+        if (finished) return;
+        finished = true;
+        liliBusy = Math.max(0, liliBusy - 1);
+        scheduleLiliRender();
+      };
+    }
+
+    function scheduleLiliRender() {
+      if (liliRenderQueued) return;
+      liliRenderQueued = true;
+      requestAnimationFrame(renderLiliFeed);
+    }
+
+    function toggleLiliFeed(force) {
+      liliFeedOpen = typeof force === 'boolean' ? force : !liliFeedOpen;
+      if (liliFeedOpen) liliUnread = 0;
+      scheduleLiliRender();
+    }
+
+    function renderLiliFeed() {
+      liliRenderQueued = false;
+      const panel = document.getElementById('lili-feed');
+      const badge = document.getElementById('lili-badge');
+      if (badge) {
+        badge.classList.toggle('lili-busy', liliBusy > 0);
+        const unread = document.getElementById('lili-unread');
+        if (unread) {
+          unread.textContent = liliUnread > 9 ? '9+' : String(liliUnread);
+          unread.classList.toggle('hidden', liliUnread === 0 || liliFeedOpen);
+        }
+        const label = document.getElementById('lili-badge-text');
+        if (label) label.textContent = liliBusy > 0 ? 'Lili is working…' : 'Lili Agent Live';
+      }
+      if (!panel) return;
+      panel.classList.toggle('lili-feed-open', liliFeedOpen);
+      panel.setAttribute('aria-hidden', String(!liliFeedOpen));
+      if (!liliFeedOpen) return;
+
+      const list = document.getElementById('lili-feed-list');
+      const tone = { info: 'text-emerald-400', success: 'text-emerald-300', warn: 'text-amber-400', error: 'text-rose-400' };
+      list.innerHTML = liliFeed.slice(-40).reverse().map((e, i) => `
+        <li class="flex items-start gap-2 py-1.5 ${i === 0 ? 'lili-fade' : ''}">
+          <span class="font-mono text-[10px] text-zinc-500 shrink-0 pt-0.5">${e.time.toTimeString().slice(0, 8)}</span>
+          <i data-lucide="${escapeHtml(e.icon)}" class="w-3.5 h-3.5 shrink-0 mt-0.5 ${tone[e.level] || tone.info}"></i>
+          <span class="text-zinc-300 leading-snug">${escapeHtml(e.text)}</span>
+        </li>`).join('') || '<li class="py-2 text-zinc-500">No activity yet. Import CVs to watch Lili work.</li>';
+      if (window.lucide) lucide.createIcons({ nameAttr: 'data-lucide', root: list });
+    }
+
+    // SUPABASE CLOUD: recruiter login, private rows (RLS), live sync over realtime
+    const SUPABASE_URL_DEFAULT = 'https://ppjxzlepqstqvcrkqscz.supabase.co';
+    // Public anon key. Safe to ship: RLS only returns rows owned by the signed-in recruiter.
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwanh6bGVwcXN0cXZjcmtxc2N6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzExOTMsImV4cCI6MjEwNjUwNzE5M30.9au5nW-syj80Db4vQplm9SOpXHZpFyiuG-kEqtA_5PI';
+
+    let sb = null;
+    let session = null;
+    let realtimeChannel = null;
+
+    function cloudSettings() {
+      let url = SUPABASE_URL_DEFAULT;
+      let key = SUPABASE_ANON_KEY;
+      try {
+        url = localStorage.getItem('supabase_url') || url;
+        key = key || localStorage.getItem('supabase_anon_key') || '';
+      } catch (e) {}
+      return { url, key };
+    }
+
+    function isCloud() {
+      return !!(sb && session);
+    }
+
+    // Signed-in data is cached per user so another recruiter on this browser never sees it
+    function storageKey(name) {
+      return session ? `${name}__${session.user.id}` : name;
+    }
+
+    function initSupabaseClient() {
+      const { url, key } = cloudSettings();
+      if (!key || !window.supabase || !window.supabase.createClient) return null;
+      if (sb && sb.__url === url && sb.__key === key) return sb;
+      sb = window.supabase.createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true } });
+      sb.__url = url;
+      sb.__key = key;
+      // Supabase warns against awaiting client calls inside this callback, so defer the work
+      sb.auth.onAuthStateChange((event, newSession) => setTimeout(() => handleSessionChange(newSession), 0));
+      return sb;
+    }
+
+    function initCloud() {
+      if (!initSupabaseClient()) updateSupabaseIndicator();
+    }
+
+    async function handleSessionChange(newSession) {
+      const before = session ? session.user.id : null;
+      const after = newSession ? newSession.user.id : null;
+      session = newSession;
+      if (before === after) return;
+      if (after) await onSignedIn();
+      else onSignedOut(before);
+    }
 
     function updateSupabaseIndicator() {
       const dot = document.getElementById('supabase-indicator-dot');
       const text = document.getElementById('supabase-status-text');
-      if (SUPABASE_CONFIG.anonKey) {
-        if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
-        if (text) text.textContent = 'Supabase Cloud (Active)';
+      if (isCloud()) {
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        if (text) text.textContent = session.user.email;
       } else {
         if (dot) dot.className = 'w-2 h-2 rounded-full bg-zinc-600';
-        if (text) text.textContent = 'Connect Supabase';
+        if (text) text.textContent = 'Sign in · Local mode';
       }
     }
 
+    function setAuthResult(message, type = 'info') {
+      const el = document.getElementById('supabase-test-result');
+      if (!el) return;
+      el.className = `p-3 rounded-lg text-xs border ${type === 'error' ? 'bg-rose-500/10 text-rose-300 border-rose-500/30' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'}`;
+      el.textContent = message;
+    }
+
     function openSupabaseModal() {
-      document.getElementById('supabase-url-input').value = SUPABASE_CONFIG.url;
-      document.getElementById('supabase-key-input').value = SUPABASE_CONFIG.anonKey;
+      const { url, key } = cloudSettings();
+      document.getElementById('supabase-url-input').value = url;
+      document.getElementById('supabase-key-input').value = SUPABASE_ANON_KEY ? '' : key;
+      document.getElementById('supabase-key-input').placeholder = SUPABASE_ANON_KEY ? 'Built in (no need to paste)' : 'anon / public key (eyJh...)';
+      document.getElementById('supabase-test-result').classList.add('hidden');
+      document.getElementById('auth-signed-out').classList.toggle('hidden', isCloud());
+      document.getElementById('auth-signed-in').classList.toggle('hidden', !isCloud());
+      if (isCloud()) document.getElementById('auth-user-email').textContent = session.user.email;
       document.getElementById('supabase-modal').classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
     }
 
     function closeSupabaseModal() {
       document.getElementById('supabase-modal').classList.add('hidden');
     }
 
-    async function saveAndSyncSupabase() {
-      const url = document.getElementById('supabase-url-input').value.trim();
+    function readAuthForm() {
+      const url = document.getElementById('supabase-url-input').value.trim() || SUPABASE_URL_DEFAULT;
       const key = document.getElementById('supabase-key-input').value.trim();
-      const resultEl = document.getElementById('supabase-test-result');
+      try {
+        localStorage.setItem('supabase_url', url);
+        if (key) localStorage.setItem('supabase_anon_key', key);
+      } catch (e) {}
+      return {
+        email: document.getElementById('auth-email').value.trim(),
+        password: document.getElementById('auth-password').value
+      };
+    }
 
-      if (!key) {
-        showToast('Please enter your Supabase anon/public key.');
+    async function runAuth(action) {
+      const { email, password } = readAuthForm();
+      if (!isValidEmail(email) || password.length < 8) {
+        setAuthResult('Enter your email and a password of at least 8 characters.', 'error');
         return;
       }
-
-      localStorage.setItem('supabase_url', url);
-      localStorage.setItem('supabase_anon_key', key);
-
-      resultEl.classList.remove('hidden', 'bg-rose-500/10', 'text-rose-400', 'bg-emerald-500/10', 'text-emerald-400');
-      resultEl.classList.add('bg-zinc-800', 'text-zinc-300');
-      resultEl.innerHTML = '<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin inline mr-1"></i> Testing connection to Supabase...';
-      if (window.lucide) lucide.createIcons();
-
+      if (!window.supabase) {
+        setAuthResult('The cloud library is still loading or was blocked. Check your connection and try again.', 'error');
+        return;
+      }
+      const client = initSupabaseClient();
+      if (!client) {
+        setAuthResult('Add the project anon key under Project settings first.', 'error');
+        return;
+      }
+      const btn = document.getElementById('btn-save-supabase');
+      btn.disabled = true;
       try {
-        const res = await fetch(`${url}/rest/v1/job_roles?select=count`, {
-          headers: {
-            'apikey': key,
-            'Authorization': `Bearer ${key}`
-          }
-        });
-
-        if (res.ok) {
-          resultEl.className = 'p-3 rounded-lg text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
-          resultEl.innerHTML = '✅ Successfully connected to Lili-HR-agent database! Realtime cloud sync active.';
-          updateSupabaseIndicator();
-          showToast('Supabase connected! Syncing pipeline data...');
-          try {
-            await pullCandidatesFromSupabase();
-            await syncAllLocalCandidatesToSupabase();
-          } catch (syncErr) {
-            console.warn('Supabase initial sync warning:', syncErr);
-          }
-          setTimeout(() => closeSupabaseModal(), 1500);
+        const { data, error } = action === 'signup'
+          ? await client.auth.signUp({ email, password })
+          : await client.auth.signInWithPassword({ email, password });
+        if (error) {
+          setAuthResult(error.message, 'error');
+        } else if (action === 'signup' && !data.session) {
+          setAuthResult('Account created. Confirm the email Supabase sent you, then sign in.');
         } else {
-          resultEl.className = 'p-3 rounded-lg text-xs bg-rose-500/10 text-rose-400 border border-rose-500/30';
-          resultEl.innerHTML = `⚠️ Connection returned status ${res.status}. Make sure you ran the SQL schema in Supabase SQL editor.`;
+          document.getElementById('auth-password').value = '';
+          closeSupabaseModal();
         }
       } catch (err) {
-        resultEl.className = 'p-3 rounded-lg text-xs bg-rose-500/10 text-rose-400 border border-rose-500/30';
-        resultEl.innerHTML = `⚠️ Connection error: ${err.message}`;
+        setAuthResult(`Couldn't reach Supabase: ${err.message}`, 'error');
+      } finally {
+        btn.disabled = false;
       }
-      if (window.lucide) lucide.createIcons();
     }
 
-    function disconnectSupabase() {
-      localStorage.removeItem('supabase_anon_key');
-      updateSupabaseIndicator();
-      document.getElementById('supabase-key-input').value = '';
-      const resultEl = document.getElementById('supabase-test-result');
-      resultEl.classList.add('hidden');
-      showToast('Disconnected Supabase. Running in offline/local mode.');
+    function handleSignIn() { return runAuth('signin'); }
+    function handleSignUp() { return runAuth('signup'); }
+
+    async function handleSignOut() {
       closeSupabaseModal();
+      if (sb) await sb.auth.signOut();
     }
 
-    async function syncCandidateToSupabase(cand) {
-      if (!SUPABASE_CONFIG.anonKey) return;
-      try {
-        await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates`, {
-          method: 'POST',
-          headers: {
-            'apikey': SUPABASE_CONFIG.anonKey,
-            'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'resolution=merge-duplicates'
-          },
-          body: JSON.stringify({
-            id: cand.id,
-            role_id: cand.roleId || currentJobId,
-            anon_id: cand.anonId || cand.id,
-            name: cand.name,
-            contact_email: cand.email,
-            score: cand.score,
-            tier: cand.tier === 'tier1' ? 1 : cand.tier === 'tier2' ? 2 : 3,
-            years: cand.exp || 3.0,
-            matched: cand.skills || [],
-            takeaway: cand.takeaway || '',
-            status: cand.status || 'pending',
-            email: cand.emailDraft || ''
-          })
-        });
-      } catch (err) {
-        console.warn('Supabase candidate sync error:', err);
+    // Field mapping between the app and Postgres. Rows always carry the same keys
+    // (bulk upserts require it) and never include lili_* so the client can't overwrite Lili's verdict.
+    function candidateToRow(cand) {
+      return {
+        id: cand.id,
+        owner_id: session.user.id,
+        role_id: cand.roleId || currentJobId,
+        anon_id: cand.anonId || cand.id,
+        name: cand.name,
+        contact_email: cand.email || null,
+        score: Math.round(Number(cand.score) || 0),
+        tier: cand.tier === 'tier1' ? 1 : cand.tier === 'tier2' ? 2 : 3,
+        years: Number(cand.exp) || 0,
+        matched: cand.skills || [],
+        missing: cand.missing || [],
+        breakdown: cand.breakdown || [],
+        strengths: cand.strengths || [],
+        gaps: cand.gaps || [],
+        takeaway: cand.takeaway || '',
+        status: cand.status || 'pending',
+        email: cand.emailDraft || '',
+        cv_text: cand.cvText || null
+      };
+    }
+
+    function rowToCandidate(r) {
+      return {
+        id: r.id,
+        name: r.name,
+        email: r.contact_email || '',
+        roleId: r.role_id,
+        score: r.score,
+        tier: r.tier === 1 ? 'tier1' : r.tier === 2 ? 'tier2' : 'tier3',
+        status: r.status || (r.tier === 1 ? 'Fast-Track' : r.tier === 2 ? 'Bench / Review' : 'Does Not Meet Bar'),
+        skills: Array.isArray(r.matched) ? r.matched : [],
+        missing: Array.isArray(r.missing) ? r.missing : [],
+        breakdown: Array.isArray(r.breakdown) ? r.breakdown : [],
+        exp: parseFloat(r.years) || 0,
+        takeaway: r.takeaway || '',
+        strengths: Array.isArray(r.strengths) ? r.strengths : [],
+        gaps: Array.isArray(r.gaps) ? r.gaps : [],
+        emailDraft: r.email || '',
+        emailSent: (r.status || '').includes('Sent'),
+        cvText: r.cv_text || '',
+        liliScore: r.lili_score ?? null,
+        liliTier: r.lili_tier ?? null,
+        liliSummary: r.lili_summary || '',
+        liliStrengths: Array.isArray(r.lili_strengths) ? r.lili_strengths : [],
+        liliGaps: Array.isArray(r.lili_gaps) ? r.lili_gaps : [],
+        liliEvidence: Array.isArray(r.lili_evidence) ? r.lili_evidence : [],
+        liliEvaluatedAt: r.lili_evaluated_at || null
+      };
+    }
+
+    function jobToRow(job) {
+      return {
+        owner_id: session.user.id,
+        id: job.id,
+        title: job.title,
+        company: job.company || null,
+        min_exp: Number(job.minExp) || 0,
+        mandatory: job.mandatory || [],
+        weights: job.weights || { tech: 40, exp: 25, impact: 20, lead: 15 },
+        full_text: job.fullText || ''
+      };
+    }
+
+    function rowToJob(r) {
+      return {
+        id: r.id,
+        title: r.title,
+        company: r.company || '',
+        minExp: parseFloat(r.min_exp) || 0,
+        mandatory: Array.isArray(r.mandatory) ? r.mandatory : [],
+        weights: r.weights || { tech: 40, exp: 25, impact: 20, lead: 15 },
+        fullText: r.full_text || ''
+      };
+    }
+
+    let lastSyncErrorToast = 0;
+    function reportSyncError(message) {
+      console.warn('Supabase sync error:', message);
+      liliLog('cloud-off', `Cloud sync failed: ${message}`, 'error');
+      // Throttle so a network drop during a batch shows one toast, not twenty
+      if (Date.now() - lastSyncErrorToast > 10000) {
+        lastSyncErrorToast = Date.now();
+        showToast(`Cloud sync failed (${message}). Your changes are saved in this browser; use Sync now to retry.`, 'error');
       }
     }
 
-    async function syncAllLocalCandidatesToSupabase() {
-      if (!SUPABASE_CONFIG.anonKey || candidates.length === 0) return;
-      for (const c of candidates) {
-        await syncCandidateToSupabase(c);
+    async function upsertCandidatesToSupabase(list) {
+      if (!isCloud() || list.length === 0) return false;
+      const { error } = await sb.from('candidates').upsert(list.map(candidateToRow), { onConflict: 'id' });
+      if (error) {
+        reportSyncError(error.message);
+        return false;
       }
+      liliLog('cloud-upload', `Saved ${list.length} candidate${list.length > 1 ? 's' : ''} to your private cloud`, 'success');
+      return true;
     }
 
-    async function pullCandidatesFromSupabase() {
-      if (!SUPABASE_CONFIG.anonKey) return;
+    async function deleteCandidatesFromSupabase(ids) {
+      if (!isCloud() || ids.length === 0) return;
+      const { error } = await sb.from('candidates').delete().in('id', ids);
+      if (error) reportSyncError(error.message);
+    }
+
+    async function upsertJobToSupabase(job) {
+      if (!isCloud()) return;
+      const { error } = await sb.from('job_roles').upsert(jobToRow(job), { onConflict: 'owner_id,id' });
+      if (error) reportSyncError(error.message);
+      else liliLog('briefcase', `Role "${job.title}" synced`, 'success');
+    }
+
+    async function deleteJobFromSupabase(id) {
+      if (!isCloud()) return;
+      const { error } = await sb.from('job_roles').delete().eq('id', id);
+      if (error) reportSyncError(error.message);
+    }
+
+    // Cloud is the source of truth once signed in. Local-mode data can be uploaded once per account.
+    async function loadCloudData() {
+      if (!isCloud()) return;
+      const done = liliTask('Loading your private pipeline from the cloud', 'cloud-download');
       try {
-        const res = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?select=*&order=created_at.desc`, {
-          headers: {
-            'apikey': SUPABASE_CONFIG.anonKey,
-            'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
-          }
-        });
-        if (res.ok) {
-          const dbRows = await res.json();
-          if (dbRows && dbRows.length > 0) {
-            const mapped = dbRows.map(r => ({
-              id: r.id,
-              name: r.name,
-              email: r.contact_email,
-              roleId: r.role_id,
-              score: r.score,
-              tier: r.tier === 1 ? 'tier1' : r.tier === 2 ? 'tier2' : 'tier3',
-              status: r.status || (r.tier === 1 ? 'Fast-Track' : r.tier === 2 ? 'Bench / Review' : 'Does Not Meet Bar'),
-              skills: Array.isArray(r.matched) ? r.matched : [],
-              exp: parseFloat(r.years) || 3.0,
-              takeaway: r.takeaway || '',
-              strengths: Array.isArray(r.strengths) ? r.strengths : [],
-              gaps: Array.isArray(r.gaps) ? r.gaps : [],
-              emailDraft: r.email || ''
-            }));
-            const existingIds = new Set(candidates.map(c => c.id));
-            const newFromDb = mapped.filter(m => !existingIds.has(m.id));
-            if (newFromDb.length > 0) {
-              candidates = [...newFromDb, ...candidates];
-              saveCandidates();
-              renderCandidates();
-              updateStats();
-            }
+        const [jobsRes, candRes] = await Promise.all([
+          sb.from('job_roles').select('*'),
+          sb.from('candidates').select('*').order('created_at', { ascending: false })
+        ]);
+        if (jobsRes.error) throw jobsRes.error;
+        if (candRes.error) throw candRes.error;
+
+        let cloudJobs = jobsRes.data.map(rowToJob);
+        let cloudCandidates = candRes.data.map(rowToCandidate);
+
+        const localCandidates = loadJSON('talentscout_real_candidates_v3', []);
+        const localJobs = loadJSON('talentscout_jobs', defaultJobs);
+        const offeredKey = `lili_upload_offered__${session.user.id}`;
+        const cloudIds = new Set(cloudCandidates.map(c => c.id));
+        const localOnly = Array.isArray(localCandidates) ? localCandidates.filter(c => !cloudIds.has(c.id)) : [];
+
+        if (cloudJobs.length === 0) {
+          cloudJobs = Array.isArray(localJobs) && localJobs.length ? localJobs : defaultJobs;
+          const { error } = await sb.from('job_roles').upsert(cloudJobs.map(jobToRow), { onConflict: 'owner_id,id' });
+          if (error) throw error;
+          liliLog('briefcase', `Created ${cloudJobs.length} job roles in your account`, 'success');
+        }
+
+        let offered = false;
+        try { offered = localStorage.getItem(offeredKey) === '1'; } catch (e) {}
+        if (localOnly.length > 0 && !offered) {
+          try { localStorage.setItem(offeredKey, '1'); } catch (e) {}
+          if (confirm(`Upload ${localOnly.length} candidate${localOnly.length > 1 ? 's' : ''} from this browser to your private cloud pipeline?`)) {
+            const { error } = await sb.from('candidates').upsert(localOnly.map(candidateToRow), { onConflict: 'id' });
+            if (error) throw error;
+            cloudCandidates = [...localOnly, ...cloudCandidates];
           }
         }
+
+        jobs = cloudJobs;
+        candidates = cloudCandidates;
+        if (!jobs.some(j => j.id === currentJobId)) currentJobId = jobs[0].id;
+        persistJSON(storageKey('talentscout_jobs'), jobs);
+        persistJSON(storageKey('talentscout_real_candidates_v3'), candidates);
+        populateRoleDropdown();
+        renderTable();
+        liliLog('database', `Loaded ${candidates.length} candidates and ${jobs.length} roles`, 'success');
       } catch (err) {
-        console.warn('Supabase pull error:', err);
+        reportSyncError(err.message || 'network error');
+      } finally {
+        done();
       }
+    }
+
+    async function onSignedIn() {
+      // Paint the cached copy first, then refresh from the cloud
+      jobs = loadJSON(storageKey('talentscout_jobs'), jobs);
+      candidates = loadJSON(storageKey('talentscout_real_candidates_v3'), []);
+      if (!Array.isArray(jobs) || jobs.length === 0) jobs = defaultJobs;
+      if (!jobs.some(j => j.id === currentJobId)) currentJobId = jobs[0].id;
+      populateRoleDropdown();
+      renderTable();
+      updateSupabaseIndicator();
+      liliLog('user-check', `Signed in as ${session.user.email}`, 'success');
+      await loadCloudData();
+      subscribeRealtime();
+    }
+
+    function onSignedOut(previousUserId) {
+      unsubscribeRealtime();
+      // Don't leave a recruiter's candidate PII cached on a shared device
+      if (previousUserId) {
+        try {
+          localStorage.removeItem(`talentscout_jobs__${previousUserId}`);
+          localStorage.removeItem(`talentscout_real_candidates_v3__${previousUserId}`);
+        } catch (e) {}
+      }
+      jobs = loadJSON('talentscout_jobs', defaultJobs);
+      if (!Array.isArray(jobs) || jobs.length === 0) jobs = defaultJobs;
+      candidates = loadJSON('talentscout_real_candidates_v3', []);
+      if (!jobs.some(j => j.id === currentJobId)) currentJobId = jobs[0].id;
+      populateRoleDropdown();
+      renderTable();
+      updateSupabaseIndicator();
+      liliLog('log-out', 'Signed out. Back to local demo mode', 'warn');
+    }
+
+    async function fullCloudResync() {
+      closeSupabaseModal();
+      await loadCloudData();
+      await upsertCandidatesToSupabase(candidates);
+    }
+
+    // REALTIME: other devices' edits and Lili's verdicts (written by the Wesam agent) arrive live
+    let realtimeRenderQueued = false;
+    function scheduleRealtimeRender() {
+      if (realtimeRenderQueued) return;
+      realtimeRenderQueued = true;
+      requestAnimationFrame(() => {
+        realtimeRenderQueued = false;
+        persistJSON(storageKey('talentscout_real_candidates_v3'), candidates);
+        persistJSON(storageKey('talentscout_jobs'), jobs);
+        populateRoleDropdown();
+        renderTable();
+      });
+    }
+
+    function sameCandidate(a, b) {
+      const pick = c => JSON.stringify([c.name, c.email, c.status, c.score, c.tier, c.roleId, c.liliScore, c.liliEvaluatedAt, c.emailDraft]);
+      return pick(a) === pick(b);
+    }
+
+    function onCandidateChange(payload) {
+      if (payload.eventType === 'DELETE') {
+        const id = payload.old && payload.old.id;
+        if (!id || !candidates.some(c => c.id === id)) return;
+        candidates = candidates.filter(c => c.id !== id);
+        liliLog('trash-2', `Candidate ${id} removed on another device`, 'warn');
+        scheduleRealtimeRender();
+        return;
+      }
+      const incoming = rowToCandidate(payload.new);
+      const index = candidates.findIndex(c => c.id === incoming.id);
+      const existing = index >= 0 ? candidates[index] : null;
+      if (existing && sameCandidate(existing, incoming)) return; // echo of our own write
+
+      const newVerdict = incoming.liliScore !== null && (!existing || existing.liliEvaluatedAt !== incoming.liliEvaluatedAt);
+      if (newVerdict) {
+        liliLog('sparkles', `Lili (Wesam) verified ${incoming.name}: ${incoming.liliScore}/100, Tier ${incoming.liliTier}`, 'success');
+        showToast(`Lili verified ${incoming.name}: ${incoming.liliScore}/100 (Tier ${incoming.liliTier})`, 'success');
+      } else {
+        liliLog('refresh-cw', existing ? `${incoming.name} updated on another device` : `${incoming.name} added on another device`);
+      }
+
+      if (index >= 0) candidates[index] = { ...existing, ...incoming };
+      else candidates.unshift(incoming);
+      if (currentDrawerCandidateId === incoming.id) renderDrawerLiliVerdict(candidates.find(c => c.id === incoming.id));
+      scheduleRealtimeRender();
+    }
+
+    function onJobChange(payload) {
+      if (payload.eventType === 'DELETE') {
+        const id = payload.old && payload.old.id;
+        if (!id || !jobs.some(j => j.id === id) || jobs.length <= 1) return;
+        jobs = jobs.filter(j => j.id !== id);
+        if (currentJobId === id) currentJobId = jobs[0].id;
+      } else {
+        const incoming = rowToJob(payload.new);
+        const index = jobs.findIndex(j => j.id === incoming.id);
+        if (index >= 0 && JSON.stringify(jobs[index]) === JSON.stringify(incoming)) return;
+        if (index >= 0) jobs[index] = incoming;
+        else jobs.unshift(incoming);
+        liliLog('briefcase', `Role "${incoming.title}" updated on another device`);
+      }
+      scheduleRealtimeRender();
+    }
+
+    function subscribeRealtime() {
+      unsubscribeRealtime();
+      if (!isCloud()) return;
+      realtimeChannel = sb.channel(`lili-pipeline-${session.user.id}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'candidates' }, onCandidateChange)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'job_roles' }, onJobChange)
+        .subscribe(status => {
+          if (status === 'SUBSCRIBED') liliLog('radio', 'Live sync connected. Changes from other devices and from Lili appear instantly', 'success');
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') liliLog('radio', 'Live sync interrupted. Retrying…', 'warn');
+        });
+    }
+
+    function unsubscribeRealtime() {
+      if (realtimeChannel && sb) sb.removeChannel(realtimeChannel);
+      realtimeChannel = null;
     }
 
     // BULK CV IMPORT & PARSING ENGINE
@@ -1487,14 +2046,73 @@
       event.target.value = '';
     }
 
-    async function processBulkFiles(files) {
-      const validFiles = files.filter(f => {
-        const ext = f.name.split('.').pop().toLowerCase();
-        return ext === 'pdf' || ext === 'docx' || ext === 'txt' || ext === 'md';
-      });
+    const MAX_CV_BYTES = 10 * 1024 * 1024;
+    const MIN_CV_TEXT_CHARS = 80;
 
-      if (validFiles.length === 0) {
-        showToast('Please upload valid resume files (.pdf, .docx, .txt)');
+    // Shared by single and bulk upload. Throws a human-readable error for unusable files.
+    async function extractCvText(file) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (ext === 'doc') throw new Error('Legacy .doc is not supported. Save as .docx or PDF.');
+      if (!['pdf', 'docx', 'txt', 'md'].includes(ext)) throw new Error(`Unsupported file type .${ext}`);
+      if (file.size > MAX_CV_BYTES) throw new Error('File is larger than 10 MB.');
+
+      let text;
+      if (ext === 'pdf') text = await parsePdfFile(file);
+      else if (ext === 'docx') text = await parseDocxFile(file);
+      else text = await file.text();
+
+      if (text.replace(/\s+/g, '').length < MIN_CV_TEXT_CHARS) {
+        throw new Error(ext === 'pdf'
+          ? 'No text layer found (scanned/image PDF). Paste the CV text via Single CV instead.'
+          : 'File contains almost no text.');
+      }
+      return text;
+    }
+
+    function extractName(text, filename) {
+      const lines = text.split('\n').map(l => l.trim())
+        .filter(l => l.length > 2 && !/resume|curriculum|cv\b/i.test(l));
+      const first = lines.length > 0 ? lines[0].replace(/[^\p{L}\s'.-]/gu, '').trim() : '';
+      if (first && first.length <= 35 && first.split(/\s+/).length <= 4) return first;
+      return filename.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+    }
+
+    function extractYears(text) {
+      const statedAll = [...text.matchAll(/(\d{1,2}(?:\.\d)?)\+?\s*years?\s*(?:of)?\s*(?:professional\s+|industry\s+|hands-on\s+)?(?:experience|exp)/gi)]
+        .map(m => parseFloat(m[1])).filter(n => n > 0 && n <= 45);
+      if (statedAll.length > 0) return Math.max(...statedAll);
+
+      // Sum explicit role durations, e.g. "Feb 2023 – Present (1 year 8 months)". Only lines with a date
+      // range count, so skill annotations like "Python (7 yrs)" are not mistaken for jobs.
+      let months = 0;
+      for (const line of text.split('\n')) {
+        if (!/\b(19|20)\d{2}\b.*[–—-].*(\b(19|20)\d{2}\b|present|current|now)/i.test(line)) continue;
+        const m = line.match(/\(\s*(?:(\d{1,2})\s*(?:years?|yrs?))?\s*,?\s*(?:(\d{1,2})\s*(?:months?|mos?))?\s*\)/i);
+        if (m) months += (parseInt(m[1] || '0', 10) * 12) + parseInt(m[2] || '0', 10);
+      }
+      if (months > 0) return Math.round((months / 12) * 10) / 10;
+
+      const years = (text.match(/\b(19[89]\d|20[0-3]\d)\b/g) || []).map(Number);
+      const thisYear = new Date().getFullYear();
+      if (/\b(present|current|now)\b/i.test(text)) years.push(thisYear);
+      const valid = years.filter(y => y <= thisYear);
+      if (valid.length >= 2) {
+        const span = Math.max(...valid) - Math.min(...valid);
+        if (span >= 1 && span <= 45) return span;
+      }
+      return null;
+    }
+
+    const BULK_CONCURRENCY = 3;
+    const BULK_STAGES = ['Read', 'Extract', 'Match', 'Score', 'Tier'];
+
+    async function processBulkFiles(files) {
+      if (isBulkProcessing) {
+        showToast('A batch is still being analyzed. Drop more files when it finishes.', 'error');
+        return;
+      }
+      if (files.length === 0) {
+        showToast('Please upload valid resume files (.pdf, .docx, .txt)', 'error');
         return;
       }
 
@@ -1505,162 +2123,166 @@
       isBulkProcessing = true;
       const btnIngest = document.getElementById('btn-ingest-bulk');
       btnIngest.disabled = true;
+      const batchStamp = Date.now();
 
-      for (let i = 0; i < validFiles.length; i++) {
-        const file = validFiles[i];
-        const queueItem = {
-          id: 'bulk_' + Date.now() + '_' + i,
-          file: file,
-          name: file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '),
-          email: '',
-          exp: 3.0,
-          skills: [],
-          status: 'extracting',
-          score: 0,
-          tier: 'tier2',
-          error: null
-        };
-        bulkQueue.unshift(queueItem);
-        renderBulkQueue();
+      const items = files.map((file, i) => ({
+        id: `bulk_${batchStamp}_${i}`,
+        file,
+        name: file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '),
+        email: '',
+        exp: 0,
+        skills: [],
+        status: 'queued',
+        stage: -1,
+        score: 0,
+        tier: 'tier3',
+        error: null
+      }));
+      bulkQueue.unshift(...items);
+      renderBulkQueue();
 
-        try {
-          let text = '';
-          const ext = file.name.split('.').pop().toLowerCase();
-          if (ext === 'pdf') {
-            text = await parsePdfFile(file);
-          } else if (ext === 'docx') {
-            text = await parseDocxFile(file);
-          } else {
-            text = await file.text();
+      const done = liliTask(`Screening ${items.length} CV${items.length > 1 ? 's' : ''} against "${activeJob.title}" (${Math.min(BULK_CONCURRENCY, items.length)} at a time)`, 'files');
+      let processed = 0;
+      let next = 0;
+
+      const advance = (item, stage) => {
+        item.stage = stage;
+        patchBulkRow(item);
+      };
+
+      // Each worker pulls the next file; PDF.js parses in its own web worker, so 3 run truly in parallel
+      async function worker() {
+        while (next < items.length) {
+          const item = items[next++];
+          // item.stage = index of the last completed stage; the next chip shows as active
+          item.status = 'extracting';
+          patchBulkRow(item);
+          try {
+            const text = await extractCvText(item.file);
+            advance(item, 0);
+
+            const emailMatch = text.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/);
+            if (emailMatch) item.email = emailMatch[0];
+            item.name = extractName(text, item.file.name);
+            // No skill fallback: an unreadable CV must never be credited with the role's must-haves
+            item.skills = detectSkills(text, activeJob);
+            const years = extractYears(text);
+            item.exp = years ?? 0;
+            item.expUnknown = years === null;
+            item.text = text;
+            advance(item, 1);
+
+            const result = scoreCandidate(activeJob, item.skills, item.exp, text);
+            advance(item, 2);
+            advance(item, 3);
+
+            item.score = result.score;
+            item.tier = result.tier;
+            item.status = 'ready';
+            advance(item, 4);
+
+            const caps = [result.belowExpBar && `max ${SCORING.minExpCap} (under ${activeJob.minExp} yrs)`, result.missing.length && `max ${SCORING.missingMustHaveCap} (missing ${result.missing.join(', ')})`].filter(Boolean);
+            liliLog(result.tier === 'tier1' ? 'zap' : 'file-check', `Scored ${item.name}: ${item.score}/100, Tier ${item.tier.slice(-1)}${caps.length ? ' · ' + caps.join('; ') : ''}`, result.tier === 'tier1' ? 'success' : 'info');
+          } catch (err) {
+            console.error('Bulk parse error:', err);
+            item.status = 'error';
+            item.error = err.message || 'Parse error';
+            patchBulkRow(item);
+            liliLog('file-x', `${item.file.name}: ${item.error}`, 'error');
           }
 
-          // Heuristic extraction
-          const emailMatch = text.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/);
-          if (emailMatch) queueItem.email = emailMatch[0];
-
-          const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2 && !l.toLowerCase().includes('resume'));
-          if (lines.length > 0 && lines[0].length < 35) {
-            queueItem.name = lines[0].replace(/[^a-zA-Z\s]/g, '').trim() || queueItem.name;
-          }
-
-          const commonTech = [
-            'React', 'Next.js', 'TypeScript', 'JavaScript', 'Python', 'FastAPI', 'Django', 
-            'PostgreSQL', 'Node.js', 'MongoDB', 'Redis', 'Docker', 'Kubernetes', 'AWS', 
-            'GCP', 'Azure', 'Storybook', 'Tailwind', 'GraphQL', 'LangChain', 'LlamaIndex', 
-            'Pinecone', 'Qdrant', 'Redux', 'Terraform', 'CI/CD', 'Git', 'C#', 'ASP.NET', '.NET'
-          ];
-          queueItem.skills = commonTech.filter(tech => new RegExp(`\\b${tech}\\b`, 'i').test(text));
-          if (queueItem.skills.length === 0) queueItem.skills = activeJob.mandatory.slice(0, 2);
-
-          const expMatch = text.match(/(\d+)\+?\s*years?\s*(of)?\s*(experience|exp)/i);
-          if (expMatch) {
-            queueItem.exp = parseFloat(expMatch[1]);
-          } else {
-            const years = text.match(/\b(20[0-2]\d)\b/g);
-            if (years && years.length >= 2) {
-              const numYears = years.map(Number);
-              const span = Math.max(...numYears) - Math.min(...numYears);
-              if (span >= 1 && span <= 25) queueItem.exp = span;
-            }
-          }
-
-          // Compute score
-          const matchedMandatory = activeJob.mandatory.filter(m => queueItem.skills.some(s => s.toLowerCase().includes(m.toLowerCase())));
-          const mandatoryMatchRatio = matchedMandatory.length / (activeJob.mandatory.length || 1);
-
-          let calculatedScore = 75;
-          if (queueItem.exp < activeJob.minExp) {
-            calculatedScore = Math.min(55, Math.round(queueItem.exp * 15));
-          } else {
-            calculatedScore = Math.round(50 + (mandatoryMatchRatio * 35) + Math.min(queueItem.exp * 2, 15));
-            if (calculatedScore > 98) calculatedScore = 96;
-          }
-
-          queueItem.score = calculatedScore;
-          if (calculatedScore >= 85) queueItem.tier = 'tier1';
-          else if (calculatedScore < 60) queueItem.tier = 'tier3';
-          else queueItem.tier = 'tier2';
-
-          queueItem.status = 'ready';
-        } catch (err) {
-          console.error('Bulk parse error:', err);
-          queueItem.status = 'error';
-          queueItem.error = err.message || 'Parse error';
+          processed++;
+          const percent = Math.round((processed / items.length) * 100);
+          document.getElementById('bulk-progress-bar').style.width = percent + '%';
+          document.getElementById('bulk-progress-text').textContent = `Processed ${processed} of ${items.length} CVs (${percent}%)`;
         }
-
-        // Update progress bar
-        const processed = i + 1;
-        const percent = Math.round((processed / validFiles.length) * 100);
-        document.getElementById('bulk-progress-bar').style.width = percent + '%';
-        document.getElementById('bulk-progress-text').innerHTML = `
-          <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i>
-          Processed ${processed} of ${validFiles.length} CVs (${percent}%)
-        `;
-
-        renderBulkQueue();
       }
+
+      await Promise.all(Array.from({ length: Math.min(BULK_CONCURRENCY, items.length) }, worker));
+      done();
 
       isBulkProcessing = false;
       const readyCount = bulkQueue.filter(q => q.status === 'ready').length;
       if (readyCount > 0) {
         btnIngest.disabled = false;
         btnIngest.innerHTML = `<i data-lucide="zap" class="w-3.5 h-3.5"></i> Ingest ${readyCount} Candidates to Pipeline`;
+        lucide.createIcons({ root: btnIngest });
       }
-      lucide.createIcons();
       showToast(`Batch screening complete! ${readyCount} candidates ready.`);
     }
 
+    function bulkRowInfoHtml(item) {
+      return `
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-zinc-100 truncate">${escapeHtml(item.name)}</span>
+          ${item.status === 'ready' ? `<span class="text-zinc-500 font-mono">(${item.expUnknown ? 'exp unknown' : item.exp.toFixed(1) + ' yrs exp'})</span>` : ''}
+        </div>
+        <p class="text-[11px] text-zinc-400 truncate mt-0.5">
+          <span class="font-mono text-[10px] text-zinc-500">${escapeHtml(item.file.name)}</span>
+          ${item.email ? ` • <span>${escapeHtml(item.email)}</span>` : (item.status === 'ready' ? ' • <span class="text-amber-400">no email found</span>' : '')}
+        </p>
+        ${item.status === 'error' ? `<p class="text-[11px] text-rose-400 mt-0.5">${escapeHtml(item.error)}</p>` : ''}`;
+    }
+
+    function bulkRowResultHtml(item) {
+      if (item.status === 'error') {
+        return '<span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-medium">Error</span>';
+      }
+      if (item.status !== 'ready') {
+        return `<span class="text-[11px] text-zinc-500">${item.status === 'queued' ? 'Queued' : 'Analyzing…'}</span>`;
+      }
+      const tone = item.tier === 'tier1' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+        : item.tier === 'tier2' ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+        : 'bg-rose-500/15 text-rose-400 border-rose-500/30';
+      return `<div class="flex items-center gap-1.5 lili-fade">
+          <span class="px-2 py-0.5 rounded text-xs font-bold border ${tone}">${Number(item.score)}/100</span>
+          <span class="text-[10px] text-zinc-400">T${item.tier.slice(-1)}</span>
+        </div>`;
+    }
+
+    const STAGE_BASE = 'stage-chip flex-1 text-center text-[10px] py-0.5 rounded border';
+    function stageChipClass(item, i) {
+      if (item.status === 'error' && i === Math.max(item.stage + 1, 0)) return `${STAGE_BASE} bg-rose-500/15 text-rose-300 border-rose-500/30`;
+      if (i <= item.stage) return `${STAGE_BASE} bg-emerald-500/15 text-emerald-300 border-emerald-500/30`;
+      if (i === item.stage + 1 && item.status === 'extracting') return `${STAGE_BASE} bg-sky-500/15 text-sky-300 border-sky-500/30`;
+      return `${STAGE_BASE} bg-zinc-800/60 text-zinc-500 border-zinc-800`;
+    }
+
+    function updateBulkTierCounts() {
+      const count = tier => bulkQueue.filter(q => q.tier === tier && q.status === 'ready').length;
+      document.getElementById('bulk-t1-count').textContent = `${count('tier1')} Fast-Track (T1)`;
+      document.getElementById('bulk-t2-count').textContent = `${count('tier2')} Review (T2)`;
+      document.getElementById('bulk-t3-count').textContent = `${count('tier3')} Below Bar (T3)`;
+    }
+
+    // Full render: only when a batch is added. Progress afterwards goes through patchBulkRow.
     function renderBulkQueue() {
       const container = document.getElementById('bulk-queue-container');
       if (!container) return;
-
-      const t1 = bulkQueue.filter(q => q.tier === 'tier1' && q.status === 'ready').length;
-      const t2 = bulkQueue.filter(q => q.tier === 'tier2' && q.status === 'ready').length;
-      const t3 = bulkQueue.filter(q => q.tier === 'tier3' && q.status === 'ready').length;
-
-      document.getElementById('bulk-t1-count').textContent = `${t1} Fast-Track (T1)`;
-      document.getElementById('bulk-t2-count').textContent = `${t2} Review (T2)`;
-      document.getElementById('bulk-t3-count').textContent = `${t3} Below Bar (T3)`;
-
+      updateBulkTierCounts();
       container.innerHTML = bulkQueue.map(item => `
-        <div class="p-3 flex items-center justify-between text-xs hover:bg-zinc-900/60 transition">
-          <div class="min-w-0 pr-2">
-            <div class="flex items-center gap-2">
-              <span class="font-semibold text-zinc-100 truncate">${item.name}</span>
-              ${item.status === 'ready' ? `<span class="text-zinc-500 font-mono">(${item.exp.toFixed(1)} yrs exp)</span>` : ''}
-            </div>
-            <p class="text-[11px] text-zinc-400 truncate mt-0.5">
-              <span class="font-mono text-[10px] text-zinc-500">${item.file.name}</span>
-              ${item.email ? ` • <span>${item.email}</span>` : ''}
-            </p>
-            ${item.skills.length > 0 ? `
-              <div class="flex flex-wrap gap-1 mt-1">
-                ${item.skills.slice(0, 4).map(s => `<span class="px-1.5 py-0.2 rounded bg-zinc-800 text-[10px] text-zinc-400">${s}</span>`).join('')}
-              </div>
-            ` : ''}
+        <div class="p-3 text-xs" data-bulk-id="${escapeHtml(item.id)}">
+          <div class="flex items-center justify-between gap-2">
+            <div class="min-w-0 pr-2" data-part="info">${bulkRowInfoHtml(item)}</div>
+            <div class="shrink-0 text-right" data-part="result">${bulkRowResultHtml(item)}</div>
           </div>
-          <div class="shrink-0 text-right">
-            ${item.status === 'extracting' ? `
-              <span class="text-emerald-400 flex items-center gap-1 font-medium text-[11px]">
-                <i data-lucide="loader" class="w-3 h-3 animate-spin"></i> Analyzing...
-              </span>
-            ` : item.status === 'error' ? `
-              <span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-medium">Error</span>
-            ` : `
-              <div class="flex items-center gap-1.5">
-                <span class="px-2 py-0.5 rounded text-xs font-bold ${
-                  item.tier === 'tier1' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' :
-                  item.tier === 'tier2' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' :
-                  'bg-rose-500/15 text-rose-400 border border-rose-500/30'
-                }">${item.score}/100</span>
-                <span class="text-[10px] text-zinc-400">${item.tier === 'tier1' ? 'T1' : item.tier === 'tier2' ? 'T2' : 'T3'}</span>
-              </div>
-            `}
+          <div class="flex gap-1 mt-2" data-part="stages" aria-label="Pipeline progress">
+            ${BULK_STAGES.map((label, i) => `<span class="${stageChipClass(item, i)}">${label}</span>`).join('')}
           </div>
-        </div>
-      `).join('');
+        </div>`).join('');
+    }
 
-      lucide.createIcons();
+    // Patch one row in place. Chips keep their DOM nodes so the CSS colour transitions (staggered) can play.
+    function patchBulkRow(item) {
+      const row = document.querySelector(`[data-bulk-id="${item.id}"]`);
+      if (!row) return;
+      row.querySelector('[data-part="info"]').innerHTML = bulkRowInfoHtml(item);
+      row.querySelector('[data-part="result"]').innerHTML = bulkRowResultHtml(item);
+      [...row.querySelector('[data-part="stages"]').children].forEach((chip, i) => {
+        const cls = stageChipClass(item, i);
+        if (chip.className !== cls) chip.className = cls;
+      });
+      if (item.status === 'ready' || item.status === 'error') updateBulkTierCounts();
     }
 
     function ingestBulkCandidates() {
@@ -1669,30 +2291,21 @@
 
       const activeJob = jobs.find(j => j.id === currentJobId) || jobs[0];
 
-      readyItems.forEach((item) => {
-        const newCand = {
-          id: `C-0${candidates.length + 1}`,
-          name: item.name,
-          email: item.email || 'candidate@email.com',
-          roleId: currentJobId,
-          score: item.score,
-          tier: item.tier,
-          status: item.tier === 'tier1' ? 'Fast-Track' : item.tier === 'tier2' ? 'Bench / Review' : 'Does Not Meet Bar',
-          skills: item.skills,
-          exp: item.exp,
-          takeaway: `${item.skills.slice(0, 3).join(', ')} experience (${item.exp.toFixed(1)} yrs). ${item.score >= 85 ? `Matched mandatory skills.` : `Below role bar: requires ${activeJob.minExp}+ yrs.`}`,
-          strengths: [`Demonstrated hands-on experience in ${item.skills.join(', ')}.`, `${item.exp.toFixed(1)} years total professional experience.`],
-          gaps: [item.exp < activeJob.minExp ? `Under mandatory ${activeJob.minExp}-year bar for this role.` : 'Standard technical screening verification.'],
-          emailDraft: `Subject: Update regarding your application for ${activeJob.title}\n\nHi ${item.name},\nThank you for applying. We reviewed your profile and experience in ${item.skills.join(', ')}.\n\n${item.tier === 'tier1' ? 'We would love to invite you to an initial screening call: [Insert Booking Link]' : 'We are currently reviewing candidate cohorts and will follow up.'}\n\nBest,\nTalentScout Hiring Team`
-        };
+      const added = readyItems.map(item => {
+        const newCand = buildCandidate({ name: item.name, email: item.email, exp: item.exp, skills: item.skills, text: item.text, job: activeJob });
+        if (item.expUnknown) newCand.gaps.unshift('Years of experience could not be determined from the CV. Verify manually.');
         candidates.unshift(newCand);
+        return newCand;
       });
 
-      saveCandidates();
-      renderCandidates();
-      updateStats();
-      showToast(`🎉 Successfully ingested ${readyItems.length} candidates into pipeline!`);
+      saveCandidates(added);
+      liliLog('users', `Added ${added.length} candidate${added.length > 1 ? 's' : ''} to "${activeJob.title}"`, 'success');
+      const noEmail = added.filter(c => !c.email).length;
+      showToast(`🎉 Ingested ${added.length} candidates into pipeline${noEmail ? ` (${noEmail} without an email address)` : ''}.`);
       bulkQueue = [];
+      document.getElementById('bulk-queue-container').innerHTML = '';
+      document.getElementById('bulk-progress-container').classList.add('hidden');
+      document.getElementById('btn-ingest-bulk').disabled = true;
       closeBulkUploadModal();
     }
 
@@ -1737,31 +2350,23 @@
       statusEl.querySelector('span').textContent = `Reading ${file.name}...`;
 
       try {
-        let extractedText = '';
-        const ext = file.name.split('.').pop().toLowerCase();
-
-        if (ext === 'pdf') {
-          extractedText = await parsePdfFile(file);
-        } else if (ext === 'docx') {
-          extractedText = await parseDocxFile(file);
-        } else {
-          // Plain text / Markdown
-          extractedText = await file.text();
-        }
+        const extractedText = await extractCvText(file);
 
         // Auto-extract candidate signals from raw text
         statusEl.querySelector('span').textContent = `Extracting candidate information...`;
         extractResumeInformation(extractedText, file.name);
 
-        statusEl.innerHTML = `<span class="text-emerald-400 font-semibold flex items-center gap-1"><i data-lucide="check-circle" class="w-4 h-4"></i> ${file.name} successfully parsed!</span>`;
+        statusEl.innerHTML = `<span class="text-emerald-400 font-semibold flex items-center gap-1"><i data-lucide="check-circle" class="w-4 h-4"></i> <span></span></span>`;
+        statusEl.querySelector('span span').textContent = `${file.name} successfully parsed!`;
         lucide.createIcons();
       } catch (err) {
         console.error('File parsing error:', err);
-        statusEl.innerHTML = `<span class="text-rose-400">Failed to extract text. You can still paste text manually below.</span>`;
+        statusEl.innerHTML = `<span class="text-rose-400"></span>`;
+        statusEl.querySelector('span').textContent = `${err.message || 'Failed to extract text.'} You can still paste text manually below.`;
       }
     }
 
-    // In-browser PDF extractor using PDF.js
+    // In-browser PDF extractor using PDF.js (hasEOL keeps line breaks so the name/first-line heuristics work)
     async function parsePdfFile(file) {
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -1769,7 +2374,7 @@
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
-        const pageText = textContent.items.map(item => item.str).join(' ');
+        const pageText = textContent.items.map(item => item.str + (item.hasEOL ? '\n' : ' ')).join('');
         fullText += pageText + '\n\n';
       }
       return fullText;
@@ -1784,97 +2389,44 @@
 
     // Smart heuristic extractor
     function extractResumeInformation(rawText, filename) {
+      const activeJob = jobs.find(j => j.id === currentJobId) || jobs[0];
       document.getElementById('in-resume').value = rawText.trim();
 
-      // 1. Email extraction
-      const emailMatch = rawText.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/);
-      if (emailMatch) {
-        document.getElementById('in-email').value = emailMatch[0];
-      }
+      const emailMatch = rawText.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/);
+      document.getElementById('in-email').value = emailMatch ? emailMatch[0] : '';
+      document.getElementById('in-name').value = extractName(rawText, filename) || 'Candidate Applicant';
+      document.getElementById('in-stack').value = detectSkills(rawText, activeJob).join(', ');
 
-      // 2. Name extraction (first line or filename heuristic)
-      const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 2 && !l.toLowerCase().includes('resume') && !l.toLowerCase().includes('curriculum'));
-      let candidateName = lines.length > 0 ? lines[0].replace(/[^a-zA-Z\s]/g, '').trim() : '';
-      if (!candidateName || candidateName.length > 35) {
-        candidateName = filename.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
-      }
-      document.getElementById('in-name').value = candidateName || 'Candidate Applicant';
-
-      // 3. Tech Stack Detection
-      const commonTech = [
-        'React', 'Next.js', 'TypeScript', 'JavaScript', 'Python', 'FastAPI', 'Django', 
-        'PostgreSQL', 'Node.js', 'MongoDB', 'Redis', 'Docker', 'Kubernetes', 'AWS', 
-        'GCP', 'Azure', 'Storybook', 'Tailwind', 'GraphQL', 'LangChain', 'LlamaIndex', 
-        'Pinecone', 'Qdrant', 'Redux', 'Terraform', 'CI/CD', 'Git'
-      ];
-      const detected = commonTech.filter(tech => new RegExp(`\\b${tech}\\b`, 'i').test(rawText));
-      document.getElementById('in-stack').value = detected.length > 0 ? detected.join(', ') : 'Software Engineering';
-
-      // 4. Years of experience calculation
-      let expYears = 4.0;
-      const expMatch = rawText.match(/(\d+)\+?\s*years?\s*(of)?\s*(experience|exp)/i);
-      if (expMatch) {
-        expYears = parseFloat(expMatch[1]);
-      } else {
-        // Date span heuristic (e.g. 2018 - 2024)
-        const years = rawText.match(/\b(20[0-2]\d)\b/g);
-        if (years && years.length >= 2) {
-          const numYears = years.map(Number);
-          const span = Math.max(...numYears) - Math.min(...numYears);
-          if (span >= 1 && span <= 25) expYears = span;
-        }
-      }
-      document.getElementById('in-exp').value = expYears.toFixed(1);
+      const years = extractYears(rawText);
+      document.getElementById('in-exp').value = years === null ? '' : years.toFixed(1);
     }
 
     function handleRealCandidateSubmit() {
-      const name = document.getElementById('in-name').value.trim() || 'New Candidate';
-      const email = document.getElementById('in-email').value.trim() || 'candidate@email.com';
-      const exp = parseFloat(document.getElementById('in-exp').value) || 2.0;
-      const stackStr = document.getElementById('in-stack').value.trim() || 'General';
+      const name = document.getElementById('in-name').value.trim();
+      const email = document.getElementById('in-email').value.trim();
+      const expRaw = document.getElementById('in-exp').value.trim();
+      const exp = parseFloat(expRaw);
+      const stackStr = document.getElementById('in-stack').value.trim();
       const resume = document.getElementById('in-resume').value.trim();
+
+      if (!name || expRaw === '' || isNaN(exp) || exp < 0) {
+        showToast('Please enter the candidate name and years of experience.', 'error');
+        return;
+      }
+      if (email && !isValidEmail(email)) {
+        showToast('That email address does not look valid.', 'error');
+        return;
+      }
 
       const skills = stackStr.split(',').map(s => s.trim()).filter(Boolean);
       const activeJob = jobs.find(j => j.id === currentJobId) || jobs[0];
-
-      // Calculate score based on active job's mandatory requirements & min experience
-      let calculatedScore = 75;
-      const matchedMandatory = activeJob.mandatory.filter(m => skills.some(s => s.toLowerCase().includes(m.toLowerCase())));
-      const mandatoryMatchRatio = matchedMandatory.length / activeJob.mandatory.length;
-
-      // Score cap check if experience is below mandatory
-      if (exp < activeJob.minExp) {
-        calculatedScore = Math.min(55, Math.round(exp * 15));
-      } else {
-        calculatedScore = Math.round(50 + (mandatoryMatchRatio * 35) + Math.min(exp * 2, 15));
-        if (calculatedScore > 98) calculatedScore = 96;
-      }
-
-      let tier = 'tier2';
-      let status = 'Bench / Review';
-      if (calculatedScore >= 85) { tier = 'tier1'; status = 'Fast-Track'; }
-      else if (calculatedScore < 60) { tier = 'tier3'; status = 'Does Not Meet Bar'; }
-
-      const newId = `C-0${candidates.length + 1}`;
-
-      const newCand = {
-        id: newId,
-        name: name,
-        email: email,
-        roleId: currentJobId,
-        score: calculatedScore,
-        tier: tier,
-        status: status,
-        skills: skills,
-        exp: exp,
-        takeaway: `${skills.slice(0, 3).join(', ')} experience (${exp} yrs). ${calculatedScore >= 85 ? `Matched ${matchedMandatory.length}/${activeJob.mandatory.length} mandatory skills.` : `Below role bar: requires ${activeJob.minExp}+ yrs.`}`,
-        strengths: [`Demonstrated hands-on experience in ${skills.join(', ')}.`, `${exp} years total professional experience.`],
-        gaps: [exp < activeJob.minExp ? `Under mandatory ${activeJob.minExp}-year bar for this role.` : 'Standard technical screening verification.'],
-        emailDraft: `Subject: Update regarding your application for ${activeJob.title}\n\nHi ${name},\nThank you for applying. We reviewed your profile and experience in ${skills.join(', ')}.\n\n${tier === 'tier1' ? 'We would love to invite you to an initial screening call: [Insert Booking Link]' : 'We are currently reviewing candidate cohorts and will follow up.'}\n\nBest,\nTalentScout Hiring Team`
-      };
+      const newCand = buildCandidate({ name, email, exp, skills, text: resume, job: activeJob });
+      const calculatedScore = newCand.score;
+      const status = newCand.status;
 
       candidates.unshift(newCand);
-      saveCandidates();
+      saveCandidates([newCand]);
+      liliLog('file-check', `Scored ${newCand.name}: ${newCand.score}/100, Tier ${newCand.tier.slice(-1)}`, newCand.tier === 'tier1' ? 'success' : 'info');
       closeUploadModal();
 
       document.getElementById('in-name').value = '';
@@ -1920,47 +2472,17 @@
         emailDraft: `Subject: Next Steps: AI Applications Engineer at NeuroFlow\n\nHi Marcus,\nYour RAG router and token optimization experience caught our eye. Let's schedule an interview: [Insert Booking Link]`
       };
 
-      candidates.unshift(alex, marcus);
-      saveCandidates();
-      alert('✅ Imported candidate profiles into the pipeline!');
-    }
-
-    // Drawer Open
-    let currentDrawerCandidateId = null;
-
-    function openDrawer(id) {
-      const c = candidates.find(cand => cand.id === id);
-      if (!c) return;
-      currentDrawerCandidateId = id;
-
-      const isAnon = document.getElementById('anonymize-toggle').checked;
-      document.getElementById('drawer-name').textContent = isAnon ? c.id : c.name;
-      document.getElementById('drawer-role').textContent = `${c.exp} yrs · ${c.skills.join(', ')}`;
-      document.getElementById('ds-score').textContent = `${c.score}/100`;
-      document.getElementById('dbar-score').style.width = `${c.score}%`;
-
-      document.getElementById('drawer-strengths').innerHTML = c.strengths.map(s => `<li>${s}</li>`).join('');
-      document.getElementById('drawer-gaps').innerHTML = c.gaps.map(g => `<li>${g}</li>`).join('');
-      
-      // Parse email draft into subject and body
-      const draft = c.emailDraft || '';
-      const subjectMatch = draft.match(/^Subject:\s*([^\n]+)\n+([\s\S]*)$/i);
-      const subject = subjectMatch ? subjectMatch[1].trim() : `Next Steps: Interview Screening`;
-      const body = subjectMatch ? subjectMatch[2].trim() : draft;
-
-      document.getElementById('drawer-email-to').value = c.email || `${c.name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@gmail.com`;
-      document.getElementById('drawer-email-subject').value = subject;
-      document.getElementById('drawer-email-body-edit').value = body;
-
-      const sentBadge = document.getElementById('drawer-email-sent-badge');
-      if (c.emailSent || (c.status && c.status.includes('Sent'))) {
-        sentBadge.classList.remove('hidden');
-      } else {
-        sentBadge.classList.add('hidden');
+      // Fresh IDs: candidate IDs are global in the cloud, so fixed sample IDs would collide across recruiters
+      const fresh = [alex, marcus]
+        .filter(s => !candidates.some(c => c.name === s.name && c.roleId === s.roleId))
+        .map(s => ({ ...s, id: newCandidateId() }));
+      if (fresh.length === 0) {
+        showToast('Sample candidates are already in the pipeline.');
+        return;
       }
-
-      document.getElementById('drawer').classList.remove('translate-x-full');
-      lucide.createIcons();
+      candidates.unshift(...fresh);
+      saveCandidates(fresh);
+      showToast(`Imported ${fresh.length} sample candidate profiles (Backend & AI roles).`);
     }
 
     // INBOX CONFIGURATION SYSTEM
@@ -1969,6 +2491,7 @@
         recruiterName: localStorage.getItem('recruiter_name') || 'Laila Mohamed',
         recruiterEmail: localStorage.getItem('recruiter_email') || 'laila.mohamed.fikry@gmail.com',
         bookingLink: localStorage.getItem('recruiter_booking_link') || 'https://cal.com/laila-recruiter/30min',
+        wesamUrl: localStorage.getItem('wesam_agent_url') || '',
         deliveryMode: localStorage.getItem('email_delivery_mode') || 'gmail',
         resendKey: localStorage.getItem('resend_api_key') || ''
       };
@@ -1989,6 +2512,7 @@
       document.getElementById('inbox-recruiter-name').value = cfg.recruiterName;
       document.getElementById('inbox-recruiter-email').value = cfg.recruiterEmail;
       document.getElementById('inbox-booking-link').value = cfg.bookingLink;
+      document.getElementById('inbox-wesam-url').value = cfg.wesamUrl;
       document.getElementById('inbox-resend-key').value = cfg.resendKey;
 
       if (cfg.deliveryMode === 'resend') {
@@ -2018,6 +2542,8 @@
       localStorage.setItem('recruiter_name', name);
       localStorage.setItem('recruiter_email', email);
       localStorage.setItem('recruiter_booking_link', booking);
+      const wesamUrl = document.getElementById('inbox-wesam-url').value.trim();
+      localStorage.setItem('wesam_agent_url', /^https:\/\//.test(wesamUrl) ? wesamUrl : '');
       localStorage.setItem('email_delivery_mode', mode);
       localStorage.setItem('resend_api_key', resendKey);
 
@@ -2036,7 +2562,7 @@
       if (window.lucide) lucide.createIcons();
 
       const subject = `Test Notification: Lili TalentScout HR Recruiter Setup`;
-      const body = `Hi ${cfg.recruiterName},\n\nThis confirms your Lili TalentScout Recruiter Inbox (${cfg.recruiterEmail}) is properly configured and active.\n\nDelivery Mode: ${cfg.deliveryMode === 'resend' ? 'Resend Cloud API' : '1-Click Gmail Web Dispatch'}\nCalendar Link: ${cfg.bookingLink}\n\nBest regards,\nLili AI Technical Recruiter`;
+      const body = `Hi ${cfg.recruiterName},\n\nThis confirms your Lili TalentScout Recruiter Inbox (${cfg.recruiterEmail}) is properly configured and active.\n\nDelivery Mode: ${cfg.deliveryMode === 'resend' ? emailProviderName(cfg.resendKey) + ' API' : '1-Click Gmail Web Dispatch'}\nCalendar Link: ${cfg.bookingLink}\n\nBest regards,\nLili AI Technical Recruiter`;
 
       if (cfg.deliveryMode === 'resend' && cfg.resendKey) {
         try {
@@ -2055,10 +2581,10 @@
           const data = await res.json();
           if (data.success) {
             resEl.className = 'p-2.5 rounded-lg text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
-            resEl.innerHTML = `✅ Successfully delivered test email to ${testEmail} via Resend! Check your inbox.`;
+            resEl.innerHTML = `✅ Successfully delivered test email to ${testEmail} via ${emailProviderName(cfg.resendKey)}! Check your inbox.`;
           } else {
             resEl.className = 'p-2.5 rounded-lg text-xs bg-rose-500/10 text-rose-400 border border-rose-500/30';
-            resEl.innerHTML = `⚠️ Resend Error: ${data.error || 'Failed to dispatch email'}`;
+            resEl.innerHTML = `⚠️ ${emailProviderName(cfg.resendKey)} Error: ${escapeHtml(data.error || 'Failed to dispatch email')}`;
           }
         } catch (err) {
           resEl.className = 'p-2.5 rounded-lg text-xs bg-rose-500/10 text-rose-400 border border-rose-500/30';
@@ -2161,7 +2687,108 @@ ${inbox.recruiterEmail}`;
       const emailData = generateCandidateEmailDraft(c, activeJob, type);
       document.getElementById('drawer-email-subject').value = emailData.subject;
       document.getElementById('drawer-email-body-edit').value = emailData.body;
-      document.getElementById('drawer-email-to').value = c.email || `${c.name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@gmail.com`;
+      // Never guess an address: a guessed gmail.com address can belong to a real stranger
+      document.getElementById('drawer-email-to').value = c.email || '';
+    }
+
+    function renderDrawerBreakdown(c) {
+      const el = document.getElementById('drawer-breakdown');
+      if (!el) return;
+      const bars = (c.breakdown || []).map(d => {
+        const color = d.score >= 85 ? 'bg-emerald-500' : d.score >= 70 ? 'bg-amber-500' : 'bg-rose-500';
+        return `
+          <div>
+            <div class="flex justify-between text-[11px] text-zinc-400 mb-0.5">
+              <span>${escapeHtml(d.label)} <span class="text-zinc-600">· ${Number(d.weight)}%</span></span>
+              <span class="font-mono text-zinc-300">${Number(d.score)}</span>
+            </div>
+            <div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden"><div class="${color} h-full" style="width:${Number(d.score)}%"></div></div>
+          </div>`;
+      }).join('');
+      const missing = (c.missing || []).map(m => `<span class="px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-300 border border-rose-500/20 text-[10px]">✗ ${escapeHtml(m)}</span>`).join('');
+      el.innerHTML = bars
+        ? `<h4 class="font-semibold text-zinc-200">🧮 Why this score (role rubric weights)</h4>${bars}${missing ? `<div class="flex flex-wrap gap-1 pt-1">${missing}</div>` : ''}`
+        : '';
+    }
+
+    function renderDrawerQuestions(c) {
+      const el = document.getElementById('panel-questions');
+      if (!el) return;
+      const qs = [];
+      (c.missing || []).slice(0, 2).forEach(m => qs.push({
+        title: `Verify gap: ${m}`,
+        q: `The role requires ${m}, which we couldn't find in your CV. Have you used it, or something close to it, in production? Walk me through a concrete example.`,
+        signal: 'A specific project, their own role in it, and the trade-offs they made. A vague "I\'ve read about it" is a red flag.'
+      }));
+      (c.skills || []).slice(0, 2).forEach(s => qs.push({
+        title: `Depth probe: ${s}`,
+        q: `What is the hardest production problem you solved with ${s}? What broke, how did you find it, and what did you change?`,
+        signal: 'Real numbers (latency, scale, cost), a clear root cause, and what they personally owned.'
+      }));
+      qs.push({
+        title: 'Technical Experience & Architecture',
+        q: 'Walk me through the largest system you designed and what trade-offs you made.',
+        signal: 'Specific metrics, concrete architecture trade-offs, individual ownership.'
+      });
+      el.innerHTML = qs.map((item, i) => `
+        <div class="p-3 bg-zinc-800/40 border border-zinc-800 rounded-lg">
+          <div class="font-semibold text-zinc-200 mb-1">Q${i + 1}: ${escapeHtml(item.title)}</div>
+          <p class="text-zinc-400 text-[11px] mb-2">"${escapeHtml(item.q)}"</p>
+          <div class="text-[10px] text-emerald-400 bg-emerald-500/10 p-1.5 rounded border border-emerald-500/20">
+            <strong>Strong Signal:</strong> ${escapeHtml(item.signal)}
+          </div>
+        </div>`).join('');
+    }
+
+    // LILI DEEP EVALUATION (written by the Wesam agent through Supabase; read-only here)
+    function renderDrawerLiliVerdict(c) {
+      const el = document.getElementById('drawer-lili');
+      if (!el || !c) return;
+      if (c.liliScore !== null && c.liliScore !== undefined) {
+        const tone = c.liliTier === 1 ? 'text-emerald-300' : c.liliTier === 2 ? 'text-amber-300' : 'text-rose-300';
+        const list = (items, cls) => (items || []).slice(0, 4).map(t => `<li class="${cls}">${escapeHtml(typeof t === 'string' ? t : JSON.stringify(t))}</li>`).join('');
+        el.innerHTML = `
+          <div class="rounded-lg border border-violet-500/30 bg-violet-500/10 p-3 space-y-2 lili-fade">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-violet-200 flex items-center gap-1.5"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Lili deep evaluation</span>
+              <span class="font-mono font-bold ${tone}">${Number(c.liliScore)}/100 · Tier ${Number(c.liliTier)}</span>
+            </div>
+            ${c.liliSummary ? `<p class="text-zinc-300 leading-relaxed">${escapeHtml(c.liliSummary)}</p>` : ''}
+            ${(c.liliStrengths || []).length ? `<ul class="list-disc list-inside space-y-0.5 text-zinc-400">${list(c.liliStrengths, '')}</ul>` : ''}
+            ${(c.liliGaps || []).length ? `<ul class="list-disc list-inside space-y-0.5 text-amber-300/90">${list(c.liliGaps, '')}</ul>` : ''}
+            <p class="text-[10px] text-zinc-500">Evidence-cited by Lili on Wesam · ${c.liliEvaluatedAt ? escapeHtml(new Date(c.liliEvaluatedAt).toLocaleString()) : ''}</p>
+          </div>`;
+      } else {
+        el.innerHTML = `
+          <div class="flex items-center justify-between gap-3 rounded-lg border border-zinc-800 bg-zinc-800/30 p-3">
+            <p class="text-zinc-400 leading-snug">This score is an instant keyword pre-screen. Ask Lili for an evidence-cited deep evaluation; it lands here live.</p>
+            <button onclick="requestLiliEvaluation()" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-violet-500/20 hover:bg-violet-500/30 text-violet-200 border border-violet-500/30 font-semibold flex items-center gap-1"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Deep evaluate</button>
+          </div>`;
+      }
+      if (window.lucide) lucide.createIcons({ root: el });
+    }
+
+    function requestLiliEvaluation() {
+      const c = candidates.find(cand => cand.id === currentDrawerCandidateId);
+      if (!c) return;
+      if (!isCloud()) {
+        showToast('Sign in first. Lili reads the CV from your private cloud pipeline.', 'error');
+        return;
+      }
+      if (!c.cvText) {
+        showToast('No CV text stored for this candidate. Re-import their CV so Lili can read it.', 'error');
+        return;
+      }
+      const prompt = `Evaluate candidate ${c.id}`;
+      const wesamUrl = getInboxConfig().wesamUrl;
+      // Open synchronously inside the click so popup blockers allow it
+      const win = wesamUrl ? window.open(wesamUrl, '_blank') : null;
+      if (win) win.opener = null;
+      navigator.clipboard.writeText(prompt).catch(() => {});
+      liliLog('send', `Asked Lili (Wesam) for a deep evaluation of ${c.name} (${c.id})`);
+      showToast(wesamUrl
+        ? `Copied "${prompt}". Paste it into Lili's chat${win ? '' : ' (allow popups to open Wesam automatically)'}; her verdict will appear here live.`
+        : `Copied "${prompt}". Paste it into Lili's chat on Wesam (add her link in Inbox settings to open it automatically).`);
     }
 
     // Drawer Open
@@ -2174,21 +2801,24 @@ ${inbox.recruiterEmail}`;
 
       const isAnon = document.getElementById('anonymize-toggle').checked;
       document.getElementById('drawer-name').textContent = isAnon ? c.id : c.name;
-      document.getElementById('drawer-role').textContent = `${c.exp} yrs · ${c.skills.join(', ')}`;
+      document.getElementById('drawer-role').textContent = `${c.exp} yrs · ${(c.skills || []).join(', ')}`;
       document.getElementById('ds-score').textContent = `${c.score}/100`;
-      document.getElementById('dbar-score').style.width = `${c.score}%`;
+      document.getElementById('dbar-score').style.width = `${Math.max(0, Math.min(100, Number(c.score) || 0))}%`;
 
-      document.getElementById('drawer-strengths').innerHTML = c.strengths.map(s => `<li>${s}</li>`).join('');
-      document.getElementById('drawer-gaps').innerHTML = c.gaps.map(g => `<li>${g}</li>`).join('');
+      document.getElementById('drawer-strengths').innerHTML = (c.strengths || []).map(s => `<li>${escapeHtml(s)}</li>`).join('');
+      document.getElementById('drawer-gaps').innerHTML = (c.gaps || []).map(g => `<li>${escapeHtml(g)}</li>`).join('');
+      renderDrawerBreakdown(c);
+      renderDrawerQuestions(c);
+      renderDrawerLiliVerdict(c);
 
       initInboxSettings();
 
       // Check if candidate is rejected/below bar or invite
-      const isReject = (c.tier === 'tier3' || c.score < 70 || (c.status && c.status.toLowerCase().includes('reject')) || (c.status && c.status.toLowerCase().includes('feedback')));
+      const isReject = (c.tier === 'tier3' || c.score < SCORING.tier2Min || (c.status && c.status.toLowerCase().includes('reject')) || (c.status && c.status.toLowerCase().includes('feedback')));
 
       if (c.emailDraft && !c.emailDraft.includes('Subject: Update regarding') && !c.emailDraft.includes('Subject: Next Steps')) {
         const subjectMatch = c.emailDraft.match(/^Subject:\s*([^\n]+)\n+([\s\S]*)$/i);
-        document.getElementById('drawer-email-to').value = c.email || `${c.name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@gmail.com`;
+        document.getElementById('drawer-email-to').value = c.email || '';
         document.getElementById('drawer-email-subject').value = subjectMatch ? subjectMatch[1].trim() : `Application Update`;
         document.getElementById('drawer-email-body-edit').value = subjectMatch ? subjectMatch[2].trim() : c.emailDraft;
       } else {
@@ -2223,6 +2853,54 @@ ${inbox.recruiterEmail}`;
       lucide.createIcons();
     }
 
+    function gmailComposeUrl(to, subject, body) {
+      return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }
+
+    // window.open returns null when a popup blocker intervenes; callers must not report success then
+    function openGmailCompose(to, subject, body, existingWindow = null) {
+      const url = gmailComposeUrl(to, subject, body);
+      if (existingWindow && !existingWindow.closed) {
+        existingWindow.location.href = url;
+        return true;
+      }
+      const win = window.open(url, '_blank');
+      if (!win) {
+        showToast('Popup blocked. Allow popups for this site, or use "Copy" and paste into your mail client.', 'error');
+        return false;
+      }
+      return true;
+    }
+
+    function emailProviderName(key) {
+      const k = String(key || '');
+      if (k.startsWith('xkeysib-')) return 'Brevo';
+      if (k.startsWith('re_')) return 'Resend';
+      return 'Email API';
+    }
+
+    // POST to the serverless dispatcher; resolves to { ok, error }
+    async function sendViaResend(inbox, to, subject, body) {
+      try {
+        const res = await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to, subject, body, apiKey: inbox.resendKey, fromEmail: inbox.recruiterEmail, fromName: inbox.recruiterName })
+        });
+        const data = await res.json().catch(() => ({}));
+        return res.ok && data.success ? { ok: true } : { ok: false, error: data.error || `HTTP ${res.status}` };
+      } catch (err) {
+        return { ok: false, error: err.message || 'network error' };
+      }
+    }
+
+    function markEmailed(c, to, subject, body, isReject) {
+      c.email = to;
+      c.emailSent = true;
+      c.status = isReject ? 'Feedback Sent ✉️' : 'Invite Sent ✉️';
+      c.emailDraft = `Subject: ${subject}\n\n${body}`;
+    }
+
     async function sendDrawerEmail() {
       const c = candidates.find(cand => cand.id === currentDrawerCandidateId);
       if (!c) return;
@@ -2231,96 +2909,67 @@ ${inbox.recruiterEmail}`;
       const subject = document.getElementById('drawer-email-subject').value.trim();
       const body = document.getElementById('drawer-email-body-edit').value.trim();
 
-      if (!to) {
-        showToast('Please enter candidate email address.', 'error');
+      if (!isValidEmail(to)) {
+        showToast('Please enter a valid candidate email address.', 'error');
         return;
       }
 
-      const btn = document.getElementById('btn-send-drawer-email');
-      btn.disabled = true;
-      btn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin inline mr-1"></i> Dispatching...`;
-      if (window.lucide) lucide.createIcons();
-
       const inbox = getInboxConfig();
-      const isReject = currentDrawerEmailTemplate === 'reject' || subject.toLowerCase().includes('update') || body.toLowerCase().includes('not to move forward');
+      const isReject = currentDrawerEmailTemplate === 'reject' || body.toLowerCase().includes('not to move forward');
+      const btn = document.getElementById('btn-send-drawer-email');
+      const resetButton = () => {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="send" class="w-3.5 h-3.5"></i> ⚡ Send via Inbox`;
+        if (window.lucide) lucide.createIcons();
+      };
 
-      // Check if Resend API Key is active
       if (inbox.deliveryMode === 'resend' && inbox.resendKey) {
-        try {
-          const res = await fetch('/api/send-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to,
-              subject,
-              body,
-              apiKey: inbox.resendKey,
-              fromEmail: inbox.recruiterEmail,
-              fromName: inbox.recruiterName
-            })
-          });
-          const data = await res.json();
-          if (data.success) {
-            c.email = to;
-            c.emailSent = true;
-            c.status = isReject ? 'Feedback Sent ✉️' : 'Invite Sent ✉️';
-            c.emailDraft = `Subject: ${subject}\n\n${body}`;
-            saveCandidates();
-            renderTable();
-            updateStats();
-            if (typeof syncCandidateToSupabase === 'function') syncCandidateToSupabase(c);
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin inline mr-1"></i> Dispatching...`;
+        if (window.lucide) lucide.createIcons();
 
-            document.getElementById('drawer-email-sent-badge').classList.remove('hidden');
-            showToast(`✅ Real email delivered to ${to} via Resend!`, 'success');
-            btn.disabled = false;
-            btn.innerHTML = `<i data-lucide="send" class="w-3.5 h-3.5"></i> ⚡ Send via Inbox`;
-            if (window.lucide) lucide.createIcons();
-            return;
-          } else {
-            console.warn('Resend API error:', data);
-            showToast(data.error || 'Resend error. Falling back to Gmail composer...', 'error');
-          }
-        } catch (err) {
-          console.warn('API error:', err);
+        const result = await sendViaResend(inbox, to, subject, body);
+        resetButton();
+        if (result.ok) {
+          markEmailed(c, to, subject, body, isReject);
+          saveCandidates([c]);
+          document.getElementById('drawer-email-sent-badge').classList.remove('hidden');
+          showToast(`✅ Email delivered to ${to} via ${emailProviderName(inbox.resendKey)}.`, 'success');
+          liliLog('send', `${isReject ? 'Feedback' : 'Interview invite'} delivered to ${c.name} via ${emailProviderName(inbox.resendKey)}`, 'success');
+          return;
         }
+        // Do not auto-open Gmail here: after an await the browser treats it as an unsolicited popup
+        liliLog('mail-x', `Couldn't email ${c.name}: ${result.error}`, 'error');
+        showToast(`${emailProviderName(inbox.resendKey)} failed: ${result.error}. Use "Open in Gmail" to send manually.`, 'error');
+        return;
       }
 
-      // Default 1-Click Gmail Web Dispatch (100% Free, Zero Setup)
-      c.email = to;
-      c.emailSent = true;
-      c.status = isReject ? 'Feedback Sent ✉️' : 'Invite Sent ✉️';
-      c.emailDraft = `Subject: ${subject}\n\n${body}`;
-      saveCandidates();
-      renderTable();
-      updateStats();
-      if (typeof syncCandidateToSupabase === 'function') syncCandidateToSupabase(c);
-
+      // Gmail mode: open synchronously inside the click so popup blockers allow it
+      if (!openGmailCompose(to, subject, body)) return;
+      markEmailed(c, to, subject, body, isReject);
+      saveCandidates([c]);
       document.getElementById('drawer-email-sent-badge').classList.remove('hidden');
-
-      btn.disabled = false;
-      btn.innerHTML = `<i data-lucide="send" class="w-3.5 h-3.5"></i> ⚡ Send via Inbox`;
-      if (window.lucide) lucide.createIcons();
-
-      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      window.open(gmailUrl, '_blank');
-
-      showToast(`✉️ Opened Gmail with pre-filled draft for ${c.name}! Status updated.`, 'success');
+      showToast(`✉️ Opened Gmail with pre-filled draft for ${c.name}. Click Send in Gmail to deliver.`, 'success');
+      liliLog('mail', `Opened Gmail draft for ${c.name}`);
     }
 
     function openDrawerInGmail() {
       const to = document.getElementById('drawer-email-to').value.trim();
       const subject = document.getElementById('drawer-email-subject').value.trim();
       const body = document.getElementById('drawer-email-body-edit').value.trim();
-      const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      window.open(url, '_blank');
+      openGmailCompose(to, subject, body);
     }
 
-    function copyDrawerEmail() {
+    async function copyDrawerEmail() {
       const to = document.getElementById('drawer-email-to').value.trim();
       const subject = document.getElementById('drawer-email-subject').value.trim();
       const body = document.getElementById('drawer-email-body-edit').value.trim();
-      navigator.clipboard.writeText(`To: ${to}\nSubject: ${subject}\n\n${body}`);
-      showToast('Email draft copied to clipboard!', 'info');
+      try {
+        await navigator.clipboard.writeText(`To: ${to}\nSubject: ${subject}\n\n${body}`);
+        showToast('Email draft copied to clipboard!', 'info');
+      } catch (e) {
+        showToast('Clipboard access was denied. Select the text and copy it manually.', 'error');
+      }
     }
 
     // Dispatch Modal
@@ -2329,10 +2978,35 @@ ${inbox.recruiterEmail}`;
       currentDispatchType = type;
       const checked = document.querySelectorAll('.candidate-check:checked');
       const inbox = getInboxConfig();
-      document.getElementById('modal-subtitle').textContent = `Dispatching ${type === 'accept' ? 'interview invitations' : 'feedback rejections'} to ${checked.length} candidates`;
+      const resend = inbox.deliveryMode === 'resend' && inbox.resendKey;
+      document.getElementById('modal-subtitle').textContent = resend
+        ? `Sending ${type === 'accept' ? 'interview invitations' : 'feedback rejections'} to ${checked.length} candidates via ${emailProviderName(inbox.resendKey)}`
+        : checked.length === 1
+          ? `Opening a Gmail draft for 1 candidate`
+          : `Preparing ${checked.length} personalized drafts (open each candidate's Outreach tab to send via Gmail)`;
       const senderEl = document.getElementById('modal-sender-email');
       if (senderEl) senderEl.textContent = inbox.recruiterEmail;
+      [1, 2, 3, 4].forEach(n => setDispatchStep(n, 'pending'));
+      document.getElementById('step-3-label').textContent = resend ? `Sending via ${emailProviderName(inbox.resendKey)}` : 'Preparing Gmail drafts';
       document.getElementById('dispatch-modal').classList.remove('hidden');
+    }
+
+    function setDispatchStep(n, state) {
+      const el = document.getElementById('step-' + n);
+      if (!el) return;
+      const look = {
+        pending: ['flex items-center gap-2 text-zinc-500', 'circle', 'w-3.5 h-3.5 text-zinc-600'],
+        done: ['flex items-center gap-2 text-emerald-400 font-semibold lili-fade', 'check-circle-2', 'w-3.5 h-3.5'],
+        error: ['flex items-center gap-2 text-rose-400 font-semibold lili-fade', 'alert-circle', 'w-3.5 h-3.5']
+      }[state];
+      el.className = look[0];
+      const old = el.querySelector('svg, i');
+      const icon = document.createElement('i');
+      icon.setAttribute('data-lucide', look[1]);
+      icon.className = look[2];
+      if (old) old.replaceWith(icon);
+      else el.prepend(icon);
+      if (window.lucide) lucide.createIcons({ root: el });
     }
 
     function closeDispatchModal() {
@@ -2341,83 +3015,86 @@ ${inbox.recruiterEmail}`;
 
     async function startSimulatedDispatch() {
       const btn = document.getElementById('modal-confirm');
-      btn.disabled = true;
-      btn.textContent = "Dispatching...";
-
       const checked = Array.from(document.querySelectorAll('.candidate-check:checked'));
       const activeJob = jobs.find(j => j.id === currentJobId) || jobs[0];
       const inbox = getInboxConfig();
       const isReject = currentDispatchType === 'reject';
+      const resendMode = inbox.deliveryMode === 'resend' && inbox.resendKey;
+      const selected = checked.map(cb => candidates.find(c => c.id === cb.dataset.id)).filter(Boolean);
 
-      const steps = [1, 2, 3, 4];
-      for (let idx = 0; idx < steps.length; idx++) {
-        await new Promise(r => setTimeout(r, 400));
-        const el = document.getElementById('step-' + (idx + 1));
-        if (el) {
-          el.className = "flex items-center gap-2 text-emerald-400 font-semibold";
-          const icon = el.querySelector('i');
-          if (icon) icon.setAttribute('data-lucide', 'check-circle-2');
-          if (window.lucide) lucide.createIcons();
+      // Reserve the Gmail tab now, while we still have the click's user activation
+      let gmailWindow = null;
+      if (!resendMode && selected.length === 1) {
+        gmailWindow = window.open('about:blank', '_blank');
+        if (!gmailWindow) {
+          showToast('Popup blocked. Allow popups for this site to open Gmail drafts.', 'error');
+          return;
         }
       }
 
-      // Process candidates
-      for (const cb of checked) {
-        const id = cb.dataset.id;
-        const cand = candidates.find(c => c.id === id);
-        if (cand) {
-          cand.status = isReject ? 'Feedback Sent ✉️' : 'Invite Sent ✉️';
-          cand.emailSent = true;
+      btn.disabled = true;
+      btn.textContent = "Dispatching...";
 
-          const emailData = generateCandidateEmailDraft(cand, activeJob, isReject ? 'reject' : 'invite');
-          cand.emailDraft = `Subject: ${emailData.subject}\n\n${emailData.body}`;
+      // Steps tick on real progress, with no artificial delay
+      const finishTask = liliTask(`${isReject ? 'Sending feedback to' : 'Inviting'} ${selected.length} candidate${selected.length > 1 ? 's' : ''}`, isReject ? 'mail-x' : 'mail');
+      setDispatchStep(1, 'done');
+      const drafts = selected.map(cand => {
+        const emailData = generateCandidateEmailDraft(cand, activeJob, isReject ? 'reject' : 'invite');
+        cand.emailDraft = `Subject: ${emailData.subject}\n\n${emailData.body}`;
+        return { cand, emailData };
+      });
+      setDispatchStep(2, 'done');
+      await new Promise(requestAnimationFrame);
 
-          // Background Resend API Delivery if configured
-          if (inbox.deliveryMode === 'resend' && inbox.resendKey && cand.email) {
-            try {
-              await fetch('/api/send-email', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  to: cand.email,
-                  subject: emailData.subject,
-                  body: emailData.body,
-                  apiKey: inbox.resendKey,
-                  fromEmail: inbox.recruiterEmail,
-                  fromName: inbox.recruiterName
-                })
-              });
-            } catch (e) {
-              console.warn('Batch Resend error:', e);
-            }
-          }
+      const changed = selected.slice();
+      let delivered = 0;
+      const failed = [];
+      const noEmail = [];
 
-          if (typeof syncCandidateToSupabase === 'function') {
-            syncCandidateToSupabase(cand);
-          }
+      for (const { cand, emailData } of drafts) {
+        if (!isValidEmail(cand.email)) {
+          noEmail.push(cand.name);
+          liliLog('mail-question', `${cand.name}: no email address on file`, 'warn');
+          continue;
         }
-      }
 
-      saveCandidates();
-      renderTable();
-      updateStats();
-
-      if (inbox.deliveryMode === 'resend' && inbox.resendKey) {
-        showToast(`🎉 Delivered ${checked.length} real email(s) via Resend API!`, 'success');
-      } else {
-        if (checked.length === 1) {
-          const id = checked[0].dataset.id;
-          const cand = candidates.find(c => c.id === id);
-          if (cand && cand.email) {
-            const emailData = generateCandidateEmailDraft(cand, activeJob, isReject ? 'reject' : 'invite');
-            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(cand.email)}&su=${encodeURIComponent(emailData.subject)}&body=${encodeURIComponent(emailData.body)}`;
-            window.open(gmailUrl, '_blank');
+        if (resendMode) {
+          const result = await sendViaResend(inbox, cand.email, emailData.subject, emailData.body);
+          if (result.ok) {
+            markEmailed(cand, cand.email, emailData.subject, emailData.body, isReject);
+            delivered++;
+            liliLog('send', `${isReject ? 'Feedback' : 'Interview invite'} delivered to ${cand.name} via ${emailProviderName(inbox.resendKey)}`, 'success');
+          } else {
+            failed.push(`${cand.name}: ${result.error}`);
+            liliLog('mail-x', `Couldn't email ${cand.name}: ${result.error}`, 'error');
           }
-          showToast(`✉️ Opened pre-filled Gmail draft for ${cand ? cand.name : 'candidate'}! Hit Send to deliver.`, 'success');
+          document.getElementById('step-3-label').textContent = `Sending ${delivered + failed.length}/${drafts.length - noEmail.length}`;
+        } else if (gmailWindow) {
+          openGmailCompose(cand.email, emailData.subject, emailData.body, gmailWindow);
+          markEmailed(cand, cand.email, emailData.subject, emailData.body, isReject);
+          delivered++;
+          liliLog('mail', `Opened Gmail draft for ${cand.name}`);
         } else {
-          showToast(`✉️ Prepared ${checked.length} drafts! Status updated in pipeline.`, 'success');
+          // Browsers only allow one popup per click, so multi-select Gmail mode prepares drafts
+          cand.status = isReject ? 'Feedback Drafted' : 'Invite Drafted';
+          liliLog('file-pen', `Drafted ${isReject ? 'feedback' : 'invite'} for ${cand.name}`);
         }
       }
+      setDispatchStep(3, failed.length ? 'error' : 'done');
+
+      if (gmailWindow && delivered === 0) gmailWindow.close();
+      saveCandidates(changed);
+      setDispatchStep(4, 'done');
+      finishTask();
+
+      if (resendMode) {
+        showToast(`Delivered ${delivered}/${selected.length} email(s) via ${emailProviderName(inbox.resendKey)}.${failed.length ? ` Failed: ${failed.join('; ')}` : ''}`, failed.length ? 'error' : 'success');
+      } else if (gmailWindow && delivered > 0) {
+        showToast(`✉️ Opened pre-filled Gmail draft for ${selected[0].name}. Hit Send to deliver.`, 'success');
+      } else if (selected.length > 1) {
+        showToast(`Prepared ${selected.length - noEmail.length} personalized drafts. Open each candidate's Outreach tab to send.`, 'success');
+      }
+      if (noEmail.length) showToast(`No email address on file for: ${noEmail.join(', ')}`, 'error');
 
       closeDispatchModal();
       deselectAll();
@@ -2425,12 +3102,143 @@ ${inbox.recruiterEmail}`;
       btn.textContent = "Confirm & Dispatch";
     }
 
+    // EXPORT: shortlist CSV for hiring managers (respects role, tier filter and Bias-Free Mode)
+    function csvCell(value) {
+      let s = String(value ?? '');
+      // Neutralise spreadsheet formula injection from CV-derived text
+      if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+      return `"${s.replace(/"/g, '""')}"`;
+    }
+
+    function exportPipelineCsv() {
+      const job = jobs.find(j => j.id === currentJobId) || jobs[0];
+      const isAnon = document.getElementById('anonymize-toggle').checked;
+      const rows = candidates
+        .filter(c => (!c.roleId || c.roleId === currentJobId) && (currentFilter === 'all' || c.tier === currentFilter))
+        .sort((a, b) => b.score - a.score);
+      if (rows.length === 0) {
+        showToast('No candidates to export for this role/filter.', 'error');
+        return;
+      }
+
+      const dims = ['tech', 'exp', 'impact', 'lead'];
+      const header = ['Rank', 'Candidate', 'Email', 'Score', 'Tier', 'Status', 'Years', 'Tech', 'Experience', 'Impact', 'Leadership', 'Matched Skills', 'Missing Must-Haves', 'Takeaway', 'Gaps'];
+      const lines = rows.map((c, i) => {
+        const dimScore = key => ((c.breakdown || []).find(d => d.key === key) || {}).score ?? '';
+        return [
+          i + 1,
+          isAnon ? c.id : c.name,
+          isAnon ? '' : c.email,
+          c.score,
+          c.tier === 'tier1' ? 'Tier 1 Fast-Track' : c.tier === 'tier2' ? 'Tier 2 Bench' : 'Tier 3 Below Bar',
+          c.status,
+          c.exp,
+          ...dims.map(dimScore),
+          (c.skills || []).join('; '),
+          (c.missing || []).join('; '),
+          c.takeaway,
+          (c.gaps || []).join(' | ')
+        ].map(csvCell).join(',');
+      });
+
+      const csv = '﻿' + [header.map(csvCell).join(','), ...lines].join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `lili-shortlist-${job.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      showToast(`Exported ${rows.length} candidates${isAnon ? ' (anonymized)' : ''}.`);
+    }
+
+    // COMPARE: side-by-side matrix of selected candidates against the role rubric
+    function openCompareModal() {
+      const ids = Array.from(document.querySelectorAll('.candidate-check:checked')).map(cb => cb.dataset.id);
+      const selected = ids.map(id => candidates.find(c => c.id === id)).filter(Boolean).sort((a, b) => b.score - a.score);
+      if (selected.length < 2) {
+        showToast('Select at least 2 candidates to compare.', 'error');
+        return;
+      }
+      if (selected.length > 5) {
+        showToast('Compare up to 5 candidates at a time.', 'error');
+        return;
+      }
+
+      const job = jobs.find(j => j.id === currentJobId) || jobs[0];
+      const isAnon = document.getElementById('anonymize-toggle').checked;
+      const cellColor = v => v >= 85 ? 'text-emerald-400' : v >= 70 ? 'text-amber-400' : 'text-rose-400';
+      const dimRows = ['tech', 'exp', 'impact', 'lead'].map(key => {
+        const label = { tech: 'Technical Stack', exp: 'Experience Depth', impact: 'Production Impact', lead: 'Leadership' }[key];
+        const scores = selected.map(c => ((c.breakdown || []).find(d => d.key === key) || {}).score);
+        const best = Math.max(...scores.filter(v => typeof v === 'number'));
+        return `<tr class="border-t border-zinc-800">
+          <td class="p-2 text-zinc-400">${label} <span class="text-zinc-600">(${Number(job.weights[key])}%)</span></td>
+          ${scores.map(v => `<td class="p-2 text-center font-mono ${typeof v === 'number' ? cellColor(v) : 'text-zinc-600'} ${v === best ? 'font-bold underline' : ''}">${typeof v === 'number' ? v : '–'}</td>`).join('')}
+        </tr>`;
+      }).join('');
+      const mustHaveRows = job.mandatory.map(m => `<tr class="border-t border-zinc-800">
+          <td class="p-2 text-zinc-400">${escapeHtml(m)}</td>
+          ${selected.map(c => {
+            const has = (c.skills || []).some(s => skillSatisfies(s, m));
+            return `<td class="p-2 text-center ${has ? 'text-emerald-400' : 'text-rose-400'}">${has ? '✓' : '✗'}</td>`;
+          }).join('')}
+        </tr>`).join('');
+
+      let modal = document.getElementById('compare-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'compare-modal';
+        modal.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4';
+        modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+        document.body.appendChild(modal);
+      }
+      modal.innerHTML = `
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-4xl w-full p-6 shadow-2xl max-h-[90vh] overflow-auto text-xs">
+          <div class="flex items-center justify-between border-b border-zinc-800 pb-3 mb-3">
+            <div>
+              <h3 class="font-bold text-sm text-zinc-100">Candidate Comparison Matrix</h3>
+              <p class="text-[11px] text-zinc-400">${escapeHtml(job.title)} · min ${Number(job.minExp)} yrs · best per row underlined</p>
+            </div>
+            <button onclick="document.getElementById('compare-modal').remove()" class="text-zinc-500 hover:text-zinc-300"><i data-lucide="x" class="w-4 h-4"></i></button>
+          </div>
+          <table class="w-full border-collapse">
+            <thead><tr>
+              <th class="p-2 text-left text-zinc-500 font-medium">Criterion</th>
+              ${selected.map(c => `<th class="p-2 text-center text-zinc-100">${escapeHtml(isAnon ? c.id : c.name)}</th>`).join('')}
+            </tr></thead>
+            <tbody>
+              <tr class="border-t border-zinc-800 bg-zinc-800/30">
+                <td class="p-2 font-semibold text-zinc-200">Overall Fit Score</td>
+                ${selected.map(c => `<td class="p-2 text-center font-mono font-bold text-base ${cellColor(c.score)}">${Number(c.score)}</td>`).join('')}
+              </tr>
+              <tr class="border-t border-zinc-800">
+                <td class="p-2 text-zinc-400">Years of Experience</td>
+                ${selected.map(c => `<td class="p-2 text-center font-mono ${c.exp < job.minExp ? 'text-rose-400' : 'text-zinc-200'}">${Number(c.exp)}</td>`).join('')}
+              </tr>
+              ${dimRows}
+              <tr><td colspan="${selected.length + 1}" class="pt-3 pb-1 text-[10px] uppercase tracking-wider text-zinc-500 font-semibold">Mandatory Must-Haves</td></tr>
+              ${mustHaveRows}
+              <tr class="border-t border-zinc-800">
+                <td class="p-2 text-zinc-400">Top Gap to Probe</td>
+                ${selected.map(c => `<td class="p-2 text-zinc-400 align-top">${escapeHtml((c.gaps || [])[0] || '–')}</td>`).join('')}
+              </tr>
+            </tbody>
+          </table>
+        </div>`;
+      if (window.lucide) lucide.createIcons();
+    }
+
     // Init
     populateRoleDropdown();
     renderTable();
     updateSupabaseIndicator();
-    pullCandidatesFromSupabase();
     initInboxSettings();
+    renderLiliFeed();
+    // supabase-js loads async so first paint never waits on it
+    if (window.supabase) initCloud();
+    else document.getElementById('supabase-js').addEventListener('load', initCloud);
   </script>
 </body>
 </html>
