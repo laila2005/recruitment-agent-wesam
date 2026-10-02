@@ -73,7 +73,8 @@ export default async function handler(req, res) {
     console.warn('lili api unauthorized');
     return res.status(401).json({ error: 'Unauthorized' });
   }
-  if (req.method !== 'GET' && req.method !== 'HEAD') {
+  // GET only: HEAD prefetches/link previews must never trigger submit/outreach/ingest
+  if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Use GET' });
   }
 
