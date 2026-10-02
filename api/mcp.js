@@ -16,7 +16,7 @@ const RECRUITER_EMAIL = process.env.LILI_OWNER_EMAIL || 'laila.mohamed.fikry@gma
 const SERVER_INFO = { name: 'talentscout-ats', version: '1.0.0' };
 const SUPPORTED_VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'];
 
-const TOOLS = [
+export const TOOLS = [
   {
     name: 'list_roles',
     rpc: 'lili_list_roles',
@@ -126,7 +126,7 @@ const TOOLS = [
   }
 ];
 
-async function callRpc(fn, params) {
+export async function callRpc(fn, params) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
     method: 'POST',
     headers: {
@@ -147,7 +147,7 @@ async function callRpc(fn, params) {
 }
 
 // Constant-time comparison so response timing doesn't leak how much of the key matched
-function safeEqual(a, b) {
+export function safeEqual(a, b) {
   const left = Buffer.from(a);
   const right = Buffer.from(b);
   return left.length === right.length && timingSafeEqual(left, right);
