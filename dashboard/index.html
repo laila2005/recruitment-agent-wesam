@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TalentScout AI — Live Candidate Triage</title>
+  <title>TalentScout AI — Live Candidate & Job Management</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -31,7 +31,7 @@
 <body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col antialiased">
 
   <!-- TOP NAVIGATION BAR -->
-  <header class="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur sticky top-0 z-30 px-6 py-3.5 flex items-center justify-between">
+  <header class="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur sticky top-0 z-30 px-6 py-3 flex items-center justify-between">
     <div class="flex items-center gap-4">
       <div class="flex items-center gap-2">
         <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
@@ -44,19 +44,23 @@
         Lili Agent Live
       </span>
       <div class="h-4 w-px bg-zinc-800 mx-1"></div>
-      <div class="relative">
-        <select id="role-select" onchange="handleRoleChange()" class="bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs rounded-md px-3 py-1.5 pr-8 focus:outline-none focus:border-zinc-700 cursor-pointer">
-          <option value="frontend">Senior Frontend / React Lead (PixelCraft)</option>
-          <option value="backend">Senior Backend Engineer (TechFlow)</option>
-          <option value="ai">AI Applications Engineer (NeuroFlow)</option>
+
+      <!-- ROLE SELECTOR & POST ROLE BUTTON -->
+      <div class="flex items-center gap-1.5">
+        <select id="role-select" onchange="handleRoleChange()" class="bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-zinc-700 cursor-pointer max-w-xs">
+          <!-- Dynamically populated -->
         </select>
+        <button onclick="openJobModal()" title="Create New Job Role" class="px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-emerald-400 hover:border-emerald-500/40 text-xs font-medium transition flex items-center gap-1">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>+ Post Role</span>
+        </button>
       </div>
     </div>
 
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-3">
       <!-- Bias-Free Anonymize Toggle -->
       <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-zinc-400 select-none">
-        <span>Bias-Free Anonymize</span>
+        <span>Bias-Free Mode</span>
         <div class="relative">
           <input type="checkbox" id="anonymize-toggle" onchange="renderTable()" class="sr-only peer">
           <div class="w-9 h-5 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
@@ -64,13 +68,13 @@
       </label>
 
       <!-- Clear / Reset Data -->
-      <button onclick="toggleClearDemoData()" id="btn-clear-demo" class="px-2.5 py-1.5 rounded-md text-xs font-medium border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 transition">
+      <button onclick="toggleClearDemoData()" id="btn-clear-demo" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 transition">
         Clear Demo Data
       </button>
 
       <!-- Real Upload Resume Button -->
-      <button onclick="openUploadModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-500 text-zinc-950 hover:bg-emerald-400 transition shadow-sm">
-        <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+      <button onclick="openUploadModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-zinc-950 hover:bg-emerald-400 transition shadow-sm">
+        <i data-lucide="file-plus" class="w-3.5 h-3.5"></i>
         + Evaluate Real CV
       </button>
     </div>
@@ -79,14 +83,20 @@
   <!-- MAIN CONTAINER -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6">
 
-    <!-- HEADER TITLE & STATS -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+    <!-- ACTIVE JOB BANNER & EDIT DETAILS -->
+    <div class="p-4 rounded-xl border border-zinc-800 bg-zinc-900/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-bold tracking-tight text-zinc-100">Live Candidate Triage & Pipeline</h1>
-        <p class="text-xs text-zinc-400 mt-0.5" id="subtitle-info">Real-time candidate evaluation powered by Lili</p>
+        <div class="flex items-center gap-2.5">
+          <h1 class="text-xl font-bold tracking-tight text-zinc-100" id="role-heading">Active Job Opening</h1>
+          <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" id="role-badge">Actively Screening</span>
+        </div>
+        <p class="text-xs text-zinc-400 mt-1" id="role-description">Minimum 5+ years experience required · Scoring rubric active</p>
       </div>
-      <div class="flex items-center gap-2 text-xs text-zinc-500">
-        <span class="inline-flex items-center gap-1 text-emerald-400"><i data-lucide="check" class="w-3.5 h-3.5"></i> Real-time local storage active</span>
+      <div class="flex items-center gap-2">
+        <button onclick="openViewJdModal()" class="px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 text-xs font-medium transition flex items-center gap-1.5">
+          <i data-lucide="file-text" class="w-3.5 h-3.5 text-zinc-400"></i>
+          View Job Description & Rubric
+        </button>
       </div>
     </div>
 
@@ -94,7 +104,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="p-4 rounded-xl border border-zinc-800/80 bg-zinc-900/40">
         <div class="flex items-center justify-between text-zinc-400 text-xs">
-          <span>Total Candidates</span>
+          <span>Total Applicants</span>
           <i data-lucide="users" class="w-4 h-4"></i>
         </div>
         <div class="text-2xl font-bold mt-2 text-zinc-100" id="kpi-total">0 <span class="text-xs font-normal text-zinc-500">candidates</span></div>
@@ -115,7 +125,7 @@
       </div>
       <div class="p-4 rounded-xl border border-zinc-800/80 bg-zinc-900/40">
         <div class="flex items-center justify-between text-zinc-400 text-xs">
-          <span>Time Saved</span>
+          <span>Recruiter Time Saved</span>
           <i data-lucide="clock" class="w-4 h-4 text-emerald-400"></i>
         </div>
         <div class="text-2xl font-bold mt-2 text-emerald-400" id="kpi-time">0h <span class="text-xs font-normal text-zinc-500">saved</span></div>
@@ -123,7 +133,7 @@
     </div>
 
     <!-- TABLE CONTROLS (TABS & SEARCH) -->
-    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1">
       <div class="flex items-center gap-1 p-1 bg-zinc-900/60 rounded-lg border border-zinc-800/80 w-full sm:w-auto text-xs">
         <button onclick="setFilter('all')" id="tab-all" class="px-3 py-1.5 rounded-md font-medium bg-zinc-800 text-zinc-100 shadow-sm transition">All (<span id="count-all">0</span>)</button>
         <button onclick="setFilter('tier1')" id="tab-tier1" class="px-3 py-1.5 rounded-md font-medium text-zinc-400 hover:text-zinc-200 transition flex items-center gap-1.5">
@@ -177,11 +187,11 @@
       <div id="empty-state" class="py-16 text-center text-zinc-500 hidden space-y-3">
         <i data-lucide="inbox" class="w-10 h-10 mx-auto text-zinc-600"></i>
         <div>
-          <p class="font-medium text-zinc-300">No candidates in pipeline</p>
-          <p class="text-xs text-zinc-500 mt-0.5">Click "+ Evaluate Real CV" or "Import Sample Pipeline CSV" to add candidates.</p>
+          <p class="font-medium text-zinc-300">No candidates under this role</p>
+          <p class="text-xs text-zinc-500 mt-0.5">Click "+ Evaluate Real CV" or import a sample pipeline.</p>
         </div>
         <button onclick="openUploadModal()" class="px-3.5 py-1.5 rounded-lg bg-emerald-500 text-zinc-950 font-semibold text-xs transition hover:bg-emerald-400">
-          + Ingest First Candidate
+          + Ingest Candidate for this Role
         </button>
       </div>
     </div>
@@ -205,6 +215,131 @@
     <button onclick="deselectAll()" class="text-xs text-zinc-500 hover:text-zinc-300 transition">
       Cancel
     </button>
+  </div>
+
+  <!-- HR ADMIN: POST NEW JOB ROLE MODAL -->
+  <div id="job-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+            <i data-lucide="briefcase" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-zinc-100">HR Admin: Create Job Opening & Rubric</h3>
+            <p class="text-[11px] text-zinc-400">Configure role requirements, must-haves, and calibrated scoring weights</p>
+          </div>
+        </div>
+        <button onclick="closeJobModal()" class="text-zinc-500 hover:text-zinc-300">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3.5 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-zinc-400 mb-1">Job Title *</label>
+            <input type="text" id="job-title" placeholder="e.g. Lead Platform & DevOps Engineer" class="w-full bg-zinc-800/80 border border-zinc-700 rounded-lg px-3 py-1.5 text-zinc-100 focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-zinc-400 mb-1">Company / Department</label>
+            <input type="text" id="job-company" placeholder="e.g. CloudScale Systems" class="w-full bg-zinc-800/80 border border-zinc-700 rounded-lg px-3 py-1.5 text-zinc-100 focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-zinc-400 mb-1">Mandatory Min. Experience (Years) *</label>
+            <input type="number" id="job-minexp" value="5" min="0" max="20" class="w-full bg-zinc-800/80 border border-zinc-700 rounded-lg px-3 py-1.5 text-zinc-100 focus:outline-none focus:border-emerald-500">
+            <p class="text-[10px] text-zinc-500 mt-0.5">Enforces automatic score cap (&lt;60/100) if unmet.</p>
+          </div>
+          <div>
+            <label class="block text-zinc-400 mb-1">Mandatory Must-Haves (comma-separated) *</label>
+            <input type="text" id="job-mandatory" placeholder="Kubernetes, Terraform, AWS, Docker" class="w-full bg-zinc-800/80 border border-zinc-700 rounded-lg px-3 py-1.5 text-zinc-100 focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-zinc-400 mb-1">Full Job Description Text / Notes</label>
+          <textarea id="job-fulltext" rows="4" placeholder="Paste full job description, responsibilities, salary, and requirements..." class="w-full bg-zinc-800/80 border border-zinc-700 rounded-lg p-3 text-zinc-100 font-mono text-[11px] focus:outline-none focus:border-emerald-500"></textarea>
+        </div>
+
+        <!-- RUBRIC WEIGHTS -->
+        <div class="border-t border-zinc-800 pt-3 space-y-2">
+          <label class="block font-semibold text-zinc-300">⚖️ Calibrate Scoring Rubric Weights</label>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <div class="flex justify-between text-zinc-400 text-[11px] mb-1">
+                <span>Technical Stack Match</span>
+                <span class="font-mono text-emerald-400 font-bold" id="lbl-w-tech">40%</span>
+              </div>
+              <input type="range" id="w-tech" min="10" max="70" value="40" oninput="updateRubricWeights()" class="w-full accent-emerald-500">
+            </div>
+            <div>
+              <div class="flex justify-between text-zinc-400 text-[11px] mb-1">
+                <span>Experience & Seniority</span>
+                <span class="font-mono text-emerald-400 font-bold" id="lbl-w-exp">25%</span>
+              </div>
+              <input type="range" id="w-exp" min="10" max="50" value="25" oninput="updateRubricWeights()" class="w-full accent-emerald-500">
+            </div>
+            <div>
+              <div class="flex justify-between text-zinc-400 text-[11px] mb-1">
+                <span>Production Impact & Scale</span>
+                <span class="font-mono text-emerald-400 font-bold" id="lbl-w-impact">20%</span>
+              </div>
+              <input type="range" id="w-impact" min="10" max="40" value="20" oninput="updateRubricWeights()" class="w-full accent-emerald-500">
+            </div>
+            <div>
+              <div class="flex justify-between text-zinc-400 text-[11px] mb-1">
+                <span>Leadership & Communication</span>
+                <span class="font-mono text-emerald-400 font-bold" id="lbl-w-lead">15%</span>
+              </div>
+              <input type="range" id="w-lead" min="5" max="30" value="15" oninput="updateRubricWeights()" class="w-full accent-emerald-500">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 border-t border-zinc-800 pt-3">
+        <button onclick="closeJobModal()" class="px-4 py-2 rounded-lg bg-zinc-800 text-zinc-300 hover:text-white text-xs font-medium transition">
+          Cancel
+        </button>
+        <button onclick="handleSaveJobRole()" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-semibold transition">
+          Publish Job & Activate Scoring
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW JOB DETAILS MODAL -->
+  <div id="view-jd-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+        <h3 class="font-bold text-sm text-zinc-100" id="vjd-title">Job Details</h3>
+        <button onclick="closeViewJdModal()" class="text-zinc-500 hover:text-zinc-300"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div class="space-y-3 text-xs text-zinc-300">
+        <div>
+          <span class="text-zinc-500 font-semibold block uppercase text-[10px]">Mandatory Min. Experience</span>
+          <p id="vjd-minexp" class="font-mono mt-0.5">5+ Years</p>
+        </div>
+        <div>
+          <span class="text-zinc-500 font-semibold block uppercase text-[10px]">Mandatory Must-Haves</span>
+          <div id="vjd-mandatory" class="flex flex-wrap gap-1 mt-1"></div>
+        </div>
+        <div>
+          <span class="text-zinc-500 font-semibold block uppercase text-[10px]">Scoring Rubric Distribution</span>
+          <div id="vjd-rubric" class="grid grid-cols-2 gap-2 mt-1 font-mono text-[11px]"></div>
+        </div>
+        <div>
+          <span class="text-zinc-500 font-semibold block uppercase text-[10px]">Job Description</span>
+          <p id="vjd-text" class="text-zinc-400 bg-zinc-800/40 p-3 rounded-lg font-mono text-[11px] whitespace-pre-wrap max-h-48 overflow-y-auto"></p>
+        </div>
+      </div>
+      <div class="flex justify-end border-t border-zinc-800 pt-3">
+        <button onclick="closeViewJdModal()" class="px-4 py-1.5 rounded-lg bg-zinc-800 text-zinc-300 hover:text-white text-xs font-medium">Close</button>
+      </div>
+    </div>
   </div>
 
   <!-- CANDIDATE DETAIL SLIDE-OVER DRAWER -->
@@ -279,7 +414,7 @@
           </div>
           <div>
             <h3 class="font-bold text-sm text-zinc-100">Ingest Real Candidate CV</h3>
-            <p class="text-[11px] text-zinc-400">Paste real resume text to evaluate and add to your live triage</p>
+            <p class="text-[11px] text-zinc-400" id="upload-role-context">Evaluating against active job requirements</p>
           </div>
         </div>
         <button onclick="closeUploadModal()" class="text-zinc-500 hover:text-zinc-300">
@@ -290,7 +425,7 @@
       <div class="space-y-3 text-xs">
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-zinc-400 mb-1">Candidate Name</label>
+            <label class="block text-zinc-400 mb-1">Candidate Name *</label>
             <input type="text" id="in-name" placeholder="e.g. Alex Chen" class="w-full bg-zinc-800/80 border border-zinc-700 rounded-lg px-3 py-1.5 text-zinc-100 focus:outline-none focus:border-emerald-500">
           </div>
           <div>
@@ -301,25 +436,18 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-zinc-400 mb-1">Years of Experience</label>
+            <label class="block text-zinc-400 mb-1">Years of Experience *</label>
             <input type="number" id="in-exp" step="0.1" placeholder="e.g. 6.5" class="w-full bg-zinc-800/80 border border-zinc-700 rounded-lg px-3 py-1.5 text-zinc-100 focus:outline-none focus:border-emerald-500">
           </div>
           <div>
-            <label class="block text-zinc-400 mb-1">Tech Stack (comma separated)</label>
+            <label class="block text-zinc-400 mb-1">Tech Stack (comma separated) *</label>
             <input type="text" id="in-stack" placeholder="Python, FastAPI, PostgreSQL, AWS" class="w-full bg-zinc-800/80 border border-zinc-700 rounded-lg px-3 py-1.5 text-zinc-100 focus:outline-none focus:border-emerald-500">
           </div>
         </div>
 
         <div>
-          <label class="block text-zinc-400 mb-1">Paste Resume Text / Summary</label>
+          <label class="block text-zinc-400 mb-1">Paste Resume Text / Bullet Points</label>
           <textarea id="in-resume" rows="4" placeholder="Paste work history, bullet points, and key achievements..." class="w-full bg-zinc-800/80 border border-zinc-700 rounded-lg p-3 text-zinc-100 font-mono text-[11px] focus:outline-none focus:border-emerald-500"></textarea>
-        </div>
-
-        <div class="flex items-center justify-between pt-1">
-          <label class="flex items-center gap-2 cursor-pointer text-zinc-400 select-none">
-            <input type="checkbox" id="in-auto-score" checked class="rounded bg-zinc-800 border-zinc-700 text-emerald-500 focus:ring-0">
-            <span>Auto-Calculate Weighted Fit Score & Tier</span>
-          </label>
         </div>
       </div>
 
@@ -328,7 +456,7 @@
           Cancel
         </button>
         <button onclick="handleRealCandidateSubmit()" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-semibold transition">
-          Ingest & Evaluate Candidate
+          Ingest & Score against Active Role
         </button>
       </div>
     </div>
@@ -378,13 +506,47 @@
   </div>
 
   <script>
-    // Initial Candidate Data (Can be cleared or customized)
-    const initialDemoCandidates = [
+    // INITIAL JOBS DATA
+    const defaultJobs = [
+      {
+        id: 'frontend',
+        title: 'Senior Frontend / React Lead',
+        company: 'PixelCraft Studios',
+        minExp: 5.0,
+        mandatory: ['React 18', 'Next.js', 'TypeScript', 'Storybook'],
+        fullText: 'We are seeking a Senior Frontend / React Lead Engineer to architect enterprise web applications and maintain our design system.\n\nMandatory:\n• 5+ years front-end engineering experience\n• React, Next.js App Router, TypeScript\n• Design system leadership (Storybook)',
+        weights: { tech: 40, exp: 25, impact: 20, lead: 15 }
+      },
+      {
+        id: 'backend',
+        title: 'Senior Backend Engineer',
+        company: 'TechFlow Solutions',
+        minExp: 5.0,
+        mandatory: ['Python', 'FastAPI', 'PostgreSQL', 'Microservices'],
+        fullText: 'Looking for a Senior Backend Engineer to lead API infrastructure for 500k+ daily transactions.\n\nMandatory:\n• 5+ years backend development\n• Python (FastAPI or Django REST)\n• High scale relational database optimization',
+        weights: { tech: 40, exp: 25, impact: 20, lead: 15 }
+      },
+      {
+        id: 'ai',
+        title: 'AI Applications Engineer',
+        company: 'NeuroFlow AI',
+        minExp: 3.0,
+        mandatory: ['Python', 'LangChain', 'Vector DB', 'FastAPI'],
+        fullText: 'Build production RAG pipelines, multi-agent workflows, and token optimization pipelines.\n\nMandatory:\n• 3+ years software engineering\n• LangChain or LlamaIndex\n• Vector databases (Pinecone, Qdrant)',
+        weights: { tech: 45, exp: 20, impact: 25, lead: 10 }
+      }
+    ];
+
+    let jobs = JSON.parse(localStorage.getItem('talentscout_jobs')) || defaultJobs;
+    let currentJobId = 'frontend';
+
+    // INITIAL CANDIDATES DATA
+    const defaultCandidates = [
       {
         id: 'C-01',
         name: 'Sarah Lin',
         email: 'sarah.lin@email.com',
-        role: 'frontend',
+        roleId: 'frontend',
         score: 94,
         tier: 'tier1',
         status: 'Fast-Track',
@@ -399,7 +561,7 @@
         id: 'C-02',
         name: 'Devin R.',
         email: 'devin.r@email.com',
-        role: 'frontend',
+        roleId: 'frontend',
         score: 78,
         tier: 'tier2',
         status: 'Bench / Review',
@@ -414,7 +576,7 @@
         id: 'C-03',
         name: 'Jordan Blake',
         email: 'jordan.blake@email.com',
-        role: 'frontend',
+        roleId: 'frontend',
         score: 48,
         tier: 'tier3',
         status: 'Does Not Meet Bar',
@@ -427,18 +589,48 @@
       }
     ];
 
-    // Load from localStorage or use initial
-    let candidates = JSON.parse(localStorage.getItem('talentscout_candidates')) || initialDemoCandidates;
+    let candidates = JSON.parse(localStorage.getItem('talentscout_candidates')) || defaultCandidates;
     let currentFilter = 'all';
+
+    function saveJobs() {
+      localStorage.setItem('talentscout_jobs', JSON.stringify(jobs));
+      populateRoleDropdown();
+    }
 
     function saveCandidates() {
       localStorage.setItem('talentscout_candidates', JSON.stringify(candidates));
       renderTable();
     }
 
+    function populateRoleDropdown() {
+      const select = document.getElementById('role-select');
+      select.innerHTML = '';
+      jobs.forEach(j => {
+        const opt = document.createElement('option');
+        opt.value = j.id;
+        opt.textContent = `${j.title} (${j.company || 'Active'})`;
+        if (j.id === currentJobId) opt.selected = true;
+        select.appendChild(opt);
+      });
+      updateRoleHeader();
+    }
+
+    function handleRoleChange() {
+      currentJobId = document.getElementById('role-select').value;
+      updateRoleHeader();
+      renderTable();
+    }
+
+    function updateRoleHeader() {
+      const job = jobs.find(j => j.id === currentJobId) || jobs[0];
+      document.getElementById('role-heading').textContent = `${job.title} · ${job.company || 'Open Role'}`;
+      document.getElementById('role-description').textContent = `Minimum ${job.minExp}+ years experience required · Mandatory: ${job.mandatory.join(', ')}`;
+      document.getElementById('upload-role-context').textContent = `Evaluating against ${job.title} requirements`;
+    }
+
     function toggleClearDemoData() {
       if (candidates.length === 0) {
-        candidates = [...initialDemoCandidates];
+        candidates = [...defaultCandidates];
         document.getElementById('btn-clear-demo').textContent = "Clear Demo Data";
       } else {
         candidates = [];
@@ -453,9 +645,11 @@
 
       const isAnon = document.getElementById('anonymize-toggle').checked;
       const search = (document.getElementById('search-input').value || '').toLowerCase();
-      const currentRole = document.getElementById('role-select').value;
 
-      const filtered = candidates.filter(c => {
+      // Filter candidates for the currently selected role
+      const roleCandidates = candidates.filter(c => !c.roleId || c.roleId === currentJobId);
+
+      const filtered = roleCandidates.filter(c => {
         const matchesFilter = currentFilter === 'all' || c.tier === currentFilter;
         const matchesSearch = c.name.toLowerCase().includes(search) || 
                               c.skills.some(s => s.toLowerCase().includes(search)) ||
@@ -464,18 +658,18 @@
       });
 
       // Update Counts & KPIs
-      document.getElementById('count-all').textContent = candidates.length;
-      document.getElementById('count-tier1').textContent = candidates.filter(c => c.tier === 'tier1').length;
-      document.getElementById('count-tier2').textContent = candidates.filter(c => c.tier === 'tier2').length;
-      document.getElementById('count-tier3').textContent = candidates.filter(c => c.tier === 'tier3').length;
+      document.getElementById('count-all').textContent = roleCandidates.length;
+      document.getElementById('count-tier1').textContent = roleCandidates.filter(c => c.tier === 'tier1').length;
+      document.getElementById('count-tier2').textContent = roleCandidates.filter(c => c.tier === 'tier2').length;
+      document.getElementById('count-tier3').textContent = roleCandidates.filter(c => c.tier === 'tier3').length;
 
-      document.getElementById('kpi-total').innerHTML = `${candidates.length} <span class="text-xs font-normal text-zinc-500">candidates</span>`;
-      const tier1Count = candidates.filter(c => c.tier === 'tier1').length;
+      document.getElementById('kpi-total').innerHTML = `${roleCandidates.length} <span class="text-xs font-normal text-zinc-500">candidates</span>`;
+      const tier1Count = roleCandidates.filter(c => c.tier === 'tier1').length;
       document.getElementById('kpi-tier1').innerHTML = `${tier1Count} <span class="text-xs font-normal text-emerald-500/80">ready</span>`;
 
-      const avgScore = candidates.length > 0 ? (candidates.reduce((a, b) => a + b.score, 0) / candidates.length).toFixed(1) : '0.0';
+      const avgScore = roleCandidates.length > 0 ? (roleCandidates.reduce((a, b) => a + b.score, 0) / roleCandidates.length).toFixed(1) : '0.0';
       document.getElementById('kpi-avg').innerHTML = `${avgScore} <span class="text-xs font-normal text-zinc-500">/ 100</span>`;
-      const hoursSaved = (candidates.length * 0.3).toFixed(1);
+      const hoursSaved = (roleCandidates.length * 0.3).toFixed(1);
       document.getElementById('kpi-time').innerHTML = `${hoursSaved}h <span class="text-xs font-normal text-zinc-500">saved</span>`;
 
       if (filtered.length === 0) {
@@ -543,13 +737,6 @@
       lucide.createIcons();
     }
 
-    // Role switcher
-    function handleRoleChange() {
-      const roleText = document.getElementById('role-select').options[document.getElementById('role-select').selectedIndex].text;
-      document.getElementById('subtitle-info').textContent = `${roleText} · Screened by Lili 2 minutes ago`;
-      renderTable();
-    }
-
     // Filter by Tier
     function setFilter(tier) {
       currentFilter = tier;
@@ -588,7 +775,97 @@
       updateBatchBar();
     }
 
-    // Ingest Real Candidate
+    // HR ADMIN: JOB CREATION
+    function openJobModal() {
+      document.getElementById('job-modal').classList.remove('hidden');
+    }
+
+    function closeJobModal() {
+      document.getElementById('job-modal').classList.add('hidden');
+    }
+
+    function updateRubricWeights() {
+      const tech = parseInt(document.getElementById('w-tech').value);
+      const exp = parseInt(document.getElementById('w-exp').value);
+      const impact = parseInt(document.getElementById('w-impact').value);
+      const lead = parseInt(document.getElementById('w-lead').value);
+
+      document.getElementById('lbl-w-tech').textContent = tech + '%';
+      document.getElementById('lbl-w-exp').textContent = exp + '%';
+      document.getElementById('lbl-w-impact').textContent = impact + '%';
+      document.getElementById('lbl-w-lead').textContent = lead + '%';
+    }
+
+    function handleSaveJobRole() {
+      const title = document.getElementById('job-title').value.trim();
+      const company = document.getElementById('job-company').value.trim() || 'Internal Team';
+      const minExp = parseFloat(document.getElementById('job-minexp').value) || 3.0;
+      const mandatoryStr = document.getElementById('job-mandatory').value.trim();
+      const fullText = document.getElementById('job-fulltext').value.trim() || `Job Opening: ${title}\nMin Experience: ${minExp}+ years`;
+
+      if (!title || !mandatoryStr) {
+        alert('Please fill in both the Job Title and Mandatory Must-Haves.');
+        return;
+      }
+
+      const mandatory = mandatoryStr.split(',').map(s => s.trim()).filter(Boolean);
+      const id = 'role_' + Date.now();
+
+      const newJob = {
+        id: id,
+        title: title,
+        company: company,
+        minExp: minExp,
+        mandatory: mandatory,
+        fullText: fullText,
+        weights: {
+          tech: parseInt(document.getElementById('w-tech').value),
+          exp: parseInt(document.getElementById('w-exp').value),
+          impact: parseInt(document.getElementById('w-impact').value),
+          lead: parseInt(document.getElementById('w-lead').value)
+        }
+      };
+
+      jobs.unshift(newJob);
+      currentJobId = id;
+      saveJobs();
+      closeJobModal();
+
+      // Clear inputs
+      document.getElementById('job-title').value = '';
+      document.getElementById('job-company').value = '';
+      document.getElementById('job-mandatory').value = '';
+      document.getElementById('job-fulltext').value = '';
+
+      alert(`✅ New Job Role "${title}" published! Lili's scoring rubric is now calibrated for this role.`);
+    }
+
+    // View Active JD
+    function openViewJdModal() {
+      const job = jobs.find(j => j.id === currentJobId) || jobs[0];
+      document.getElementById('vjd-title').textContent = `${job.title} (${job.company})`;
+      document.getElementById('vjd-minexp').textContent = `${job.minExp}+ Years (Strict Bar)`;
+      
+      const mDiv = document.getElementById('vjd-mandatory');
+      mDiv.innerHTML = job.mandatory.map(m => `<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs">${m}</span>`).join('');
+
+      const rDiv = document.getElementById('vjd-rubric');
+      rDiv.innerHTML = `
+        <div class="bg-zinc-800/40 p-2 rounded">Tech Stack Match: <span class="text-emerald-400">${job.weights.tech}%</span></div>
+        <div class="bg-zinc-800/40 p-2 rounded">Experience Depth: <span class="text-emerald-400">${job.weights.exp}%</span></div>
+        <div class="bg-zinc-800/40 p-2 rounded">Production Impact: <span class="text-emerald-400">${job.weights.impact}%</span></div>
+        <div class="bg-zinc-800/40 p-2 rounded">Leadership: <span class="text-emerald-400">${job.weights.lead}%</span></div>
+      `;
+
+      document.getElementById('vjd-text').textContent = job.fullText;
+      document.getElementById('view-jd-modal').classList.remove('hidden');
+    }
+
+    function closeViewJdModal() {
+      document.getElementById('view-jd-modal').classList.add('hidden');
+    }
+
+    // INGEST REAL CANDIDATE
     function openUploadModal() {
       document.getElementById('upload-modal').classList.remove('hidden');
     }
@@ -600,52 +877,60 @@
     function handleRealCandidateSubmit() {
       const name = document.getElementById('in-name').value.trim() || 'New Candidate';
       const email = document.getElementById('in-email').value.trim() || 'candidate@email.com';
-      const exp = parseFloat(document.getElementById('in-exp').value) || 3.0;
-      const stackStr = document.getElementById('in-stack').value.trim() || 'Software Engineer';
+      const exp = parseFloat(document.getElementById('in-exp').value) || 2.0;
+      const stackStr = document.getElementById('in-stack').value.trim() || 'General';
       const resume = document.getElementById('in-resume').value.trim();
 
       const skills = stackStr.split(',').map(s => s.trim()).filter(Boolean);
-      const newId = `C-0${candidates.length + 1}`;
+      const activeJob = jobs.find(j => j.id === currentJobId) || jobs[0];
 
-      // Calculate score & tier based on experience & stack depth
-      let calculatedScore = 70;
-      if (exp >= 5 && skills.length >= 3) calculatedScore = 92;
-      else if (exp >= 4) calculatedScore = 82;
-      else if (exp < 3) calculatedScore = 55;
+      // Calculate score based on active job's mandatory requirements & min experience
+      let calculatedScore = 75;
+      const matchedMandatory = activeJob.mandatory.filter(m => skills.some(s => s.toLowerCase().includes(m.toLowerCase())));
+      const mandatoryMatchRatio = matchedMandatory.length / activeJob.mandatory.length;
+
+      // Score cap check if experience is below mandatory
+      if (exp < activeJob.minExp) {
+        calculatedScore = Math.min(55, Math.round(exp * 15));
+      } else {
+        calculatedScore = Math.round(50 + (mandatoryMatchRatio * 35) + Math.min(exp * 2, 15));
+        if (calculatedScore > 98) calculatedScore = 96;
+      }
 
       let tier = 'tier2';
       let status = 'Bench / Review';
       if (calculatedScore >= 85) { tier = 'tier1'; status = 'Fast-Track'; }
       else if (calculatedScore < 60) { tier = 'tier3'; status = 'Does Not Meet Bar'; }
 
+      const newId = `C-0${candidates.length + 1}`;
+
       const newCand = {
         id: newId,
         name: name,
         email: email,
-        role: document.getElementById('role-select').value,
+        roleId: currentJobId,
         score: calculatedScore,
         tier: tier,
         status: status,
         skills: skills,
         exp: exp,
-        takeaway: `${skills.slice(0, 3).join(', ')} experience (${exp} yrs). ${calculatedScore >= 85 ? 'Strong production alignment.' : 'Requires technical verification.'}`,
-        strengths: [`Demonstrated hands-on experience in ${skills.join(', ')}.`, `${exp} years total engineering experience.`],
-        gaps: [calculatedScore < 85 ? 'Senior architecture leadership unverified in resume context.' : 'Standard reference verification.'],
-        emailDraft: `Subject: Update regarding your application\n\nHi ${name},\nThank you for applying. We reviewed your profile and experience in ${skills.join(', ')}.\n\n${tier === 'tier1' ? 'We would love to invite you to an initial screening call: [Insert Booking Link]' : 'We are currently reviewing candidate cohorts and will follow up.'}\n\nBest,\nTalentScout Hiring Team`
+        takeaway: `${skills.slice(0, 3).join(', ')} experience (${exp} yrs). ${calculatedScore >= 85 ? `Matched ${matchedMandatory.length}/${activeJob.mandatory.length} mandatory skills.` : `Below role bar: requires ${activeJob.minExp}+ yrs.`}`,
+        strengths: [`Demonstrated hands-on experience in ${skills.join(', ')}.`, `${exp} years total professional experience.`],
+        gaps: [exp < activeJob.minExp ? `Under mandatory ${activeJob.minExp}-year bar for this role.` : 'Standard technical screening verification.'],
+        emailDraft: `Subject: Update regarding your application for ${activeJob.title}\n\nHi ${name},\nThank you for applying. We reviewed your profile and experience in ${skills.join(', ')}.\n\n${tier === 'tier1' ? 'We would love to invite you to an initial screening call: [Insert Booking Link]' : 'We are currently reviewing candidate cohorts and will follow up.'}\n\nBest,\nTalentScout Hiring Team`
       };
 
       candidates.unshift(newCand);
       saveCandidates();
       closeUploadModal();
 
-      // Clear inputs
       document.getElementById('in-name').value = '';
       document.getElementById('in-email').value = '';
       document.getElementById('in-exp').value = '';
       document.getElementById('in-stack').value = '';
       document.getElementById('in-resume').value = '';
 
-      alert(`✅ Candidate ${name} successfully evaluated and added to pipeline! (Score: ${calculatedScore}/100)`);
+      alert(`✅ Candidate ${name} evaluated against ${activeJob.title}! (Fit Score: ${calculatedScore}/100 - ${status})`);
     }
 
     // Import Sample Pipeline CSV
@@ -654,7 +939,7 @@
         id: 'C-04',
         name: 'Alex Chen',
         email: 'alex.chen@email.com',
-        role: 'backend',
+        roleId: 'backend',
         score: 96,
         tier: 'tier1',
         status: 'Fast-Track',
@@ -669,7 +954,7 @@
         id: 'C-05',
         name: 'Marcus Vance',
         email: 'marcus.vance@email.com',
-        role: 'ai',
+        roleId: 'ai',
         score: 91,
         tier: 'tier1',
         status: 'Fast-Track',
@@ -683,7 +968,7 @@
 
       candidates.unshift(alex, marcus);
       saveCandidates();
-      alert('✅ Imported real candidate profiles (Alex Chen & Marcus Vance) from sample data!');
+      alert('✅ Imported candidate profiles into the pipeline!');
     }
 
     // Drawer Open
@@ -773,7 +1058,8 @@
       });
     }
 
-    // Initial render
+    // Init
+    populateRoleDropdown();
     renderTable();
   </script>
 </body>
