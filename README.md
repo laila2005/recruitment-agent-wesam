@@ -22,6 +22,9 @@ Instead, they suffer through manual chaos:
 
 TalentScout AI combines an **autonomous agent backend on Wesam.ai** with a **modern SaaS executive dashboard built on Lovable.dev** to deliver an enterprise-grade recruitment experience for \$0.
 
+* **Primary Repository:** [github.com/laila2005/recruitment-agent-wesam](https://github.com/laila2005/recruitment-agent-wesam)
+* **Dedicated Frontend Repository:** [github.com/laila2005/pixel-perfect-render-84515](https://github.com/laila2005/pixel-perfect-render-84515)
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                 FRONTEND: LOVABLE.DEV DASHBOARD             │
