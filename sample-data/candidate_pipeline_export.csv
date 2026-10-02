@@ -1,0 +1,4 @@
+Candidate_ID,Name,Applied_Role,Fit_Score,Tier,Status,Must_Haves_Met,Years_Experience,Primary_Strength,Key_Gap_or_Risk,HR_Next_Step,Outreach_Email_Status
+C-01,Sarah Lin,Senior Frontend Lead,94,Tier 1 - Fast Track,Active,Yes (100%),6.5,Storybook design system architect across 6 teams; LCP 1.4s optimization,None - top tier candidate,Schedule 30-min Technical Screen,Invite Sent
+C-02,Devin R.,Senior Frontend Lead,78,Tier 2 - Bench,Hold,Partial (80%),5.2,Solid React/Redux core and unit testing coverage,Lacks design system leadership & Next.js SSR,Keep warm pending Tier 1 interviews,Keep-Warm Drafted
+C-03,Jordan Blake,Senior Frontend Lead,48,Tier 3 - Archive,Rejected,No (40%),3.1,Experience with WordPress & basic marketing landing pages,Under 5-year mandatory bar; no TypeScript or Storybook,Send constructive feedback letter,Rejection Sent
