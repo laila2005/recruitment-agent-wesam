@@ -50,8 +50,16 @@ function Dashboard() {
   const activeJob = useMemo(() => jobRoles.find((j) => j.id === activeJobId) || jobRoles[0], [jobRoles, activeJobId]);
 
   const [candidateList, setCandidateList] = useState<Candidate[]>(() => {
-    const saved = localStorage.getItem("talentscout_candidates_v2");
-    return saved ? JSON.parse(saved) : CANDIDATES;
+    const saved = localStorage.getItem("talentscout_real_candidates");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.filter((c: Candidate) => c.id !== "sarah" && c.id !== "devin" && c.id !== "jordan");
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
   });
 
   const [anon, setAnon] = useState(false);
@@ -72,7 +80,7 @@ function Dashboard() {
   }, [jobRoles]);
 
   useEffect(() => {
-    localStorage.setItem("talentscout_candidates_v2", JSON.stringify(candidateList));
+    localStorage.setItem("talentscout_real_candidates", JSON.stringify(candidateList));
   }, [candidateList]);
 
   // Candidates for active job
