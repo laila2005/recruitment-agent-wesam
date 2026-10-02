@@ -773,6 +773,187 @@ function ViewJdModal({
   );
 }
 
+// DOCUMENT TEXT EXTRACTOR (PDF.js + Mammoth.js)
+async function extractDocumentText(file: File): Promise<string> {
+  const ext = file.name.split(".").pop()?.toLowerCase();
+
+  if (ext === "pdf") {
+    try {
+      // Ensure PDF.js is loaded
+      if (!(window as any).pdfjsLib) {
+        await new Promise<void>((resolve, reject) => {
+          const existing = document.querySelector('script[src*="pdf.min.js"]');
+          if (existing) {
+            existing.addEventListener("load", () => resolve());
+            existing.addEventListener("error", (e) => reject(e));
+            setTimeout(() => resolve(), 800);
+          } else {
+            const s = document.createElement("script");
+            s.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+            s.onload = () => resolve();
+            s.onerror = (e) => reject(e);
+            document.head.appendChild(s);
+          }
+        });
+      }
+
+      const pdfjsLib = (window as any).pdfjsLib;
+      if (pdfjsLib) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        const arrayBuffer = await file.arrayBuffer();
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+        let fullText = "";
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items.map((item: any) => item.str).join(" ");
+          fullText += pageText + "\n\n";
+        }
+
+        if (fullText.trim().length > 10) {
+          return fullText.trim();
+        }
+      }
+    } catch (err) {
+      console.warn("PDF.js extraction failed, attempting fallback...", err);
+    }
+  } else if (ext === "docx") {
+    try {
+      if (!(window as any).mammoth) {
+        await new Promise<void>((resolve, reject) => {
+          const existing = document.querySelector('script[src*="mammoth"]');
+          if (existing) {
+            existing.addEventListener("load", () => resolve());
+            existing.addEventListener("error", (e) => reject(e));
+            setTimeout(() => resolve(), 800);
+          } else {
+            const s = document.createElement("script");
+            s.src = "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js";
+            s.onload = () => resolve();
+            s.onerror = (e) => reject(e);
+            document.head.appendChild(s);
+          }
+        });
+      }
+
+      const mammoth = (window as any).mammoth;
+      if (mammoth) {
+        const arrayBuffer = await file.arrayBuffer();
+        const res = await mammoth.extractRawText({ arrayBuffer });
+        if (res.value?.trim()) return res.value.trim();
+      }
+    } catch (err) {
+      console.warn("Mammoth extraction failed, attempting fallback...", err);
+    }
+  }
+
+  // Fallback to text reader for .txt, .md or raw text streams
+  return await file.text();
+}
+
+// PRECISION RESUME HEURISTIC EXTRACTOR
+function parseResumeDetails(rawText: string, filename: string) {
+  // 1. Email extraction (precise email regex)
+  const emailMatch = rawText.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/);
+  const email = emailMatch ? emailMatch[0].trim() : "";
+
+  // 2. Candidate Name extraction
+  const lines = rawText
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.length > 2 && !/^(resume|curriculum|cv|summary|profile|page\s*\d|contact|experience|education|skills)/i.test(l));
+
+  let name = "";
+  for (const line of lines.slice(0, 6)) {
+    const cleanLine = line.replace(/[|•,].*$/, "").trim();
+    if (
+      cleanLine.length >= 3 &&
+      cleanLine.length <= 40 &&
+      /^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$/.test(cleanLine) &&
+      !/(engineer|developer|architect|full\s*stack|frontend|backend|bachelor|university|college|solutions|company)/i.test(cleanLine)
+    ) {
+      name = cleanLine;
+      break;
+    }
+  }
+
+  // Fallback to cleaned filename if not discovered in first lines
+  if (!name) {
+    const cleanFn = filename
+      .replace(/\.[^/.]+$/, "")
+      .replace(/[-_]?(?:software[-_]?engineer|developer|frontend|backend|fullstack|resume|cv|application).*$/i, "")
+      .replace(/[-_]/g, " ")
+      .trim();
+    name = cleanFn || "Candidate Applicant";
+  }
+
+  // 3. Location detection
+  let location = "Remote / Verified";
+  const locMatch = rawText.match(/\b([A-Za-z\s]+,\s*(?:Egypt|USA|United States|UK|United Kingdom|Canada|Germany|France|UAE|Saudi Arabia|Remote))\b/i);
+  if (locMatch) {
+    location = locMatch[1].trim();
+  }
+
+  // 4. University / Education detection
+  let university = "Verified Degree";
+  const uniMatch = rawText.match(/\b([A-Za-z\s]+(?:University|Polytechnic|Institute|College)[A-Za-z\s-]*)/i);
+  if (uniMatch) {
+    university = uniMatch[1].replace(/[\n\r]+/g, " ").trim();
+  }
+
+  // 5. Tech Stack Detection (comprehensive dictionary)
+  const techDictionary = [
+    "C#", "ASP.NET", ".NET", "Python", "FastAPI", "Django", "Flask",
+    "React", "React.js", "Next.js", "TypeScript", "JavaScript", "Node.js", "Express.js", "Express",
+    "PostgreSQL", "SQL Server", "MySQL", "MongoDB", "Redis",
+    "Docker", "Kubernetes", "AWS", "GCP", "Azure", "Linux",
+    "Tailwind CSS", "Tailwind", "RESTful APIs", "REST API", "GraphQL",
+    "Git", "CI/CD", "LangChain", "LlamaIndex", "Vector DB", "Qdrant", "Pinecone",
+    "Storybook", "SNMP", "Modbus", "IoT", "C++", "C", "Java", "Bash"
+  ];
+
+  const matchedTechs = new Set<string>();
+  techDictionary.forEach((tech) => {
+    let regex: RegExp;
+    if (tech === "C#" || tech === ".NET" || tech === "C++") {
+      regex = new RegExp(`(?:^|[\\s,;/(])${tech.replace("+", "\\+").replace("#", "\\#")}(?:$|[\\s,;/)-])`, "i");
+    } else {
+      regex = new RegExp(`\\b${tech.replace(".", "\\.")}\\b`, "i");
+    }
+    if (regex.test(rawText)) {
+      matchedTechs.add(tech);
+    }
+  });
+
+  // 6. Years of experience calculation
+  let calculatedExp = 3.0;
+  const explicitMatch = rawText.match(/(\d+(?:\.\d+)?)\+?\s*years?\s*(?:of)?\s*(?:experience|exp)/i);
+  if (explicitMatch) {
+    calculatedExp = parseFloat(explicitMatch[1]);
+  } else {
+    // Detect employment date ranges
+    const yearMatches = Array.from(rawText.matchAll(/\b(201\d|202[0-6])\b/g)).map((m) => parseInt(m[1]));
+    if (yearMatches.length > 0) {
+      const minYear = Math.min(...yearMatches);
+      const currentYear = 2026;
+      if (minYear >= 2012 && minYear <= currentYear) {
+        calculatedExp = Math.max(1.0, Math.round((currentYear - minYear) * 0.8 * 10) / 10);
+      }
+    }
+  }
+
+  return {
+    name,
+    email,
+    location,
+    university,
+    skills: Array.from(matchedTechs),
+    experience: calculatedExp,
+  };
+}
+
 // UPLOAD CV & EVALUATION MODAL
 function UploadModal({
   open, onOpenChange, activeJob, onCandidateCreated,
@@ -788,31 +969,43 @@ function UploadModal({
   const [skillsStr, setSkillsStr] = useState("");
   const [resumeText, setResumeText] = useState("");
   const [fileName, setFileName] = useState("");
+  const [parsing, setParsing] = useState(false);
+  const [location, setLocation] = useState("Remote / Verified");
+  const [university, setUniversity] = useState("Verified Degree");
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     setFileName(file.name);
-    const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
-    setName(cleanName);
+    setParsing(true);
+    toast.info(`Extracting text from ${file.name}...`);
 
-    // Read text from file
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = (event.target?.result as string) || "";
-      setResumeText(text);
+    try {
+      const extractedText = await extractDocumentText(file);
+      setResumeText(extractedText);
 
-      // Email heuristic
-      const emailMatch = text.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/);
-      if (emailMatch) setEmail(emailMatch[0]);
+      // Perform intelligent extraction
+      const parsed = parseResumeDetails(extractedText, file.name);
 
-      // Detect common skills
-      const common = ["React", "Next.js", "TypeScript", "Python", "FastAPI", "PostgreSQL", "AWS", "Docker", "Kubernetes", "Storybook", "Redis"];
-      const detected = common.filter(c => new RegExp(`\\b${c}\\b`, "i").test(text));
-      if (detected.length > 0) setSkillsStr(detected.join(", "));
-    };
-    reader.readAsText(file);
-    toast.success(`Loaded ${file.name}`);
+      setName(parsed.name);
+      if (parsed.email) setEmail(parsed.email);
+      setExp(parsed.experience);
+      if (parsed.skills.length > 0) {
+        setSkillsStr(parsed.skills.join(", "));
+      }
+      setLocation(parsed.location);
+      setUniversity(parsed.university);
+
+      toast.success(`Successfully parsed ${file.name}!`, {
+        description: `Identified candidate ${parsed.name} with ${parsed.skills.length} matching skills.`,
+      });
+    } catch (err) {
+      console.error("Resume parsing error:", err);
+      toast.error("Failed to parse document text. You can paste the text manually.");
+    } finally {
+      setParsing(false);
+    }
   };
 
   const handleIngest = (e: React.FormEvent) => {
@@ -822,15 +1015,17 @@ function UploadModal({
       return;
     }
 
-    const skills = skillsStr.split(",").map(s => s.trim()).filter(Boolean);
-    const matchedMandatory = activeJob.mandatory.filter(m => skills.some(s => s.toLowerCase().includes(m.toLowerCase())));
+    const skills = skillsStr.split(",").map((s) => s.trim()).filter(Boolean);
+    const matchedMandatory = activeJob.mandatory.filter((m) =>
+      skills.some((s) => s.toLowerCase().includes(m.toLowerCase()))
+    );
     const ratio = matchedMandatory.length / (activeJob.mandatory.length || 1);
 
     let calculatedScore = 75;
     if (exp < activeJob.minExp) {
       calculatedScore = Math.min(55, Math.round(exp * 14));
     } else {
-      calculatedScore = Math.round(50 + (ratio * 35) + Math.min(exp * 2, 14));
+      calculatedScore = Math.round(50 + ratio * 35 + Math.min(exp * 2, 14));
       if (calculatedScore > 98) calculatedScore = 96;
     }
 
@@ -844,14 +1039,14 @@ function UploadModal({
       anonId: "Candidate C-" + Math.floor(10 + Math.random() * 89),
       name: name.trim(),
       contactEmail: email.trim() || undefined,
-      university: "Verified Degree",
-      location: "Remote / Verified",
+      university: university || "Verified Degree",
+      location: location || "Remote / Verified",
       roleId: activeJob.id,
       score: calculatedScore,
       tier: tier,
       years: exp,
       matched: skills.length > 0 ? skills : activeJob.mandatory.slice(0, 2),
-      missing: activeJob.mandatory.filter(m => !skills.some(s => s.toLowerCase().includes(m.toLowerCase()))),
+      missing: activeJob.mandatory.filter((m) => !skills.some((s) => s.toLowerCase().includes(m.toLowerCase()))),
       takeaway: `${skills.slice(0, 3).join(", ")} experience (${exp} yrs). ${calculatedScore >= 85 ? `Matched ${matchedMandatory.length}/${activeJob.mandatory.length} mandatory skills.` : `Below role bar: requires ${activeJob.minExp}+ yrs.`}`,
       breakdown: [
         { label: "Technical Skills", weight: activeJob.weights.tech, score: Math.round(calculatedScore * 1.02) },
@@ -860,15 +1055,15 @@ function UploadModal({
         { label: "Leadership", weight: activeJob.weights.lead, score: 75 },
       ],
       strengths: [
-        { point: `Verified background in ${skills.slice(0, 2).join(", ") || "software engineering"}`, quote: "Demonstrated production experience." },
+        { point: `Verified background in ${skills.slice(0, 2).join(", ") || "software engineering"}`, quote: "Demonstrated production experience from parsed resume." },
       ],
       gaps: [
         { flag: exp < activeJob.minExp ? `Under mandatory ${activeJob.minExp}-year bar for this role` : "Standard technical verification recommended", severity: exp < activeJob.minExp ? "High" : "Low" },
       ],
       questions: [
-        { type: "Technical", q: "Walk us through your hands-on experience scaling production systems.", strong: "Cites concrete metrics, architecture trade-offs, and failure handling.", weak: "Theoretical answer with no production specifics." }
+        { type: "Technical", q: "Walk us through your hands-on experience scaling production systems.", strong: "Cites concrete metrics, architecture trade-offs, and failure handling.", weak: "Theoretical answer with no production specifics." },
       ],
-      email: `Subject: Next Steps: ${activeJob.title}\n\nHi ${name},\n\nThank you for applying. We reviewed your profile and experience in ${skills.join(", ") || "engineering"}.\n\n${tier === 1 ? "We would love to invite you to an initial screening call: [Insert Booking Link]" : "We are currently reviewing candidate cohorts and will follow up shortly."}\n\nBest,\nLili (Technical Recruiter)`
+      email: `Subject: Next Steps: ${activeJob.title}\n\nHi ${name},\n\nThank you for applying. We reviewed your profile and experience in ${skills.join(", ") || "engineering"}.\n\n${tier === 1 ? "We would love to invite you to an initial screening call: [Insert Booking Link]" : "We are currently reviewing candidate cohorts and will follow up shortly."}\n\nBest,\nLili (Technical Recruiter)`,
     };
 
     onCandidateCreated(newCand);
@@ -895,10 +1090,20 @@ function UploadModal({
         <form onSubmit={handleIngest} className="space-y-4 pt-2 text-sm">
           {/* File Picker */}
           <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed p-6 text-center hover:bg-accent/40 transition">
-            <Upload className="size-6 text-primary" />
-            <span className="text-sm font-medium">Click to select resume file (.pdf, .docx, .txt)</span>
-            {fileName && <span className="text-xs text-primary font-mono font-semibold">Selected: {fileName}</span>}
-            <input type="file" accept=".pdf,.docx,.txt" className="hidden" onChange={handleFileUpload} />
+            {parsing ? (
+              <Loader2 className="size-6 text-primary animate-spin" />
+            ) : (
+              <Upload className="size-6 text-primary" />
+            )}
+            <span className="text-sm font-medium">
+              {parsing ? "Parsing PDF/Word document with Lili Engine..." : "Click to select resume file (.pdf, .docx, .txt)"}
+            </span>
+            {fileName && (
+              <span className="text-xs text-primary font-mono font-semibold">
+                {parsing ? `Processing ${fileName}...` : `✓ Parsed: ${fileName}`}
+              </span>
+            )}
+            <input type="file" accept=".pdf,.docx,.txt" disabled={parsing} className="hidden" onChange={handleFileUpload} />
           </label>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -908,18 +1113,18 @@ function UploadModal({
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Alex Chen"
-                className="w-full rounded-md border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                placeholder="e.g. Laila Mohamed Fikry"
+                className="w-full rounded-md border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring font-medium"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">Candidate Email</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Candidate Email (Auto-extracted)</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="e.g. alex.chen@email.com"
-                className="w-full rounded-md border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                placeholder="e.g. candidate@gmail.com"
+                className="w-full rounded-md border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring font-mono"
               />
             </div>
           </div>
@@ -932,27 +1137,30 @@ function UploadModal({
                 step="0.5"
                 value={exp}
                 onChange={(e) => setExp(parseFloat(e.target.value) || 0)}
-                className="w-full rounded-md border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className="w-full rounded-md border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring font-mono"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">Tech Stack (comma-separated)</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Core Tech Stack (Auto-detected)</label>
               <input
                 value={skillsStr}
                 onChange={(e) => setSkillsStr(e.target.value)}
-                placeholder="React, TypeScript, Next.js, Node.js"
+                placeholder="React, TypeScript, Python, FastAPI"
                 className="w-full rounded-md border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1">Extracted Resume Text / Notes</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-medium text-muted-foreground">Extracted Resume Text (Clean)</label>
+              {resumeText && <span className="text-[10px] text-muted-foreground font-mono">{resumeText.length} characters extracted</span>}
+            </div>
             <textarea
-              rows={3}
+              rows={4}
               value={resumeText}
               onChange={(e) => setResumeText(e.target.value)}
-              placeholder="Resume content extracted from document..."
+              placeholder="Resume text extracted by PDF.js engine will appear here..."
               className="w-full rounded-md border bg-background p-2.5 text-xs font-mono outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -961,7 +1169,7 @@ function UploadModal({
             <button type="button" onClick={() => onOpenChange(false)} className="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-accent">
               Cancel
             </button>
-            <button type="submit" className="rounded-md bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90">
+            <button type="submit" disabled={parsing || !name.trim()} className="rounded-md bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50">
               Ingest & Score against Active Role
             </button>
           </div>
