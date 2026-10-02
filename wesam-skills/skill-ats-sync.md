@@ -1,7 +1,7 @@
 ---
 name: ats-sync
 skill: ats-sync
-description: Autonomous screening run. Pulls emailed CVs into the TalentScout pipeline, evaluates every queued candidate, writes invites and rejections for one-click approval on the dashboard, and reports a shortlist.
+description: Autonomous screening run. Pulls emailed CVs into the TalentScout pipeline, evaluates every queued candidate, writes and sends invites and constructive rejections via Brevo, and reports a shortlist.
 triggers:
   - screen new applicants
   - run screening
@@ -21,6 +21,7 @@ URL-encode every parameter value (spaces → %20, | stays as the list separator)
   {{LILI_API_BASE}}/next?t=…                      → the oldest candidate waiting for you: candidate_id, cv_text, role (job description, must_haves, weights, min_years), scoring_rules. {"done": true} when nothing is waiting.
   {{LILI_API_BASE}}/submit?id=…&score=…&summary=…&strengths=a|b&gaps=x|y&t=…   → save your evaluation (the tier is computed from the score)
   {{LILI_API_BASE}}/outreach?id=…&type=invite|reject|hold&subject=…&body=…&t=…   → record the email you wrote (shown on the dashboard for approval)
+  {{LILI_API_BASE}}/send?id=…&t=…                → send the recorded email for that candidate via Brevo (repeat-safe; demo mode delivers to the recruiter's inbox)
   {{LILI_API_BASE}}/roles?t=…                     → open roles (role_id, title, must_haves) for routing emailed CVs
   {{LILI_API_BASE}}/ingest?role_id=…&name=…&email=…&ref=<gmail message id>&cv=<CV text, max 4000 chars>&t=…   → add an emailed applicant (repeat-safe)
   {{LILI_API_BASE}}/help                          → this list
@@ -59,7 +60,8 @@ For every candidate you scored, write the email and record it by reading /outrea
 - Tier 3 → type=reject: respectful, with one specific, constructive gap.
 - Tier 2 → type=hold: one-line internal note as the body.
 Sign emails "Laila Mohamed, Technical Recruitment Lead". Keep the body under 1200 characters.
-The email appears on the recruiter's dashboard (Outreach tab) for one-click approval and sending. You never send anything.
+Then, for Tier 1 and Tier 3 only, read /send?id=<candidate_id> to deliver it via Brevo. Never send for Tier 2 (hold).
+If /send returns ok:false (for example sending is not configured), keep going: the email stays on the dashboard for one-click sending, and you mention it once under "Needs you".
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STEP 4 — REPORT (plain lines and bullets only: NO markdown tables, NO pipes "|", NO horizontal rules)
@@ -68,7 +70,7 @@ STEP 4 — REPORT (plain lines and bullets only: NO markdown tables, NO pipes "|
 
 **Summary**
 - 🧮 Screened: [N] · 🟢 Tier 1: [N] · 🟡 Tier 2: [N] · 🔴 Tier 3: [N]
-- ✉️ Emails ready for your approval on the dashboard: [N invites, N feedback]
+- ✉️ Emails sent via Brevo: [N invites, N feedback] (demo mode delivers them to your inbox)
 - ⏱ Recruiter time saved this run: ~[20 × screened] minutes
 
 **🏆 Shortlist**
@@ -78,7 +80,7 @@ For each candidate, highest score first, exactly this block:
 - **Top evidence:** [one CV fact with its source]
 - **Gap to probe:** [one gap]
 - **Cap applied:** [None / 69 under-experience / 74 missing must-have]
-- **Next step:** [Invite drafted / Feedback drafted / On bench]
+- **Next step:** [Invite sent / Feedback sent / On bench]
 
 **⚠️ Needs you:** [only real blockers; omit this line if none]
 

@@ -1961,7 +1961,7 @@ ${o.body}`;
     }
 
     function sameCandidate(a, b) {
-      const pick = c => JSON.stringify([c.name, c.email, c.status, c.score, c.tier, c.roleId, c.liliScore, c.liliEvaluatedAt, c.emailDraft, c.liliOutreach && c.liliOutreach.drafted_at]);
+      const pick = c => JSON.stringify([c.name, c.email, c.status, c.score, c.tier, c.roleId, c.liliScore, c.liliEvaluatedAt, c.emailDraft, c.liliOutreach && c.liliOutreach.drafted_at, c.liliOutreach && c.liliOutreach.sent_at]);
       return pick(a) === pick(b);
     }
 
@@ -1987,6 +1987,10 @@ ${o.body}`;
       } else if (newVerdict) {
         liliLog('sparkles', `Lili evaluated ${incoming.name}: ${incoming.liliScore}/100, Tier ${incoming.liliTier}`, 'success');
         showToast(`Lili evaluated ${incoming.name}: ${incoming.liliScore}/100 (Tier ${incoming.liliTier})`, 'success');
+      } else if (incoming.liliOutreach && incoming.liliOutreach.sent_at && !(existing && existing.liliOutreach && existing.liliOutreach.sent_at)) {
+        const demo = incoming.liliOutreach.mode === 'demo';
+        liliLog('send', `Lili emailed ${incoming.name} via Brevo${demo ? ' (demo mode: delivered to your inbox)' : ''}`, 'success');
+        showToast(`Lili sent ${incoming.name}'s email${demo ? ' (demo: check your inbox)' : ''}`, 'success');
       } else if (newOutreach) {
         const kind = incoming.liliOutreach.type === 'invite' ? 'an interview invite' : incoming.liliOutreach.type === 'reject' ? 'feedback' : 'a bench note';
         liliLog('mail', `Lili drafted ${kind} for ${incoming.name} in Gmail, waiting for your approval`, 'success');

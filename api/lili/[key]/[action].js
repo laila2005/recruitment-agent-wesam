@@ -1,10 +1,11 @@
 // Vercel Serverless Function: Lili's ATS over plain GET URLs, for agents that can only "read a web page".
 // Same six tools and database functions as the MCP server (api/mcp.js), addressed as
 //   GET /api/lili/<LILI_MCP_KEY>/<action>?param=value
-// Actions: next, pending, candidate, submit, outreach, roles, ingest, help
+// Actions: next, pending, candidate, submit, outreach, send, roles, ingest, help
 // Writes over GET are deliberate (the agent's web reader only issues GETs); every write is idempotent.
 
 import { TOOLS, callRpc, safeEqual } from '../../mcp.js';
+import { sendOutreach } from '../../_lib/send-outreach.js';
 
 const tool = name => TOOLS.find(t => t.name === name);
 const list = v => String(v || '').split('|').map(s => s.trim()).filter(Boolean);
@@ -16,7 +17,8 @@ const HELP = {
     pending: 'List waiting candidates. Params: limit (1-25).',
     candidate: 'One candidate packet. Params: id.',
     submit: 'Save your evaluation. Params: id, score (0-100 after caps), summary, strengths (items separated by |), gaps (items separated by |).',
-    outreach: 'Record the Gmail draft you created. Params: id, type (invite|reject|hold), subject, body, draft_id.',
+    outreach: 'Record the email you wrote. Params: id, type (invite|reject|hold), subject, body.',
+    send: 'Send the recorded email for one candidate via Brevo. Params: id. Repeat-safe (already-sent returns already_sent).',
     roles: 'Open roles for routing emailed applications.',
     ingest: 'Add an emailed applicant. Params: role_id, name, email, ref (Gmail message id), cv (CV text, max 4000 chars).'
   }
@@ -54,6 +56,9 @@ async function run(action, q) {
       return callRpc('lili_record_outreach', tool('record_outreach').args({
         candidate_id: q.id, type: q.type, subject: q.subject, body: q.body, gmail_draft_id: q.draft_id
       }));
+    case 'send':
+      if (!q.id) throw new Error('Missing id');
+      return sendOutreach(String(q.id));
     case 'ingest':
       if (!q.role_id || !q.name || !q.cv || !q.ref) throw new Error('Missing role_id, name, cv, or ref');
       return callRpc('lili_ingest_application', tool('ingest_application').args({
