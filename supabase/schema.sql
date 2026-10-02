@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS public.job_roles (
 -- 2. Create CANDIDATES table
 CREATE TABLE IF NOT EXISTS public.candidates (
     id TEXT PRIMARY KEY,
-    role_id TEXT REFERENCES public.job_roles(id) ON DELETE CASCADE,
+    role_id TEXT,
     anon_id TEXT NOT NULL,
     name TEXT NOT NULL,
     contact_email TEXT,
@@ -49,6 +49,7 @@ DROP POLICY IF EXISTS "Public access for job_roles" ON public.job_roles;
 CREATE POLICY "Public access for job_roles"
     ON public.job_roles
     FOR ALL
+    TO anon, authenticated
     USING (true)
     WITH CHECK (true);
 
@@ -56,6 +57,7 @@ DROP POLICY IF EXISTS "Public access for candidates" ON public.candidates;
 CREATE POLICY "Public access for candidates"
     ON public.candidates
     FOR ALL
+    TO anon, authenticated
     USING (true)
     WITH CHECK (true);
 
