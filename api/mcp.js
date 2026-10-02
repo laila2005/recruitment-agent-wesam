@@ -152,6 +152,7 @@ async function handleMessage(msg) {
     return rpcError(msg && msg.id, -32600, 'Invalid Request');
   }
   const isNotification = msg.id === undefined || msg.id === null;
+  console.log('mcp', msg.method, (msg.params && msg.params.name) || '');
 
   switch (msg.method) {
     case 'initialize': {
@@ -190,9 +191,18 @@ async function handleMessage(msg) {
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
 
-  // Prefer the Authorization header; ?key= is a fallback for MCP clients that only accept a URL
-  const key = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || req.headers['x-lili-mcp-key'] || req.query.key || '';
-  if (!process.env.LILI_MCP_KEY || !safeEqual(String(key), process.env.LILI_MCP_KEY)) {
+  // Accept the key from the Authorization header, x-lili-mcp-key, or ?key= (for MCP clients that only take a URL).
+  // Any one matching is enough: some clients (Wesam) add their own Authorization header to proxied calls.
+  const supplied = {
+    bearer: (req.headers.authorization || '').replace(/^Bearer\s+/i, ''),
+    header: req.headers['x-lili-mcp-key'] || '',
+    query: req.query.key || ''
+  };
+  const authorized = !!process.env.LILI_MCP_KEY &&
+    Object.values(supplied).some(v => v && safeEqual(String(v), process.env.LILI_MCP_KEY));
+  if (!authorized) {
+    // Which credential sources were present (never their values), to debug client behaviour
+    console.warn('mcp unauthorized; sources present:', Object.keys(supplied).filter(k => supplied[k]).join(',') || 'none');
     return res.status(401).json(rpcError(null, -32001, 'Unauthorized'));
   }
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
