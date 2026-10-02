@@ -1,7 +1,7 @@
 ---
 name: candidate-outreach
 skill: candidate-outreach
-description: Generates automated, personalized candidate communication emails tailored to disposition (Fast-Track Interview Invite, Pipeline Keep-Warm, or Constructive Feedback Rejection). Eliminates candidate ghosting for lean teams without an ATS.
+description: Autonomous Human-in-the-Loop candidate communication and task execution engine. Generates and dispatches personalized interview invitations, keep-warm updates, and constructive feedback rejections based on HR dashboard selections, maintaining an audit task list.
 triggers:
   - generate outreach email
   - candidate email
@@ -9,49 +9,77 @@ triggers:
   - interview invitation email
   - draft candidate communication
   - batch email
+  - dispatch candidate communications
+  - send emails to selected
+  - execute HR decisions
+  - approve candidates
 ---
 
-You are executing the Candidate Outreach & Communication skill.
+You are executing the Autonomous Candidate Outreach & Task Execution skill.
 
 OBJECTIVE:
-Small companies often ghost applicants because writing individualized emails takes hours. Generate professional, empathetic, and personalized emails tailored to each candidate's evaluation tier, protecting employer branding and saving recruiter time.
+Close the loop from evaluation to candidate communication. Once the HR manager reviews the comparison dashboard and provides decision directives (e.g., "Approve C-01, Reject C-03"), autonomously generate the personalized communications, queue execution tasks, and log completion to the audit trail.
 
-EMAIL TYPES BY DISPOSITION:
+EXECUTION PROTOCOL (HUMAN-IN-THE-LOOP):
 
-### 1. 🟢 TIER 1: FAST-TRACK INTERVIEW INVITATION
-- Tone: Warm, enthusiastic, efficient.
-- Requirements:
-  * Reference 1 specific accomplishment from their resume (e.g., "We were particularly impressed by your work scaling the payment pipeline...").
-  * Clearly define the screening format (30-minute informal technical/culture screen).
-  * Include a placeholder for the scheduling link `[Insert Calendly/Booking Link]`.
-  * Specify what to expect so the candidate can prepare.
+### Step 1: Decision Ingestion
+Accept HR directives in free text or structured selection:
+- "Approve [Candidate ID(s)] for interview"
+- "Reject [Candidate ID(s)]"
+- "Keep [Candidate ID(s)] on hold"
 
-### 2. 🟡 TIER 2: BENCH / "KEEP WARM" UPDATE
-- Tone: Transparent, encouraging, professional.
-- Requirements:
-  * Acknowledge receipt and affirm strong qualification.
-  * Honestly explain that the team is progressing through initial interview batches.
-  * Provide a clear timeline for when they will hear back (e.g., within 7–10 business days).
+### Step 2: Task Queue Generation
+Before sending, generate a structured task list:
+- [ ] Task 1: Generate & dispatch 1st-round screen invite to [Approved ID] (with Calendly link).
+- [ ] Task 2: Generate & dispatch constructive feedback rejection to [Rejected ID].
+- [ ] Task 3: Send keep-warm pipeline notice to [Hold ID].
+- [ ] Task 4: Update candidate status in the ATS CSV database.
 
-### 3. 🔴 TIER 3: CONSTRUCTIVE & RESPECTFUL REJECTION
-- Tone: Empathetic, appreciative, respectful of their time.
-- Requirements:
-  * Thank them genuinely for applying.
-  * Provide honest, non-judgmental role-fit context (e.g., "For this specific opening, we are strictly prioritizing candidates with 5+ years of production design system leadership").
-  * Encourage future applications as their background evolves.
-  * NEVER use generic robotic corporate phrasing like "While your background is impressive, we have chosen to move forward with other candidates."
+### Step 3: Personalized Email Generation (Zero-Generic Rule)
+Every email must be uniquely tailored:
+1. **🟢 Approved (Invite):** Enthusiastic tone, mentions their specific standout achievement, states interview duration (30 min), provides calendar scheduling link `[Insert Booking Link]`.
+2. **🟡 Hold (Keep-Warm):** Reassuring tone, affirms qualification, explains that initial batch reviews are underway, provides exact follow-up timeline (7–10 days).
+3. **🔴 Rejected (Constructive Feedback):** Empathetic tone, thanks them sincerely, references the specific role-fit criterion prioritized (e.g., "prioritizing 5+ years of design system architecture"), avoids canned corporate rejection cliches.
+
+### Step 4: Dispatch Confirmation & Audit Log
+Produce the final dispatch report confirming all actions executed.
 
 OUTPUT FORMAT:
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✉️ CANDIDATE OUTREACH PACKAGE
-Candidate ID: [ID / Name] | Role: [Job Title] | Status: [Tier 1 / 2 / 3]
+⚡ AUTONOMOUS DISPATCH EXECUTION & TASK LOG
+Role: [Job Title] | Directives Processed: [N] | Timestamp: [Date/Time]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-**Subject Line:** [Actionable, clear subject line]
-
-**Email Body:**
-[Complete, ready-to-copy email text]
+### 📋 EXECUTION TASK LIST
+• ✅ Task 1: Dispatched 1st-round interview invitation to **[Candidate ID 1]** (Delivery: Queued/Sent)
+• ✅ Task 2: Dispatched personalized constructive rejection to **[Candidate ID 2]** (Delivery: Queued/Sent)
+• ✅ Task 3: Updated candidate status in ATS Pipeline CSV (`sample-data/candidate_pipeline_export.csv`)
 
 ---
-*HR Note: Copy-paste directly into your email client or mail-merge tool.*
+
+### ✉️ DISPATCHED COMMUNICATIONS
+
+#### 1. [Candidate ID 1] — 🟢 1st-Round Interview Invitation
+**Subject:** Next Steps: Senior Backend Engineer at [Company] — Interview Invitation  
+**Recipient:** [Email / Candidate ID]  
+**Body:**  
+[Personalized email body referencing specific resume achievement and booking link]
+
+---
+
+#### 2. [Candidate ID 2] — 🔴 Constructive Feedback Rejection
+**Subject:** Update regarding your application for Senior Backend Engineer at [Company]  
+**Recipient:** [Email / Candidate ID]  
+**Body:**  
+[Empathetic, personalized rejection email explaining the specific skill prioritization]
+
+---
+
+### 📊 PIPELINE STATUS SUMMARY
+• Total Applicants Processed: [N]
+• Scheduled for Screen: [X]
+• Active on Bench: [Y]
+• Archived with Feedback: [Z]
+• Candidate Ghosting Rate: **0% (100% Notified)**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
