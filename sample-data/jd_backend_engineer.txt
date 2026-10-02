@@ -1,0 +1,48 @@
+Senior Backend Engineer — Full-Time
+TechFlow Solutions | San Francisco, CA (Remote-Friendly)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ABOUT THE ROLE
+
+We're looking for a Senior Backend Engineer to lead the design and development of our core API infrastructure. You'll work on high-throughput distributed systems serving 2M+ daily active users, collaborate closely with our product and data teams, and mentor 2–3 junior engineers.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+MANDATORY REQUIREMENTS
+
+• 5+ years of professional backend engineering experience
+• Proficiency in Python (FastAPI or Django REST) — REQUIRED
+• Experience designing and operating PostgreSQL or equivalent relational DB at scale
+• Demonstrated experience with RESTful API design and microservices architecture
+• Prior experience mentoring junior engineers or leading a squad
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+STRONG PREFERENCES (Not Mandatory)
+
+• AWS experience (EC2, RDS, Lambda, SQS)
+• Docker and Kubernetes orchestration
+• Experience with Redis for caching / job queues
+• CI/CD pipeline ownership (GitHub Actions, Jenkins, or equivalent)
+• Prior startup or high-growth environment experience
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+WHAT YOU'LL DO
+
+• Architect and build scalable backend services for our core product APIs
+• Design data models and query optimization strategies for high-throughput workloads
+• Conduct code reviews and enforce engineering standards
+• Partner with Product and Design on technical feasibility reviews
+• Mentor junior backend engineers and contribute to technical hiring
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+COMPENSATION & BENEFITS
+
+• $155,000 – $185,000 USD base salary + equity grant (0.1% – 0.25%)
+• Comprehensive health, dental, and vision coverage
+• $3,000 annual learning & conference budget
+• Remote-first culture with optional hub offices in SF, NYC, and London
+• Flexible PTO (recommended minimum 3 weeks)
