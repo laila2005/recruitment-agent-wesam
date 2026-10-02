@@ -1224,6 +1224,8 @@
             <div class="font-medium text-zinc-100 flex items-center gap-2">
               <span class="text-zinc-500 font-mono text-[11px]">#${idx + 1}</span>
               <span>${escapeHtml(isAnon ? c.id : c.name)}</span>
+              ${c.source === 'email' ? '<span class="px-1.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/20 text-[10px]" title="Lili picked this application up from your inbox">via email</span>' : ''}
+              ${isCloud() && c.cvText && (c.liliScore === null || c.liliScore === undefined) ? '<span class="lili-busy inline-flex items-center gap-1 px-1.5 rounded bg-violet-500/10 text-violet-300 border border-violet-500/20 text-[10px]" title="Lili evaluates new candidates automatically"><span class="lili-dot w-1.5 h-1.5 rounded-full bg-violet-400"></span>Queued for Lili</span>' : ''}
             </div>
             <div class="text-[11px] text-zinc-500">${isAnon ? 'Confidential Applicant' : (escapeHtml(c.email) || '<span class="text-amber-400">No email found</span>')}</div>
           </td>
@@ -1757,7 +1759,9 @@
         liliStrengths: Array.isArray(r.lili_strengths) ? r.lili_strengths : [],
         liliGaps: Array.isArray(r.lili_gaps) ? r.lili_gaps : [],
         liliEvidence: Array.isArray(r.lili_evidence) ? r.lili_evidence : [],
-        liliEvaluatedAt: r.lili_evaluated_at || null
+        liliEvaluatedAt: r.lili_evaluated_at || null,
+        liliOutreach: r.lili_outreach || null,
+        source: r.source || 'dashboard'
       };
     }
 
@@ -1873,6 +1877,7 @@
 
         jobs = cloudJobs;
         candidates = cloudCandidates;
+        backfillPrescreen(candidates);
         if (!jobs.some(j => j.id === currentJobId)) currentJobId = jobs[0].id;
         persistJSON(storageKey('talentscout_jobs'), jobs);
         persistJSON(storageKey('talentscout_real_candidates_v3'), candidates);
@@ -1940,7 +1945,7 @@
     }
 
     function sameCandidate(a, b) {
-      const pick = c => JSON.stringify([c.name, c.email, c.status, c.score, c.tier, c.roleId, c.liliScore, c.liliEvaluatedAt, c.emailDraft]);
+      const pick = c => JSON.stringify([c.name, c.email, c.status, c.score, c.tier, c.roleId, c.liliScore, c.liliEvaluatedAt, c.emailDraft, c.liliOutreach && c.liliOutreach.drafted_at]);
       return pick(a) === pick(b);
     }
 
@@ -1959,15 +1964,23 @@
       if (existing && sameCandidate(existing, incoming)) return; // echo of our own write
 
       const newVerdict = incoming.liliScore !== null && (!existing || existing.liliEvaluatedAt !== incoming.liliEvaluatedAt);
-      if (newVerdict) {
-        liliLog('sparkles', `Lili (Wesam) verified ${incoming.name}: ${incoming.liliScore}/100, Tier ${incoming.liliTier}`, 'success');
-        showToast(`Lili verified ${incoming.name}: ${incoming.liliScore}/100 (Tier ${incoming.liliTier})`, 'success');
+      const newOutreach = incoming.liliOutreach && (!existing || !existing.liliOutreach || existing.liliOutreach.drafted_at !== incoming.liliOutreach.drafted_at);
+      if (!existing && incoming.source === 'email') {
+        liliLog('mail-plus', `Lili picked up ${incoming.name}'s emailed application and added it to the pipeline`, 'success');
+        showToast(`New applicant from email: ${incoming.name}`, 'success');
+      } else if (newVerdict) {
+        liliLog('sparkles', `Lili evaluated ${incoming.name}: ${incoming.liliScore}/100, Tier ${incoming.liliTier}`, 'success');
+        showToast(`Lili evaluated ${incoming.name}: ${incoming.liliScore}/100 (Tier ${incoming.liliTier})`, 'success');
+      } else if (newOutreach) {
+        const kind = incoming.liliOutreach.type === 'invite' ? 'an interview invite' : incoming.liliOutreach.type === 'reject' ? 'feedback' : 'a bench note';
+        liliLog('mail', `Lili drafted ${kind} for ${incoming.name} in Gmail, waiting for your approval`, 'success');
       } else {
         liliLog('refresh-cw', existing ? `${incoming.name} updated on another device` : `${incoming.name} added on another device`);
       }
 
       if (index >= 0) candidates[index] = { ...existing, ...incoming };
       else candidates.unshift(incoming);
+      backfillPrescreen([candidates.find(c => c.id === incoming.id)]);
       if (currentDrawerCandidateId === incoming.id) renderDrawerLiliVerdict(candidates.find(c => c.id === incoming.id));
       scheduleRealtimeRender();
     }
@@ -2770,34 +2783,56 @@ ${inbox.recruiterEmail}`;
       } else {
         el.innerHTML = `
           <div class="flex items-center justify-between gap-3 rounded-lg border border-zinc-800 bg-zinc-800/30 p-3">
-            <p class="text-zinc-400 leading-snug">This score is an instant keyword pre-screen. Ask Lili for an evidence-cited deep evaluation; it lands here live.</p>
-            <button onclick="requestLiliEvaluation()" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-violet-500/20 hover:bg-violet-500/30 text-violet-200 border border-violet-500/30 font-semibold flex items-center gap-1"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Deep evaluate</button>
+            <p class="text-zinc-400 leading-snug lili-busy flex items-start gap-2"><span class="lili-dot mt-1.5 w-1.5 h-1.5 shrink-0 rounded-full bg-violet-400"></span><span>${escapeHtml(liliQueueMessage(c))}</span></p>
+            <button onclick="requestLiliEvaluation()" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-violet-500/20 hover:bg-violet-500/30 text-violet-200 border border-violet-500/30 font-semibold flex items-center gap-1"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> Watch Lili</button>
           </div>`;
       }
       if (window.lucide) lucide.createIcons({ root: el });
     }
 
+    const LILI_SCHEDULE_TEXT = 'every 15 minutes';
+
+    function liliQueueMessage(c) {
+      if (!isCloud()) return 'Sign in so Lili can pick this candidate up. She screens your cloud pipeline automatically.';
+      if (!c.cvText) return 'No CV text stored for this candidate. Re-import their CV and Lili will evaluate it automatically.';
+      return `Queued. Lili evaluates new candidates on her own (${LILI_SCHEDULE_TEXT}), drafts the outreach email, and her evidence-cited verdict appears here live. The score above is the instant pre-screen.`;
+    }
+
+    // Opens Lili's workspace so the recruiter can watch her work. No copy-paste: she finds queued candidates herself.
     function requestLiliEvaluation() {
-      const c = candidates.find(cand => cand.id === currentDrawerCandidateId);
-      if (!c) return;
-      if (!isCloud()) {
-        showToast('Sign in first. Lili reads the CV from your private cloud pipeline.', 'error');
-        return;
-      }
-      if (!c.cvText) {
-        showToast('No CV text stored for this candidate. Re-import their CV so Lili can read it.', 'error');
-        return;
-      }
-      const prompt = `Evaluate candidate ${c.id}`;
       const wesamUrl = getInboxConfig().wesamUrl;
-      // Open synchronously inside the click so popup blockers allow it
-      const win = wesamUrl ? window.open(wesamUrl, '_blank') : null;
+      if (!wesamUrl) {
+        showToast("Add Lili's Wesam link in Inbox settings to open her workspace from here.", 'error');
+        return;
+      }
+      const win = window.open(wesamUrl, '_blank');
       if (win) win.opener = null;
-      navigator.clipboard.writeText(prompt).catch(() => {});
-      liliLog('send', `Asked Lili (Wesam) for a deep evaluation of ${c.name} (${c.id})`);
-      showToast(wesamUrl
-        ? `Copied "${prompt}". Paste it into Lili's chat${win ? '' : ' (allow popups to open Wesam automatically)'}; her verdict will appear here live.`
-        : `Copied "${prompt}". Paste it into Lili's chat on Wesam (add her link in Inbox settings to open it automatically).`);
+      else showToast('Popup blocked. Allow popups for this site to open Lili.', 'error');
+    }
+
+    // Applicants Lili adds from email arrive without a pre-screen; compute it here so the table and rubric bars stay complete
+    function backfillPrescreen(list) {
+      if (!isCloud()) return;
+      const updated = [];
+      for (const c of list) {
+        if (!c || !c.cvText || (c.breakdown || []).length > 0) continue;
+        const job = jobs.find(j => j.id === c.roleId);
+        if (!job) continue;
+        const years = extractYears(c.cvText);
+        const skills = detectSkills(c.cvText, job);
+        const fresh = buildCandidate({ name: c.name, email: c.email, exp: years ?? 0, skills, text: c.cvText, job });
+        Object.assign(c, {
+          score: fresh.score, tier: fresh.tier, skills, exp: fresh.exp, breakdown: fresh.breakdown,
+          missing: fresh.missing, takeaway: fresh.takeaway, strengths: fresh.strengths, gaps: fresh.gaps,
+          status: c.status === 'Received by email' ? fresh.status : c.status
+        });
+        if (years === null) c.gaps.unshift('Years of experience could not be determined from the CV. Verify manually.');
+        updated.push(c);
+      }
+      if (updated.length) {
+        upsertCandidatesToSupabase(updated);
+        scheduleRealtimeRender();
+      }
     }
 
     // Drawer Open
