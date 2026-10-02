@@ -569,56 +569,10 @@
     let jobs = JSON.parse(localStorage.getItem('talentscout_jobs')) || defaultJobs;
     let currentJobId = 'frontend';
 
-    // INITIAL CANDIDATES DATA
-    const defaultCandidates = [
-      {
-        id: 'C-01',
-        name: 'Sarah Lin',
-        email: 'sarah.lin@email.com',
-        roleId: 'frontend',
-        score: 94,
-        tier: 'tier1',
-        status: 'Fast-Track',
-        skills: ['React 18', 'Next.js', 'TypeScript', 'Storybook', 'Web Vitals'],
-        exp: 6.5,
-        takeaway: 'Storybook architect across 6 teams; verified LCP 1.4s optimization. Top tier match.',
-        strengths: ['Architected Storybook design system across 6 teams.', 'Optimized Core Web Vitals: LCP 3.8s to 1.4s.', 'Mentored 4 junior developers.'],
-        gaps: ['Limited GraphQL production experience noted.'],
-        emailDraft: `Subject: Next Steps: Senior Frontend Lead at PixelCraft\n\nHi Sarah,\nThank you for applying. We were particularly impressed by your experience architecting Storybook design systems across 6 teams and your verified Core Web Vitals optimization.\n\nWe'd love to invite you to an initial 30-minute screening conversation: [Insert Booking Link]\n\nBest,\nTalentScout Hiring Team`
-      },
-      {
-        id: 'C-02',
-        name: 'Devin R.',
-        email: 'devin.r@email.com',
-        roleId: 'frontend',
-        score: 78,
-        tier: 'tier2',
-        status: 'Bench / Review',
-        skills: ['React', 'TypeScript', 'Redux'],
-        exp: 5.2,
-        takeaway: 'Strong Redux state architect; lacks SSR/Next.js exposure and formal team leadership.',
-        strengths: ['Solid Redux and TypeScript foundation.', 'Built high-traffic e-commerce SPAs with 80% test coverage.'],
-        gaps: ['Lacks Next.js App Router experience.', 'No formal team leadership or design system architecture.'],
-        emailDraft: `Subject: Update regarding your application for Senior Frontend Lead at PixelCraft\n\nHi Devin,\nThank you for your application. Our team is currently conducting initial screening calls with our first cohort of candidates. We'd love to keep your profile active in our bench and follow up within 7-10 business days.\n\nBest,\nTalentScout Hiring Team`
-      },
-      {
-        id: 'C-03',
-        name: 'Jordan Blake',
-        email: 'jordan.blake@email.com',
-        roleId: 'frontend',
-        score: 48,
-        tier: 'tier3',
-        status: 'Does Not Meet Bar',
-        skills: ['React (2y)', 'WordPress', 'HTML/CSS'],
-        exp: 3.1,
-        takeaway: 'WordPress-focused builder; does not meet the 5-year mandatory senior bar. Score capped.',
-        strengths: ['Experience with client communication and WordPress landing pages.'],
-        gaps: ['Does not meet 5-year mandatory senior bar.', 'No production TypeScript or enterprise component libraries.'],
-        emailDraft: `Subject: Update regarding your application for Senior Frontend Lead at PixelCraft\n\nHi Jordan,\nThank you for taking the time to apply to PixelCraft. For this specific lead position, we are strictly prioritizing candidates with 5+ years of enterprise TypeScript and design system leadership. We truly appreciate your time and wish you the best.\n\nBest,\nTalentScout Hiring Team`
-      }
-    ];
+    // INITIAL CANDIDATES DATA (Empty by default for real evaluations)
+    const defaultCandidates = [];
 
-    let candidates = JSON.parse(localStorage.getItem('talentscout_candidates')) || defaultCandidates;
+    let candidates = JSON.parse(localStorage.getItem('talentscout_real_candidates_v3')) || [];
     let currentFilter = 'all';
 
     function saveJobs() {
@@ -627,7 +581,7 @@
     }
 
     function saveCandidates() {
-      localStorage.setItem('talentscout_candidates', JSON.stringify(candidates));
+      localStorage.setItem('talentscout_real_candidates_v3', JSON.stringify(candidates));
       renderTable();
     }
 
