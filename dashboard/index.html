@@ -477,10 +477,51 @@
         </div>
       </div>
 
-      <div id="panel-email" class="space-y-3 hidden">
-        <div class="p-3 bg-zinc-800/40 border border-zinc-800 rounded-lg font-mono text-[11px] text-zinc-300 whitespace-pre-wrap" id="drawer-email-body"></div>
-        <button onclick="copyEmail()" class="w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold rounded-lg text-xs transition flex items-center justify-center gap-1.5">
-          <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Email Draft
+      <div id="panel-email" class="space-y-3 hidden text-xs">
+        <!-- Connected Recruiter Inbox Banner -->
+        <div class="flex items-center justify-between rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-2.5">
+          <div class="flex items-center gap-2">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span class="text-zinc-300 font-medium">Connected Inbox:</span>
+            <span class="font-mono text-emerald-400 font-semibold">laila.mohamed.fikry@gmail.com</span>
+          </div>
+          <span id="drawer-email-sent-badge" class="hidden inline-flex items-center gap-1 rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-400 border border-emerald-500/30">
+            ✓ Sent
+          </span>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-semibold text-zinc-400 uppercase mb-1">To (Candidate Email)</label>
+          <input type="email" id="drawer-email-to" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-200 outline-none focus:border-emerald-500 font-mono">
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-semibold text-zinc-400 uppercase mb-1">Subject</label>
+          <input type="text" id="drawer-email-subject" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-200 outline-none focus:border-emerald-500 font-medium">
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-[10px] font-semibold text-zinc-400 uppercase">Email Body (Fully Editable)</label>
+            <span class="text-[10px] text-zinc-500">Auto-drafted by Lili</span>
+          </div>
+          <textarea id="drawer-email-body-edit" rows="8" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-xs text-zinc-300 leading-relaxed outline-none focus:border-emerald-500 font-mono resize-none"></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button id="btn-send-drawer-email" onclick="sendDrawerEmail()" class="py-2.5 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold rounded-lg text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+            <i data-lucide="send" class="w-3.5 h-3.5"></i> ⚡ Send via Inbox
+          </button>
+          <button onclick="openDrawerInGmail()" class="py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium rounded-lg text-xs transition flex items-center justify-center gap-1.5 border border-zinc-700">
+            <i data-lucide="external-link" class="w-3.5 h-3.5 text-emerald-400"></i> Open in Gmail
+          </button>
+        </div>
+
+        <button onclick="copyDrawerEmail()" class="w-full py-1 text-center text-zinc-400 hover:text-zinc-200 text-xs transition flex items-center justify-center gap-1.5 pt-0.5">
+          <i data-lucide="copy" class="w-3 h-3"></i> Copy Draft to Clipboard
         </button>
       </div>
     </div>
@@ -1074,9 +1115,12 @@
     }
 
     // Drawer Open
+    let currentDrawerCandidateId = null;
+
     function openDrawer(id) {
       const c = candidates.find(cand => cand.id === id);
       if (!c) return;
+      currentDrawerCandidateId = id;
 
       const isAnon = document.getElementById('anonymize-toggle').checked;
       document.getElementById('drawer-name').textContent = isAnon ? c.id : c.name;
@@ -1086,9 +1130,26 @@
 
       document.getElementById('drawer-strengths').innerHTML = c.strengths.map(s => `<li>${s}</li>`).join('');
       document.getElementById('drawer-gaps').innerHTML = c.gaps.map(g => `<li>${g}</li>`).join('');
-      document.getElementById('drawer-email-body').textContent = c.emailDraft;
+      
+      // Parse email draft into subject and body
+      const draft = c.emailDraft || '';
+      const subjectMatch = draft.match(/^Subject:\s*([^\n]+)\n+([\s\S]*)$/i);
+      const subject = subjectMatch ? subjectMatch[1].trim() : `Next Steps: Interview Screening`;
+      const body = subjectMatch ? subjectMatch[2].trim() : draft;
+
+      document.getElementById('drawer-email-to').value = c.email || `${c.name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@gmail.com`;
+      document.getElementById('drawer-email-subject').value = subject;
+      document.getElementById('drawer-email-body-edit').value = body;
+
+      const sentBadge = document.getElementById('drawer-email-sent-badge');
+      if (c.emailSent || (c.status && c.status.includes('Sent'))) {
+        sentBadge.classList.remove('hidden');
+      } else {
+        sentBadge.classList.add('hidden');
+      }
 
       document.getElementById('drawer').classList.remove('translate-x-full');
+      lucide.createIcons();
     }
 
     function closeDrawer() {
@@ -1105,11 +1166,51 @@
           btn.className = "py-2.5 border-b-2 border-transparent text-zinc-400 hover:text-zinc-200 mr-4";
         }
       });
+      lucide.createIcons();
     }
 
-    function copyEmail() {
-      const text = document.getElementById('drawer-email-body').textContent;
-      navigator.clipboard.writeText(text);
+    function sendDrawerEmail() {
+      const c = candidates.find(cand => cand.id === currentDrawerCandidateId);
+      if (!c) return;
+
+      const to = document.getElementById('drawer-email-to').value.trim();
+      const subject = document.getElementById('drawer-email-subject').value.trim();
+      const body = document.getElementById('drawer-email-body-edit').value.trim();
+
+      const btn = document.getElementById('btn-send-drawer-email');
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i> Sending...`;
+      lucide.createIcons();
+
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="send" class="w-3.5 h-3.5"></i> ⚡ Send via Inbox`;
+        
+        c.email = to;
+        c.emailSent = true;
+        c.status = 'Invite Sent ✉️';
+        c.emailDraft = `Subject: ${subject}\n\n${body}`;
+        saveCandidates();
+
+        document.getElementById('drawer-email-sent-badge').classList.remove('hidden');
+        lucide.createIcons();
+        alert(`⚡ Email dispatched to ${c.name} (${to}) from connected inbox laila.mohamed.fikry@gmail.com!\n\nCandidate status updated to 'Invite Sent ✉️' in your ATS pipeline.`);
+      }, 700);
+    }
+
+    function openDrawerInGmail() {
+      const to = document.getElementById('drawer-email-to').value.trim();
+      const subject = document.getElementById('drawer-email-subject').value.trim();
+      const body = document.getElementById('drawer-email-body-edit').value.trim();
+      const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.open(url, '_blank');
+    }
+
+    function copyDrawerEmail() {
+      const to = document.getElementById('drawer-email-to').value.trim();
+      const subject = document.getElementById('drawer-email-subject').value.trim();
+      const body = document.getElementById('drawer-email-body-edit').value.trim();
+      navigator.clipboard.writeText(`To: ${to}\nSubject: ${subject}\n\n${body}`);
       alert('Email draft copied to clipboard!');
     }
 

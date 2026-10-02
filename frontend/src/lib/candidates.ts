@@ -4,6 +4,8 @@ export interface Candidate {
   id: string;
   anonId: string;
   name: string;
+  contactEmail?: string;
+  emailSent?: boolean;
   university: string;
   location: string;
   roleId?: string;
