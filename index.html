@@ -1734,7 +1734,21 @@
       };
     }
 
+    // Lili may record outreach as {type, drafted_at} (via lili_record_outreach) or {type, subject, body, recorded_at}
+    function liliOutreachDraft(o) {
+      if (!o || !o.body) return '';
+      return `Subject: ${o.subject || 'Application update'}
+
+${o.body}`;
+    }
+
+    function liliOutreachStatus(o, current) {
+      if (!o || (current || '').includes('Sent')) return null;
+      return o.type === 'invite' ? 'Invite drafted by Lili' : o.type === 'reject' ? 'Feedback drafted by Lili' : o.type === 'hold' ? 'On bench (Lili)' : null;
+    }
+
     function rowToCandidate(r) {
+      const outreach = r.lili_outreach || null;
       return {
         id: r.id,
         name: r.name,
@@ -1742,7 +1756,7 @@
         roleId: r.role_id,
         score: r.score,
         tier: r.tier === 1 ? 'tier1' : r.tier === 2 ? 'tier2' : 'tier3',
-        status: r.status || (r.tier === 1 ? 'Fast-Track' : r.tier === 2 ? 'Bench / Review' : 'Does Not Meet Bar'),
+        status: liliOutreachStatus(outreach, r.status) || r.status || (r.tier === 1 ? 'Fast-Track' : r.tier === 2 ? 'Bench / Review' : 'Does Not Meet Bar'),
         skills: Array.isArray(r.matched) ? r.matched : [],
         missing: Array.isArray(r.missing) ? r.missing : [],
         breakdown: Array.isArray(r.breakdown) ? r.breakdown : [],
@@ -1750,7 +1764,7 @@
         takeaway: r.takeaway || '',
         strengths: Array.isArray(r.strengths) ? r.strengths : [],
         gaps: Array.isArray(r.gaps) ? r.gaps : [],
-        emailDraft: r.email || '',
+        emailDraft: r.email || liliOutreachDraft(outreach),
         emailSent: (r.status || '').includes('Sent'),
         cvText: r.cv_text || '',
         liliScore: r.lili_score ?? null,
@@ -1760,7 +1774,7 @@
         liliGaps: Array.isArray(r.lili_gaps) ? r.lili_gaps : [],
         liliEvidence: Array.isArray(r.lili_evidence) ? r.lili_evidence : [],
         liliEvaluatedAt: r.lili_evaluated_at || null,
-        liliOutreach: r.lili_outreach || null,
+        liliOutreach: outreach ? { ...outreach, drafted_at: outreach.drafted_at || outreach.recorded_at } : null,
         source: r.source || 'dashboard'
       };
     }
