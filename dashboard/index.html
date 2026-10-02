@@ -54,6 +54,9 @@
         <select id="role-select" onchange="handleRoleChange()" class="bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-zinc-700 cursor-pointer max-w-xs">
           <!-- Dynamically populated -->
         </select>
+        <button onclick="deleteCurrentRole()" id="btn-delete-role" title="Delete Active Job Role" class="p-1.5 rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-rose-400 hover:border-rose-500/40 text-xs transition">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+        </button>
         <button onclick="openJobModal()" title="Create New Job Role" class="px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-emerald-400 hover:border-emerald-500/40 text-xs font-medium transition flex items-center gap-1">
           <i data-lucide="plus" class="w-3.5 h-3.5"></i>
           <span>+ Post Role</span>
@@ -308,7 +311,7 @@
             <i data-lucide="briefcase" class="w-4 h-4"></i>
           </div>
           <div>
-            <h3 class="font-bold text-sm text-zinc-100">HR Admin: Create Job Opening & Rubric</h3>
+            <h3 class="font-bold text-sm text-zinc-100" id="job-modal-title">HR Admin: Create Job Opening & Rubric</h3>
             <p class="text-[11px] text-zinc-400">Configure role requirements, must-haves, and calibrated scoring weights</p>
           </div>
         </div>
@@ -386,7 +389,7 @@
         <button onclick="closeJobModal()" class="px-4 py-2 rounded-lg bg-zinc-800 text-zinc-300 hover:text-white text-xs font-medium transition">
           Cancel
         </button>
-        <button onclick="handleSaveJobRole()" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-semibold transition">
+        <button id="btn-save-job" onclick="handleSaveJobRole()" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-semibold transition">
           Publish Job & Activate Scoring
         </button>
       </div>
@@ -418,8 +421,18 @@
           <p id="vjd-text" class="text-zinc-400 bg-zinc-800/40 p-3 rounded-lg font-mono text-[11px] whitespace-pre-wrap max-h-48 overflow-y-auto"></p>
         </div>
       </div>
-      <div class="flex justify-end border-t border-zinc-800 pt-3">
-        <button onclick="closeViewJdModal()" class="px-4 py-1.5 rounded-lg bg-zinc-800 text-zinc-300 hover:text-white text-xs font-medium">Close</button>
+      <div class="flex items-center justify-between border-t border-zinc-800 pt-3">
+        <button onclick="deleteCurrentRole()" class="px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 text-xs font-semibold flex items-center gap-1.5 transition">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          <span>Remove Role</span>
+        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="editCurrentRole()" class="px-3 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800 text-zinc-200 hover:text-white text-xs font-medium flex items-center gap-1.5 transition">
+            <i data-lucide="edit-3" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span>Edit Role</span>
+          </button>
+          <button onclick="closeViewJdModal()" class="px-4 py-1.5 rounded-lg bg-zinc-800 text-zinc-300 hover:text-white text-xs font-medium">Close</button>
+        </div>
       </div>
     </div>
   </div>
@@ -797,13 +810,70 @@
       updateBatchBar();
     }
 
-    // HR ADMIN: JOB CREATION
+    // HR ADMIN: JOB CREATION & EDITING
+    let editingJobId = null;
+
     function openJobModal() {
+      if (!editingJobId) {
+        document.getElementById('job-modal-title').textContent = "HR Admin: Create Job Opening & Rubric";
+        document.getElementById('btn-save-job').textContent = "Publish Role & Activate Rubric";
+        document.getElementById('job-title').value = '';
+        document.getElementById('job-company').value = '';
+        document.getElementById('job-minexp').value = '5';
+        document.getElementById('job-mandatory').value = '';
+        document.getElementById('job-fulltext').value = '';
+        document.getElementById('w-tech').value = 40;
+        document.getElementById('w-exp').value = 25;
+        document.getElementById('w-impact').value = 20;
+        document.getElementById('w-lead').value = 15;
+        updateRubricWeights();
+      }
       document.getElementById('job-modal').classList.remove('hidden');
+      lucide.createIcons();
     }
 
     function closeJobModal() {
+      editingJobId = null;
       document.getElementById('job-modal').classList.add('hidden');
+    }
+
+    function editCurrentRole() {
+      const job = jobs.find(j => j.id === currentJobId) || jobs[0];
+      if (!job) return;
+      editingJobId = job.id;
+
+      document.getElementById('job-title').value = job.title;
+      document.getElementById('job-company').value = job.company;
+      document.getElementById('job-minexp').value = job.minExp;
+      document.getElementById('job-mandatory').value = job.mandatory.join(', ');
+      document.getElementById('job-fulltext').value = job.fullText;
+      document.getElementById('w-tech').value = job.weights.tech;
+      document.getElementById('w-exp').value = job.weights.exp;
+      document.getElementById('w-impact').value = job.weights.impact;
+      document.getElementById('w-lead').value = job.weights.lead;
+      updateRubricWeights();
+
+      document.getElementById('job-modal-title').textContent = "HR Admin: Edit Job Opening & Rubric";
+      document.getElementById('btn-save-job').textContent = "Save Changes & Update Rubric";
+
+      closeViewJdModal();
+      document.getElementById('job-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function deleteCurrentRole() {
+      if (jobs.length <= 1) {
+        alert("Cannot delete the only remaining role. Create another role first.");
+        return;
+      }
+      const job = jobs.find(j => j.id === currentJobId) || jobs[0];
+      if (!confirm(`Are you sure you want to remove the role "${job.title}"?`)) return;
+
+      jobs = jobs.filter(j => j.id !== currentJobId);
+      currentJobId = jobs[0].id;
+      saveJobs();
+      closeViewJdModal();
+      alert(`✅ Role "${job.title}" deleted.`);
     }
 
     function updateRubricWeights() {
@@ -831,9 +901,9 @@
       }
 
       const mandatory = mandatoryStr.split(',').map(s => s.trim()).filter(Boolean);
-      const id = 'role_' + Date.now();
+      const id = editingJobId || ('role_' + Date.now());
 
-      const newJob = {
+      const savedJob = {
         id: id,
         title: title,
         company: company,
@@ -848,7 +918,12 @@
         }
       };
 
-      jobs.unshift(newJob);
+      if (editingJobId) {
+        jobs = jobs.map(j => j.id === editingJobId ? savedJob : j);
+      } else {
+        jobs.unshift(savedJob);
+      }
+
       currentJobId = id;
       saveJobs();
       closeJobModal();
@@ -858,7 +933,8 @@
       document.getElementById('job-mandatory').value = '';
       document.getElementById('job-fulltext').value = '';
 
-      alert(`✅ New Job Role "${title}" published!`);
+      alert(editingJobId ? `✅ Role "${title}" updated!` : `✅ New Job Role "${title}" published!`);
+      editingJobId = null;
     }
 
     function openViewJdModal() {

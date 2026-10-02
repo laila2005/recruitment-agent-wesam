@@ -4,12 +4,13 @@ import { Toaster, toast } from "sonner";
 import {
   Sparkles, Upload, Users, Rocket, Clock, Gauge, Search, ChevronDown, CalendarPlus,
   FileText, Copy, ShieldCheck, Quote, AlertTriangle, X, FileUp, Check, Mail, MailX, Zap, Loader2,
-  Plus, Briefcase, Sliders, Info, CheckCircle2, Edit3, Send, ExternalLink,
+  Plus, Briefcase, Sliders, Info, CheckCircle2, Edit3, Send, ExternalLink, Trash2,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenuSeparator, DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -69,10 +70,24 @@ function Dashboard() {
   const [tab, setTab] = useState("scorecard");
   const [upload, setUpload] = useState(false);
   const [postRoleOpen, setPostRoleOpen] = useState(false);
+  const [editingJob, setEditingJob] = useState<JobRole | null>(null);
   const [viewJdOpen, setViewJdOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [statuses, setStatuses] = useState<Record<string, "invite" | "feedback">>({});
   const [dispatch, setDispatch] = useState<{ kind: "invite" | "feedback"; ids: string[] } | null>(null);
+
+  const handleDeleteRole = (roleId: string, roleTitle: string) => {
+    if (jobRoles.length <= 1) {
+      toast.error("Cannot delete the only remaining role. Create another role first.");
+      return;
+    }
+    const nextRoles = jobRoles.filter((j) => j.id !== roleId);
+    setJobRoles(nextRoles);
+    if (activeJobId === roleId) {
+      setActiveJobId(nextRoles[0].id);
+    }
+    toast.success(`Role "${roleTitle}" removed from pipeline.`);
+  };
 
   // Sync to localStorage
   useEffect(() => {
@@ -135,21 +150,57 @@ function Dashboard() {
           {/* Job Dropdown & Post Role Button */}
           <div className="flex items-center gap-2">
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-2 rounded-md border bg-secondary px-3 py-1.5 text-sm hover:bg-accent">
-                {activeJob.title} <ChevronDown className="size-3.5 text-muted-foreground" />
+              <DropdownMenuTrigger className="flex items-center gap-2 rounded-md border bg-secondary px-3 py-1.5 text-sm hover:bg-accent font-medium max-w-[280px] sm:max-w-md truncate">
+                <span className="truncate">{activeJob.title}</span> <ChevronDown className="size-3.5 text-muted-foreground shrink-0" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-72">
+              <DropdownMenuContent align="start" className="w-80">
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Active Roles ({jobRoles.length})</DropdownMenuLabel>
                 {jobRoles.map((j) => (
-                  <DropdownMenuItem key={j.id} onClick={() => setActiveJobId(j.id)} className="cursor-pointer">
-                    {j.id === activeJob.id ? <Check className="size-3.5 text-primary" /> : <span className="w-3.5" />} {j.title}
-                  </DropdownMenuItem>
+                  <div
+                    key={j.id}
+                    onClick={() => setActiveJobId(j.id)}
+                    className={cn(
+                      "flex items-center justify-between px-2.5 py-2 text-xs rounded-sm cursor-pointer transition select-none group",
+                      j.id === activeJob.id ? "bg-primary/10 text-primary font-medium" : "hover:bg-accent text-foreground"
+                    )}>
+                    <div className="flex items-center gap-2 truncate mr-2">
+                      {j.id === activeJob.id ? <Check className="size-3.5 text-primary shrink-0" /> : <span className="w-3.5 shrink-0" />}
+                      <div className="truncate">
+                        <div className="truncate font-medium">{j.title}</div>
+                        <div className="text-[10px] text-muted-foreground">{j.company} · {j.minExp}+ yrs</div>
+                      </div>
+                    </div>
+                    {jobRoles.length > 1 && (
+                      <button
+                        title="Delete Role"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteRole(j.id, j.title);
+                        }}
+                        className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition shrink-0 opacity-70 group-hover:opacity-100">
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    )}
+                  </div>
                 ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => {
+                    setEditingJob(null);
+                    setPostRoleOpen(true);
+                  }}
+                  className="cursor-pointer text-xs font-semibold text-primary flex items-center gap-1.5 py-2">
+                  <Plus className="size-3.5" /> + Create New Role Opening
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
             {/* + Post Role Button */}
             <button
-              onClick={() => setPostRoleOpen(true)}
+              onClick={() => {
+                setEditingJob(null);
+                setPostRoleOpen(true);
+              }}
               className="flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition">
               <Plus className="size-3.5" /> + Post Role
             </button>
@@ -373,16 +424,37 @@ function Dashboard() {
       {/* HR Admin: Post Role Modal */}
       <PostRoleModal
         open={postRoleOpen}
-        onOpenChange={setPostRoleOpen}
-        onSave={(newJob) => {
-          setJobRoles((prev) => [newJob, ...prev]);
-          setActiveJobId(newJob.id);
-          toast.success(`Published new job role: ${newJob.title}! Scoring rubric is now active.`);
+        onOpenChange={(o) => {
+          setPostRoleOpen(o);
+          if (!o) setEditingJob(null);
+        }}
+        initialJob={editingJob}
+        onSave={(savedJob) => {
+          setJobRoles((prev) => {
+            const exists = prev.some((j) => j.id === savedJob.id);
+            if (exists) {
+              return prev.map((j) => (j.id === savedJob.id ? savedJob : j));
+            }
+            return [savedJob, ...prev];
+          });
+          setActiveJobId(savedJob.id);
+          toast.success(editingJob ? `Updated role: ${savedJob.title}!` : `Published new job role: ${savedJob.title}! Scoring rubric is now active.`);
+          setEditingJob(null);
         }}
       />
 
       {/* View Job Description Modal */}
-      <ViewJdModal open={viewJdOpen} onOpenChange={setViewJdOpen} job={activeJob} />
+      <ViewJdModal
+        open={viewJdOpen}
+        onOpenChange={setViewJdOpen}
+        job={activeJob}
+        canDelete={jobRoles.length > 1}
+        onDelete={(id, title) => handleDeleteRole(id, title)}
+        onEdit={(job) => {
+          setEditingJob(job);
+          setPostRoleOpen(true);
+        }}
+      />
 
       {/* Upload Resumes Modal with Evaluation */}
       <UploadModal
@@ -416,13 +488,17 @@ function Dashboard() {
   );
 }
 
-// HR ADMIN: POST ROLE MODAL
+// HR ADMIN: POST OR EDIT ROLE MODAL
 function PostRoleModal({
-  open, onOpenChange, onSave,
+  open,
+  onOpenChange,
+  onSave,
+  initialJob,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   onSave: (job: JobRole) => void;
+  initialJob?: JobRole | null;
 }) {
   const [title, setTitle] = useState("");
   const [company, setCompany] = useState("");
@@ -434,6 +510,30 @@ function PostRoleModal({
   const [impactWeight, setImpactWeight] = useState(20);
   const [leadWeight, setLeadWeight] = useState(15);
 
+  useEffect(() => {
+    if (initialJob) {
+      setTitle(initialJob.title);
+      setCompany(initialJob.company);
+      setMinExp(initialJob.minExp);
+      setMandatoryStr(initialJob.mandatory.join(", "));
+      setDescription(initialJob.description);
+      setTechWeight(initialJob.weights.tech);
+      setExpWeight(initialJob.weights.exp);
+      setImpactWeight(initialJob.weights.impact);
+      setLeadWeight(initialJob.weights.lead);
+    } else {
+      setTitle("");
+      setCompany("");
+      setMinExp(5.0);
+      setMandatoryStr("");
+      setDescription("");
+      setTechWeight(40);
+      setExpWeight(25);
+      setImpactWeight(20);
+      setLeadWeight(15);
+    }
+  }, [initialJob, open]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !mandatoryStr.trim()) {
@@ -441,8 +541,8 @@ function PostRoleModal({
       return;
     }
     const mandatory = mandatoryStr.split(",").map((s) => s.trim()).filter(Boolean);
-    const newJob: JobRole = {
-      id: "job_" + Date.now(),
+    const job: JobRole = {
+      id: initialJob ? initialJob.id : "job_" + Date.now(),
       title: title.trim(),
       company: company.trim() || "Active Opening",
       minExp: Number(minExp),
@@ -450,11 +550,7 @@ function PostRoleModal({
       description: description.trim() || `Job Opening: ${title}. Minimum experience: ${minExp}+ years.`,
       weights: { tech: techWeight, exp: expWeight, impact: impactWeight, lead: leadWeight },
     };
-    onSave(newJob);
-    setTitle("");
-    setCompany("");
-    setMandatoryStr("");
-    setDescription("");
+    onSave(job);
     onOpenChange(false);
   };
 
@@ -463,10 +559,10 @@ function PostRoleModal({
       <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Briefcase className="size-5 text-primary" /> HR Admin: Create Job Opening & Rubric
+            <Briefcase className="size-5 text-primary" /> {initialJob ? "HR Admin: Edit Job Opening & Rubric" : "HR Admin: Create Job Opening & Rubric"}
           </DialogTitle>
           <DialogDescription>
-            Configure role requirements, mandatory must-haves, and calibrated scoring weights.
+            {initialJob ? "Update role requirements, must-haves, and rubric weights." : "Configure role requirements, mandatory must-haves, and calibrated scoring weights."}
           </DialogDescription>
         </DialogHeader>
 
@@ -572,7 +668,7 @@ function PostRoleModal({
               Cancel
             </button>
             <button type="submit" className="rounded-md bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90">
-              Publish Role & Activate Rubric
+              {initialJob ? "Save Changes & Update Rubric" : "Publish Role & Activate Rubric"}
             </button>
           </div>
         </form>
@@ -582,7 +678,21 @@ function PostRoleModal({
 }
 
 // VIEW JOB DESCRIPTION MODAL
-function ViewJdModal({ open, onOpenChange, job }: { open: boolean; onOpenChange: (o: boolean) => void; job: JobRole }) {
+function ViewJdModal({
+  open,
+  onOpenChange,
+  job,
+  canDelete,
+  onDelete,
+  onEdit,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  job: JobRole;
+  canDelete: boolean;
+  onDelete: (id: string, title: string) => void;
+  onEdit: (job: JobRole) => void;
+}) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
@@ -621,6 +731,41 @@ function ViewJdModal({ open, onOpenChange, job }: { open: boolean; onOpenChange:
             <p className="rounded-lg border bg-muted/20 p-3 font-mono text-xs whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto">
               {job.description}
             </p>
+          </div>
+        </div>
+
+        {/* Action Controls: Edit, Delete, Close */}
+        <div className="flex items-center justify-between border-t pt-3 mt-2">
+          {canDelete ? (
+            <button
+              type="button"
+              onClick={() => {
+                onDelete(job.id, job.title);
+                onOpenChange(false);
+              }}
+              className="flex items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/20 transition">
+              <Trash2 className="size-3.5" /> Remove Role
+            </button>
+          ) : (
+            <span className="text-[11px] text-muted-foreground italic">Default Active Role</span>
+          )}
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                onOpenChange(false);
+                onEdit(job);
+              }}
+              className="flex items-center gap-1.5 rounded-md border bg-secondary px-3 py-1.5 text-xs font-medium hover:bg-accent transition">
+              <Edit3 className="size-3.5 text-primary" /> Edit Role & Rubric
+            </button>
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-accent">
+              Close
+            </button>
           </div>
         </div>
       </DialogContent>
