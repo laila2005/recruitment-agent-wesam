@@ -1099,6 +1099,47 @@
       document.getElementById('view-jd-modal').classList.add('hidden');
     }
 
+    // TOAST NOTIFICATION SYSTEM
+    function showToast(message, type = 'info') {
+      let container = document.getElementById('toast-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'fixed bottom-5 right-5 z-[9999] flex flex-col gap-2 pointer-events-none max-w-sm';
+        document.body.appendChild(container);
+      }
+
+      const toast = document.createElement('div');
+      const isErr = type === 'error' || message.toLowerCase().includes('error') || message.toLowerCase().includes('please enter');
+      const isWarn = message.toLowerCase().includes('disconnected') || message.toLowerCase().includes('warning');
+      const borderClass = isErr ? 'border-rose-500/40 bg-zinc-900/95 text-rose-200' :
+                          isWarn ? 'border-amber-500/40 bg-zinc-900/95 text-amber-200' :
+                          'border-emerald-500/40 bg-zinc-900/95 text-emerald-200';
+      const iconName = isErr ? 'alert-circle' : isWarn ? 'alert-triangle' : 'check-circle';
+
+      toast.className = `flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-2xl text-xs font-medium backdrop-blur-md transition-all duration-300 transform translate-y-3 opacity-0 pointer-events-auto ${borderClass}`;
+      toast.innerHTML = `
+        <i data-lucide="${iconName}" class="w-4 h-4 shrink-0"></i>
+        <span>${message}</span>
+      `;
+
+      container.appendChild(toast);
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        try { window.lucide.createIcons(); } catch (e) {}
+      }
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-3', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+      });
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-3', 'opacity-0');
+        setTimeout(() => toast.remove(), 350);
+      }, 3500);
+    }
+
     // SUPABASE DIRECT POSTGREST CLIENT
     const SUPABASE_CONFIG = {
       get url() { return localStorage.getItem('supabase_url') || 'https://ppjxzlepqstqvcrkqscz.supabase.co'; },
@@ -1143,7 +1184,7 @@
       resultEl.classList.remove('hidden', 'bg-rose-500/10', 'text-rose-400', 'bg-emerald-500/10', 'text-emerald-400');
       resultEl.classList.add('bg-zinc-800', 'text-zinc-300');
       resultEl.innerHTML = '<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin inline mr-1"></i> Testing connection to Supabase...';
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
 
       try {
         const res = await fetch(`${url}/rest/v1/job_roles?select=count`, {
@@ -1158,8 +1199,12 @@
           resultEl.innerHTML = '✅ Successfully connected to Lili-HR-agent database! Realtime cloud sync active.';
           updateSupabaseIndicator();
           showToast('Supabase connected! Syncing pipeline data...');
-          await pullCandidatesFromSupabase();
-          await syncAllLocalCandidatesToSupabase();
+          try {
+            await pullCandidatesFromSupabase();
+            await syncAllLocalCandidatesToSupabase();
+          } catch (syncErr) {
+            console.warn('Supabase initial sync warning:', syncErr);
+          }
           setTimeout(() => closeSupabaseModal(), 1500);
         } else {
           resultEl.className = 'p-3 rounded-lg text-xs bg-rose-500/10 text-rose-400 border border-rose-500/30';
@@ -1169,7 +1214,7 @@
         resultEl.className = 'p-3 rounded-lg text-xs bg-rose-500/10 text-rose-400 border border-rose-500/30';
         resultEl.innerHTML = `⚠️ Connection error: ${err.message}`;
       }
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
     }
 
     function disconnectSupabase() {
