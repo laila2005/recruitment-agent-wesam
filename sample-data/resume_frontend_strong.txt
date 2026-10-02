@@ -1,0 +1,33 @@
+SARAH LIN
+Senior Frontend Engineer
+Email: sarah.lin@email.com | GitHub: github.com/sarahlin-ui | Location: Toronto, Canada
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EXPERIENCE
+
+Lead Frontend Engineer — CloudSaaS Inc.
+Apr 2021 – Present (3 years 6 months) | Remote
+• Led a squad of 4 frontend engineers building a high-traffic analytics dashboard in React 18, Next.js, and TypeScript.
+• Architected company-wide design system in Storybook adopted across 6 product teams, reducing frontend cycle time by 30%.
+• Optimized Core Web Vitals across core app, improving Largest Contentful Paint (LCP) from 3.8s to 1.4s.
+• Conducted technical hiring interviews and spearheaded bi-weekly frontend engineering guild.
+
+Frontend Software Engineer — DigitalVibe Media
+Jan 2018 – Mar 2021 (3 years 3 months) | Toronto, Canada
+• Built responsive web applications using React, Redux, and TypeScript.
+• Migrated legacy jQuery client portal to Next.js with SSR, boosting SEO traffic by 45%.
+• Implemented automated end-to-end testing suite using Cypress, achieving 80% critical path coverage.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TECHNICAL SKILLS
+Languages:      TypeScript, JavaScript (ES6+), HTML5, CSS3/SCSS
+Frameworks/Libs:React 18, Next.js, Tailwind CSS, Storybook, Zustand, TanStack Query
+Testing:        Jest, React Testing Library, Cypress
+Tools:          Webpack, Vite, GitHub Actions, Figma
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EDUCATION
+B.S. in Software Engineering — University of Waterloo (2017)

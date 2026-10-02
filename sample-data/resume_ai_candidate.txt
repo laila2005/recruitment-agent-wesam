@@ -1,0 +1,34 @@
+MARCUS VANCE
+Software & AI Engineer
+Email: marcus.vance@email.com | GitHub: github.com/marcusvance-ai
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EXPERIENCE
+
+Software Engineer (AI & Analytics) — DataPulse Systems
+Oct 2022 – Present (2 years) | Remote
+• Developed internal AI document search engine using FastAPI, LangChain, and Qdrant vector database.
+• Reduced LLM API token costs by 35% through semantic caching with Redis and prompt compression techniques.
+• Implemented evaluation framework using Ragas to measure hallucination rates and retrieval faithfulness.
+• Built asynchronous streaming endpoints in FastAPI delivering responses under 800ms time-to-first-token.
+
+Data Analyst / Python Developer — RetailMetrics
+Jun 2020 – Sep 2022 (2 years 3 months) | Chicago, IL
+• Automated data extraction pipelines using Python (Pandas, SQLAlchemy, BeautifulSoup).
+• Designed interactive executive dashboards and maintained SQL reporting warehouses.
+• Wrote predictive churn models using scikit-learn.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TECHNICAL SKILLS
+Languages:      Python (4+ yrs), SQL, TypeScript (basic)
+AI Frameworks:  LangChain, LlamaIndex, HuggingFace, OpenAI API, Anthropic Claude SDK
+Vector DBs:     Qdrant, Pinecone, pgvector
+Backend/Tools:  FastAPI, Docker, Redis, Git, Pytest
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+OPEN SOURCE / PROJECTS
+github.com/marcusvance-ai/agentic-rag-router
+• Autonomous multi-agent routing system for complex legal contracts. (180 stars on GitHub).

@@ -1,0 +1,33 @@
+Senior Frontend / React Lead Engineer — Full-Time
+PixelCraft Studios | Remote (US/Canada/Europe)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ABOUT THE ROLE
+We are seeking a Senior Frontend / React Lead Engineer to architect our enterprise web applications, lead front-end performance optimization, and establish our company-wide design system.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+MANDATORY REQUIREMENTS
+• 5+ years of professional front-end engineering experience
+• Deep expertise in React, Next.js (App Router), and modern TypeScript
+• Proven experience building or maintaining design systems / reusable UI component libraries
+• Strong understanding of Core Web Vitals, browser rendering, and web performance optimization
+• At least 1+ years leading a squad or mentoring junior frontend developers
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PREFERRED QUALIFICATIONS (Not Mandatory)
+• Experience with GraphQL (Apollo Client or Relay)
+• Automated E2E testing with Playwright or Cypress
+• State management with Zustand or TanStack Query
+• Contribution to popular open-source UI libraries
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EVALUATION WEIGHTS
+Technical Mastery (React/Next.js/TS): 40%
+Experience Depth & Seniority: 25%
+Performance & Architecture Impact: 20%
+Leadership & Mentorship: 10%
+Communication & Documentation: 5%

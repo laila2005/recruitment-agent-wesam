@@ -1,0 +1,33 @@
+AI Applications Engineer — Full-Time
+NeuroFlow AI | San Francisco, CA (Hybrid / Remote)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ABOUT THE ROLE
+We are seeking an AI Applications Engineer to build production RAG (Retrieval-Augmented Generation) pipelines, multi-agent AI systems, and LLM-powered enterprise workflows.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+MANDATORY REQUIREMENTS
+• 3+ years of professional software engineering in Python
+• Hands-on production experience with LLM frameworks (LangChain, LlamaIndex, or LiteLLM)
+• Experience integrating Vector Databases (Pinecone, Weaviate, Qdrant, or pgvector)
+• Solid API engineering skills (FastAPI, async Python, streaming endpoints)
+• Demonstrable experience building evaluation benchmarks or handling LLM latency & cost optimization
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PREFERRED QUALIFICATIONS (Not Mandatory)
+• Fine-tuning open-weights models (Llama, Mistral, LoRA/QLoRA)
+• Full-stack experience with Next.js or React for AI chat interfaces
+• Familiarity with MCP (Model Context Protocol) standards
+• Published technical blogs or open-source AI repos
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EVALUATION WEIGHTS
+LLM & RAG Systems Depth: 40%
+Python & API Engineering: 25%
+Performance, Eval & Cost Optimization: 20%
+Product & UI Integration: 10%
+Documentation & Open Source: 5%

@@ -1,0 +1,30 @@
+JORDAN BLAKE
+Frontend Developer & Team Lead
+Email: jordan.blake@email.com | Location: Remote
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EXPERIENCE
+
+Frontend Team Lead — QuickLaunch Apps
+Feb 2023 – Present (1 year 8 months) | Remote
+• Titled Team Lead overseeing 1 junior developer on client WordPress and React sites.
+• Built marketing landing pages using HTML, CSS, and basic React components.
+• Managed client revisions and coordinated sprint deliverables.
+
+Junior Web Developer — Freelance / Local Agencies
+Aug 2021 – Jan 2023 (1 year 5 months) | Austin, TX
+• Developed static client websites using HTML5, JavaScript, and Tailwind CSS.
+• Experimented with React tutorials and personal portfolio projects.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TECHNICAL SKILLS
+Languages:      JavaScript, HTML, CSS, PHP
+Frameworks/Libs:React (2 yrs), Tailwind CSS, Bootstrap, jQuery
+Tools:          Git, npm, WordPress, Figma
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EDUCATION
+Associate Degree in Web Design — Austin Community College (2021)
