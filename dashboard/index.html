@@ -51,76 +51,78 @@
 </head>
 <body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col antialiased">
 
-  <!-- TOP NAVIGATION BAR -->
-  <header class="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur sticky top-0 z-30 px-6 py-3 flex items-center justify-between">
-    <div class="flex items-center gap-4">
-      <div class="flex items-center gap-2">
+  <!-- TOP NAVIGATION BAR: one row on wide screens, wraps to two tidy rows in split-screen; labels collapse to icons -->
+  <header class="border-b border-zinc-800 bg-zinc-900/80 backdrop-blur sticky top-0 z-30 px-3 sm:px-6 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2">
+    <div class="flex items-center gap-2 sm:gap-3 min-w-0 w-full xl:w-auto xl:flex-1">
+      <div class="flex items-center gap-2 shrink-0">
         <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
           <i data-lucide="sparkles" class="w-4 h-4"></i>
         </div>
-        <span class="font-bold text-lg tracking-tight">TalentScout <span class="text-emerald-400">AI</span></span>
+        <span class="font-bold text-lg tracking-tight whitespace-nowrap hidden sm:inline">TalentScout <span class="text-emerald-400">AI</span></span>
       </div>
-      <button id="lili-badge" onclick="toggleLiliFeed()" aria-controls="lili-feed" title="Show what Lili is doing" class="relative inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition">
+      <button id="lili-badge" onclick="toggleLiliFeed()" aria-controls="lili-feed" title="Show what Lili is doing" class="relative shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition">
         <span class="lili-dot w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
         <span id="lili-badge-text">Lili Agent Live</span>
         <span id="lili-unread" class="hidden absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-emerald-500 text-zinc-950 text-[10px] font-bold leading-4 text-center">0</span>
       </button>
-      <div class="h-4 w-px bg-zinc-800 mx-1"></div>
+      <div class="hidden md:block h-4 w-px bg-zinc-800 shrink-0"></div>
 
       <!-- ROLE SELECTOR & POST ROLE BUTTON -->
-      <div class="flex items-center gap-1.5">
-        <select id="role-select" onchange="handleRoleChange()" class="bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-zinc-700 cursor-pointer max-w-xs">
+      <div class="flex items-center gap-1.5 min-w-0 flex-1 xl:flex-none">
+        <select id="role-select" onchange="handleRoleChange()" aria-label="Active job role" class="min-w-[7rem] flex-1 xl:flex-none xl:w-72 max-w-sm truncate bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-zinc-700 cursor-pointer">
           <!-- Dynamically populated -->
         </select>
-        <button onclick="deleteCurrentRole()" id="btn-delete-role" title="Delete Active Job Role" class="p-1.5 rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-rose-400 hover:border-rose-500/40 text-xs transition">
+        <button onclick="deleteCurrentRole()" id="btn-delete-role" title="Delete active job role" aria-label="Delete active job role" class="shrink-0 p-1.5 rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-rose-400 hover:border-rose-500/40 text-xs transition">
           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
         </button>
-        <button onclick="openJobModal()" title="Create New Job Role" class="px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-emerald-400 hover:border-emerald-500/40 text-xs font-medium transition flex items-center gap-1">
+        <button onclick="openJobModal()" title="Post a new job role" aria-label="Post a new job role" class="shrink-0 px-2 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-emerald-400 hover:border-emerald-500/40 text-xs font-medium whitespace-nowrap transition flex items-center gap-1">
           <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-          <span>+ Post Role</span>
+          <span class="hidden sm:inline">Post Role</span>
         </button>
       </div>
     </div>
 
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-1.5 sm:gap-2 w-full xl:w-auto justify-end flex-wrap xl:flex-nowrap">
       <!-- Bias-Free Anonymize Toggle -->
-      <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-zinc-400 select-none">
-        <span>Bias-Free Mode</span>
+      <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-zinc-400 select-none whitespace-nowrap" title="Bias-Free Mode: hide names and emails">
+        <i data-lucide="eye-off" class="w-3.5 h-3.5 md:hidden xl:inline 2xl:hidden"></i>
+        <span class="hidden md:inline xl:hidden 2xl:inline">Bias-Free</span>
         <div class="relative">
-          <input type="checkbox" id="anonymize-toggle" onchange="renderTable()" class="sr-only peer">
+          <input type="checkbox" id="anonymize-toggle" onchange="renderTable()" class="sr-only peer" aria-label="Bias-Free Mode">
           <div class="w-9 h-5 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
         </div>
       </label>
 
       <!-- Clear / Reset Data -->
-      <button onclick="toggleClearDemoData()" id="btn-clear-demo" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 transition">
-        Clear Demo Data
+      <button onclick="toggleClearDemoData()" id="btn-clear-demo" title="Clear demo data" aria-label="Clear demo data" class="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 transition">
+        <i data-lucide="eraser" class="w-3.5 h-3.5"></i>
+        <span class="hidden lg:inline xl:hidden 2xl:inline">Clear Demo</span>
       </button>
 
-      <!-- Direct Supabase Cloud Sync Button -->
-      <button onclick="openSupabaseModal()" id="btn-supabase-status" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 transition shadow-sm">
+      <!-- Recruiter sign-in / cloud sync -->
+      <button onclick="openSupabaseModal()" id="btn-supabase-status" class="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 transition shadow-sm">
         <span id="supabase-indicator-dot" class="w-2 h-2 rounded-full bg-zinc-600"></span>
         <i data-lucide="database" class="w-3.5 h-3.5 text-emerald-400"></i>
-        <span id="supabase-status-text">Connect Supabase</span>
+        <span id="supabase-status-text" class="hidden md:inline xl:hidden 2xl:inline">Connect Supabase</span>
       </button>
 
       <!-- HR Recruiter Inbox & Dispatch Config Button -->
-      <button onclick="openInboxSettingsModal()" id="btn-inbox-status" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 transition shadow-sm" title="Configure HR Recruiter Inbox & Delivery Mode">
-        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+      <button onclick="openInboxSettingsModal()" id="btn-inbox-status" class="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 transition shadow-sm" title="Recruiter inbox and email delivery settings" aria-label="Recruiter inbox settings">
         <i data-lucide="mail" class="w-3.5 h-3.5 text-emerald-400"></i>
-        <span id="nav-recruiter-email" class="hidden sm:inline">laila.mohamed.fikry@gmail.com</span>
-        <span class="sm:hidden">Inbox</span>
+        <span id="nav-recruiter-email" class="hidden 2xl:inline">laila.mohamed.fikry@gmail.com</span>
+        <span class="hidden md:inline 2xl:hidden">Inbox</span>
       </button>
 
       <!-- Real Upload Resume Buttons -->
-      <button onclick="openUploadModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition shadow-sm">
+      <button onclick="openUploadModal()" title="Upload a single CV" aria-label="Upload a single CV" class="inline-flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition shadow-sm">
         <i data-lucide="file-up" class="w-3.5 h-3.5"></i>
-        Single CV
+        <span class="hidden sm:inline xl:hidden 2xl:inline">Single CV</span>
       </button>
 
-      <button onclick="openBulkUploadModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-zinc-950 hover:bg-emerald-400 transition shadow-sm">
+      <button onclick="openBulkUploadModal()" title="Bulk import CVs" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap bg-emerald-500 text-zinc-950 hover:bg-emerald-400 transition shadow-sm">
         <i data-lucide="files" class="w-3.5 h-3.5"></i>
-        Bulk Import CVs
+        <span class="hidden sm:inline">Bulk Import CVs</span>
+        <span class="sm:hidden">Import</span>
       </button>
     </div>
   </header>
@@ -178,26 +180,26 @@
     </div>
 
     <!-- TABLE CONTROLS (TABS & SEARCH) -->
-    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1">
-      <div class="flex items-center gap-1 p-1 bg-zinc-900/60 rounded-lg border border-zinc-800/80 w-full sm:w-auto text-xs">
-        <button onclick="setFilter('all')" id="tab-all" class="px-3 py-1.5 rounded-md font-medium bg-zinc-800 text-zinc-100 shadow-sm transition">All (<span id="count-all">0</span>)</button>
-        <button onclick="setFilter('tier1')" id="tab-tier1" class="px-3 py-1.5 rounded-md font-medium text-zinc-400 hover:text-zinc-200 transition flex items-center gap-1.5">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-1">
+      <div class="flex items-center gap-1 p-1 bg-zinc-900/60 rounded-lg border border-zinc-800/80 w-full lg:w-auto overflow-x-auto text-xs">
+        <button onclick="setFilter('all')" id="tab-all" class="whitespace-nowrap px-3 py-1.5 rounded-md font-medium bg-zinc-800 text-zinc-100 shadow-sm transition">All (<span id="count-all">0</span>)</button>
+        <button onclick="setFilter('tier1')" id="tab-tier1" class="whitespace-nowrap px-3 py-1.5 rounded-md font-medium text-zinc-400 hover:text-zinc-200 transition flex items-center gap-1.5">
           <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Fast-Track (<span id="count-tier1">0</span>)
         </button>
-        <button onclick="setFilter('tier2')" id="tab-tier2" class="px-3 py-1.5 rounded-md font-medium text-zinc-400 hover:text-zinc-200 transition flex items-center gap-1.5">
+        <button onclick="setFilter('tier2')" id="tab-tier2" class="whitespace-nowrap px-3 py-1.5 rounded-md font-medium text-zinc-400 hover:text-zinc-200 transition flex items-center gap-1.5">
           <span class="w-2 h-2 rounded-full bg-amber-400"></span> Bench (<span id="count-tier2">0</span>)
         </button>
-        <button onclick="setFilter('tier3')" id="tab-tier3" class="px-3 py-1.5 rounded-md font-medium text-zinc-400 hover:text-zinc-200 transition flex items-center gap-1.5">
+        <button onclick="setFilter('tier3')" id="tab-tier3" class="whitespace-nowrap px-3 py-1.5 rounded-md font-medium text-zinc-400 hover:text-zinc-200 transition flex items-center gap-1.5">
           <span class="w-2 h-2 rounded-full bg-rose-400"></span> Archive (<span id="count-tier3">0</span>)
         </button>
       </div>
 
-      <div class="flex items-center gap-2 w-full sm:w-auto">
-        <button onclick="importSampleCsv()" class="px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium transition flex items-center gap-1.5">
+      <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full lg:w-auto">
+        <button onclick="importSampleCsv()" class="whitespace-nowrap px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium transition flex items-center gap-1.5">
           <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
           Import Sample Pipeline CSV
         </button>
-        <button onclick="exportPipelineCsv()" class="px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium transition flex items-center gap-1.5">
+        <button onclick="exportPipelineCsv()" class="whitespace-nowrap px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium transition flex items-center gap-1.5">
           <i data-lucide="download" class="w-3.5 h-3.5"></i>
           Export CSV
         </button>
@@ -1265,9 +1267,9 @@
       ['all', 'tier1', 'tier2', 'tier3'].forEach(t => {
         const btn = document.getElementById('tab-' + t);
         if (t === tier) {
-          btn.className = "px-3 py-1.5 rounded-md font-medium bg-zinc-800 text-zinc-100 shadow-sm transition flex items-center gap-1.5";
+          btn.className = "whitespace-nowrap px-3 py-1.5 rounded-md font-medium bg-zinc-800 text-zinc-100 shadow-sm transition flex items-center gap-1.5";
         } else {
-          btn.className = "px-3 py-1.5 rounded-md font-medium text-zinc-400 hover:text-zinc-200 transition flex items-center gap-1.5";
+          btn.className = "whitespace-nowrap px-3 py-1.5 rounded-md font-medium text-zinc-400 hover:text-zinc-200 transition flex items-center gap-1.5";
         }
       });
       renderTable();
