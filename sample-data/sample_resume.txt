@@ -1,0 +1,59 @@
+ALEX CHEN
+Backend Software Engineer
+alex.chen@email.com | linkedin.com/in/alexchen-dev | github.com/alexchen-dev
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PROFESSIONAL EXPERIENCE
+
+Senior Software Engineer — PayStream Inc. (Fintech)
+Jan 2022 – Present (2 years 9 months) | Remote
+• Led backend development for real-time payment processing APIs handling 500K+ transactions/day
+• Architected migration from monolith to microservices (Python/FastAPI), reducing API latency by 40%
+• Managed PostgreSQL cluster optimization — query tuning reduced p99 response time from 800ms to 120ms
+• Mentored 2 junior engineers; conducted bi-weekly 1:1s and code review sessions
+• Owned CI/CD pipeline (GitHub Actions + Docker + AWS ECS)
+
+Backend Engineer — Logify (B2B SaaS Startup)
+Mar 2019 – Dec 2021 (2 years 9 months) | Austin, TX
+• Built RESTful APIs with Django REST Framework for log analytics platform (50K monthly active users)
+• Implemented Redis-based caching layer reducing database load by 35%
+• Collaborated with 3-person frontend team on API contract design and integration
+• Deployed services on AWS EC2 with RDS (PostgreSQL) and S3 for file storage
+
+Junior Backend Developer — DevAgency Co.
+Jun 2017 – Feb 2019 (1 year 8 months) | Austin, TX
+• Developed Python scripts for data ingestion pipelines
+• Maintained legacy Django applications for 4 client accounts
+• Participated in Agile sprints, wrote unit tests with pytest
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TECHNICAL SKILLS
+
+Languages:      Python (7 yrs), SQL (6 yrs), JavaScript (3 yrs), Go (6 months, learning)
+Frameworks:     FastAPI, Django REST Framework, Celery
+Databases:      PostgreSQL, Redis, MongoDB (basic)
+Infrastructure: AWS (EC2, RDS, S3, Lambda, SQS), Docker, Kubernetes (basic), Terraform (basic)
+Tools:          GitHub Actions, Jira, DataDog, PagerDuty
+Methodologies:  Agile/Scrum, TDD, CI/CD
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EDUCATION
+
+B.S. Computer Science — University of Texas at Austin | 2017
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PROJECTS / OPEN SOURCE
+
+github.com/alexchen-dev/fastapi-auth-boilerplate
+• FastAPI authentication boilerplate with JWT, OAuth2, and rate limiting — 340 GitHub stars
+• Used in production by 12 known open-source projects
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CERTIFICATIONS
+
+• AWS Certified Solutions Architect – Associate (2023) — Certificate # [not listed on resume]
