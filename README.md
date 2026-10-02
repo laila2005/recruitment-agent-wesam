@@ -1,7 +1,7 @@
 # TalentScout AI — Lili: The Autonomous "Zero-Dollar ATS" for Startups 🚀
 
 > **Hackathon:** Agents at Work — 1st Edition | **Deadline:** October 3, 2026  
-> **Platform:** [Wesam.ai](https://wesam.ai) | **Category:** HR Automation / Recruitment Intelligence  
+> **Backend Platform:** [Wesam.ai](https://wesam.ai) | **Frontend Dashboard:** [Lovable.dev](https://lovable.dev)  
 > **Submission Portal:** [ai.untap.us/programs/aaw-1st-edition](https://ai.untap.us/programs/aaw-1st-edition)
 
 ---
@@ -18,18 +18,26 @@ Instead, they suffer through manual chaos:
 
 ---
 
-## 💡 The Solution: Lili (Technical Recruiter & Autonomous ATS)
+## 💡 The Solution: Dual-Engine Architecture
 
-**Lili** is an autonomous AI recruitment agent built on **Wesam.ai** that executes the entire pre-screening and candidate management pipeline end-to-end, replacing the entire \$17,000 enterprise recruiting stack.
+TalentScout AI combines an **autonomous agent backend on Wesam.ai** with a **modern SaaS executive dashboard built on Lovable.dev** to deliver an enterprise-grade recruitment experience for \$0.
 
 ```
-               TRADITIONAL ATS STACK ($17,000/yr)                      LILI (ZERO-DOLLAR AUTONOMOUS ATS)
-┌─────────────────────────────────────────────────────────────┐    ┌──────────────────────────────────────────────────────────┐
-│ 1. Greenhouse / Lever ($10k/yr) — Candidate Database        │ ──►│ 📄 Instant CSV / Notion Pipeline Sync                    │
-│ 2. Gem / HireEZ ($5k/yr) — Candidate Email Outreach         │ ──►│ ✉️ 1-Click Personalized Email Generator (Invite & Reject)│
-│ 3. HackerRank / Screen ($2k/yr) — Technical Vetting Guides  │ ──►│ 🎯 Auto-Generated Technical Probes & Rating Anchors     │
-│ 4. Recruiter Agency Fees ($15k/hire) — Screening & Triage   │ ──►│ 🤖 30-Second Autonomous Evidence-Based Ranking          │
-└─────────────────────────────────────────────────────────────┘    └──────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                 FRONTEND: LOVABLE.DEV DASHBOARD             │
+│  • Executive Triage Matrix (Tier 1 Fast-Track, Bench, Pass) │
+│  • 1-Click "Bias-Free Anonymize Mode" Switch                │
+│  • Interactive Scorecard Drawer, Interview Guide & Emails   │
+│  • Visual circular score indicators (94 🟢, 78 🟡, 48 🔴)   │
+└──────────────────────────────▲──────────────────────────────┘
+                               │ (Syncs Decisions / CSV)
+┌──────────────────────────────▼──────────────────────────────┐
+│                  BACKEND: WESAM.AI AGENT (LILI)             │
+│  • Core Engine: GPT-5.5 with evidence-based guardrails      │
+│  • Modular Skills: Parsing, Rubric Scoring, Guide, Outreach │
+│  • MCP Integrations: GitMCP (GitHub repos) & Tavily Search  │
+│  • Scheduled Workflow: Daily 8:00 AM Hiring Market Brief    │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -50,12 +58,12 @@ Instead, they suffer through manual chaos:
 
 ## 📈 Measured Impact / ROI
 
-| Metric | Before Lili (Manual) | With Lili on Wesam.ai | Measured Benefit |
+| Metric | Before Lili (Manual) | With Lili on Wesam.ai + Lovable | Measured Benefit |
 |---|---|---|---|
 | **Time per hiring cycle** | 15+ hours | **Under 2 hours** | **85% reduction** |
-| **Recruiting Software Costs** | \$10,000–\$17,000/yr | **\$0 (Wesam Free Tier)** | **100% cost elimination** |
+| **Recruiting Software Costs** | \$10,000–\$17,000/yr | **\$0 (Wesam & Lovable Free Tier)**| **100% cost elimination** |
 | **Scoring Consistency** | Subjective / Gut-feel | **Defensible 0–100 Rubric** | **Full auditability** |
-| **Demographic Bias Surface** | High (name, school, photo) | **Zero (Anonymized IDs)** | **EEOC compliant** |
+| **Demographic Bias Surface** | High (name, school, photo) | **Zero (Anonymize Mode Toggle)** | **EEOC compliant** |
 | **Candidate Ghosting Rate** | ~60% of applicants | **0% (1-click tailored email drafts)**| **Protects employer brand** |
 
 ---
@@ -70,7 +78,7 @@ recruitment-agent-wesam/
 ├── docs/
 │   ├── architecture.md                # System prompt hierarchy & MCP integration design
 │   ├── impact-slides-content.md       # Complete 3-slide deck content (Problem, Solution, ROI)
-│   ├── demo-script.md                 # 2.5-minute video walkthrough recording script
+│   ├── demo-script.md                 # 2.5-minute video walkthrough recording script (Wesam + Lovable)
 │   └── lovable-dashboard-prompt.md    # Master prompt for interactive web comparison dashboard
 │
 ├── wesam-skills/
@@ -95,12 +103,7 @@ recruitment-agent-wesam/
 
 ---
 
-## 🚀 How to Replicate & Test on Wesam.ai
+## 🚀 How to Run the Demo
 
-1. Open [Wesam.ai](https://wesam.ai) and create/open the **Lili** agent.
-2. Select model **`gpt-5.5`**.
-3. Upload the skills from [`wesam-skills/`](wesam-skills/) and reference JDs from [`sample-data/`](sample-data/).
-4. Connect MCP tools:
-   * **GitHub MCP:** `https://gitmcp.io/docs`
-   * **Web Search MCP:** `https://mcp.tavily.com/mcp/?tavilyApiKey=...`
-5. Test in **Preview** using any of the candidate samples in [`sample-data/`](sample-data/).
+1. **Wesam.ai Backend Agent:** Open `Lili (Technical Recruiter)` on Wesam.ai, load skills from `wesam-skills/`, and test in Preview.
+2. **Lovable.dev Frontend Dashboard:** Paste the prompt in [`docs/lovable-dashboard-prompt.md`](docs/lovable-dashboard-prompt.md) into Lovable.dev to interact with the visual candidate matrix and bias-free anonymize toggle.
