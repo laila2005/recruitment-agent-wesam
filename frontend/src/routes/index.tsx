@@ -4,7 +4,7 @@ import { Toaster, toast } from "sonner";
 import {
   Sparkles, Upload, Users, Rocket, Clock, Gauge, Search, ChevronDown, CalendarPlus,
   FileText, Copy, ShieldCheck, Quote, AlertTriangle, X, FileUp, Check, Mail, MailX, Zap, Loader2,
-  Plus, Briefcase, Sliders, Info, CheckCircle2, Edit3, Send, ExternalLink, Trash2,
+  Plus, Briefcase, Sliders, Info, CheckCircle2, Edit3, Send, ExternalLink, Trash2, Files,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -69,6 +69,7 @@ function Dashboard() {
   const [open, setOpen] = useState<Candidate | null>(null);
   const [tab, setTab] = useState("scorecard");
   const [upload, setUpload] = useState(false);
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [postRoleOpen, setPostRoleOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<JobRole | null>(null);
   const [viewJdOpen, setViewJdOpen] = useState(false);
@@ -221,8 +222,14 @@ function Dashboard() {
 
             <button
               onClick={() => setUpload(true)}
-              className="flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition hover:opacity-90 shadow-sm">
-              <Upload className="size-4" /> Upload Resumes
+              className="flex items-center gap-1.5 rounded-md border border-border bg-secondary/80 px-3 py-1.5 text-xs sm:text-sm font-medium text-foreground transition hover:bg-accent shadow-sm">
+              <Upload className="size-4" /> Single CV
+            </button>
+
+            <button
+              onClick={() => setBulkUploadOpen(true)}
+              className="flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-primary-foreground transition hover:opacity-90 shadow-sm">
+              <Files className="size-4" /> Bulk Import CVs
             </button>
           </div>
         </div>
@@ -313,7 +320,19 @@ function Dashboard() {
                   <tr>
                     <td colSpan={8} className="py-16 text-center text-muted-foreground">
                       <p className="font-medium text-foreground">No candidates in pipeline for this opening</p>
-                      <p className="text-xs mt-1">Upload candidate resumes using the "+ Upload Resumes" button.</p>
+                      <p className="text-xs mt-1 mb-4">Upload candidate resumes using Single Upload or Bulk Import.</p>
+                      <div className="flex items-center justify-center gap-3">
+                        <button
+                          onClick={() => setUpload(true)}
+                          className="flex items-center gap-1.5 rounded-md border border-border bg-secondary px-3 py-1.5 text-xs font-medium hover:bg-accent transition shadow-sm">
+                          <Upload className="size-3.5" /> Single CV
+                        </button>
+                        <button
+                          onClick={() => setBulkUploadOpen(true)}
+                          className="flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition shadow-sm">
+                          <Files className="size-3.5" /> Bulk Import CVs
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -460,10 +479,25 @@ function Dashboard() {
       <UploadModal
         open={upload}
         onOpenChange={setUpload}
+        onOpenBulk={() => {
+          setUpload(false);
+          setBulkUploadOpen(true);
+        }}
         activeJob={activeJob}
         onCandidateCreated={(cand) => {
           setCandidateList((prev) => [cand, ...prev]);
           toast.success(`Candidate ${cand.name} evaluated & ingested into pipeline!`);
+        }}
+      />
+
+      {/* Bulk CV Import & Automated Screening Modal */}
+      <BulkUploadModal
+        open={bulkUploadOpen}
+        onOpenChange={setBulkUploadOpen}
+        activeJob={activeJob}
+        onCandidatesCreated={(cands) => {
+          setCandidateList((prev) => [...cands, ...prev]);
+          setSelected(new Set(cands.map((c) => c.id)));
         }}
       />
 
@@ -954,14 +988,418 @@ function parseResumeDetails(rawText: string, filename: string) {
   };
 }
 
-// UPLOAD CV & EVALUATION MODAL
+// SHARED CANDIDATE EVALUATION GENERATOR
+function createEvaluatedCandidate({
+  name,
+  email,
+  exp,
+  skills,
+  location,
+  university,
+  activeJob,
+}: {
+  name: string;
+  email?: string;
+  exp: number;
+  skills: string[];
+  location?: string;
+  university?: string;
+  activeJob: JobRole;
+}): Candidate {
+  const matchedMandatory = activeJob.mandatory.filter((m) =>
+    skills.some((s) => s.toLowerCase().includes(m.toLowerCase()))
+  );
+  const ratio = matchedMandatory.length / (activeJob.mandatory.length || 1);
+
+  let calculatedScore = 75;
+  if (exp < activeJob.minExp) {
+    calculatedScore = Math.min(55, Math.round(exp * 14));
+  } else {
+    calculatedScore = Math.round(50 + ratio * 35 + Math.min(exp * 2, 14));
+    if (calculatedScore > 98) calculatedScore = 96;
+  }
+
+  let tier: Tier = 2;
+  if (calculatedScore >= 85) tier = 1;
+  else if (calculatedScore < 60) tier = 3;
+
+  const candId = "cand_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+  return {
+    id: candId,
+    anonId: "Candidate C-" + Math.floor(10 + Math.random() * 89),
+    name: name.trim() || "Candidate Applicant",
+    contactEmail: email?.trim() || undefined,
+    university: university || "Verified Degree",
+    location: location || "Remote / Verified",
+    roleId: activeJob.id,
+    score: calculatedScore,
+    tier: tier,
+    years: exp,
+    matched: skills.length > 0 ? skills : activeJob.mandatory.slice(0, 2),
+    missing: activeJob.mandatory.filter((m) => !skills.some((s) => s.toLowerCase().includes(m.toLowerCase()))),
+    takeaway: `${skills.slice(0, 3).join(", ") || "Technical"} experience (${exp} yrs). ${calculatedScore >= 85 ? `Matched ${matchedMandatory.length}/${activeJob.mandatory.length} mandatory skills.` : `Below role bar: requires ${activeJob.minExp}+ yrs.`}`,
+    breakdown: [
+      { label: "Technical Skills", weight: activeJob.weights.tech, score: Math.round(calculatedScore * 1.02) },
+      { label: "Experience", weight: activeJob.weights.exp, score: Math.round(calculatedScore * 0.98) },
+      { label: "Impact", weight: activeJob.weights.impact, score: Math.round(calculatedScore * 0.95) },
+      { label: "Leadership", weight: activeJob.weights.lead, score: 75 },
+    ],
+    strengths: [
+      { point: `Verified background in ${skills.slice(0, 2).join(", ") || "software engineering"}`, quote: "Demonstrated production experience from parsed resume." },
+    ],
+    gaps: [
+      { flag: exp < activeJob.minExp ? `Under mandatory ${activeJob.minExp}-year bar for this role` : "Standard technical verification recommended", severity: exp < activeJob.minExp ? "High" : "Low" },
+    ],
+    questions: [
+      { type: "Technical", q: "Walk us through your hands-on experience scaling production systems.", strong: "Cites concrete metrics, architecture trade-offs, and failure handling.", weak: "Theoretical answer with no production specifics." },
+    ],
+    email: `Subject: Next Steps: ${activeJob.title}\n\nHi ${name},\n\nThank you for applying. We reviewed your profile and experience in ${skills.join(", ") || "engineering"}.\n\n${tier === 1 ? "We would love to invite you to an initial screening call: [Insert Booking Link]" : "We are currently reviewing candidate cohorts and will follow up shortly."}\n\nBest,\nLili (Technical Recruiter)`,
+  };
+}
+
+interface BatchFileItem {
+  id: string;
+  file: File;
+  status: "pending" | "extracting" | "evaluated" | "error";
+  candidate?: Candidate;
+  error?: string;
+  selected: boolean;
+}
+
+// BULK CV IMPORT & EVALUATION MODAL
+function BulkUploadModal({
+  open,
+  onOpenChange,
+  activeJob,
+  onCandidatesCreated,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  activeJob: JobRole;
+  onCandidatesCreated: (cands: Candidate[]) => void;
+}) {
+  const [items, setItems] = useState<BatchFileItem[]>([]);
+  const [processing, setProcessing] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+
+  const handleFiles = async (fileList: FileList | File[]) => {
+    const rawFiles = Array.from(fileList).filter((f) => {
+      const ext = f.name.split(".").pop()?.toLowerCase();
+      return ext === "pdf" || ext === "docx" || ext === "doc" || ext === "txt" || ext === "md";
+    });
+
+    if (rawFiles.length === 0) {
+      toast.error("Please drop valid resume files (.pdf, .docx, .txt).");
+      return;
+    }
+
+    const newItems: BatchFileItem[] = rawFiles.map((f, i) => ({
+      id: "bulk_" + Date.now() + "_" + i + "_" + Math.random().toString(36).substring(2, 5),
+      file: f,
+      status: "pending",
+      selected: true,
+    }));
+
+    setItems((prev) => [...prev, ...newItems]);
+    toast.info(`Queued ${newItems.length} resumes. Analyzing in parallel...`);
+
+    setProcessing(true);
+    for (const item of newItems) {
+      setItems((prev) =>
+        prev.map((it) => (it.id === item.id ? { ...it, status: "extracting" } : it))
+      );
+
+      try {
+        const text = await extractDocumentText(item.file);
+        const parsed = parseResumeDetails(text, item.file.name);
+        const candidate = createEvaluatedCandidate({
+          name: parsed.name,
+          email: parsed.email,
+          exp: parsed.experience,
+          skills: parsed.skills,
+          location: parsed.location,
+          university: parsed.university,
+          activeJob,
+        });
+
+        setItems((prev) =>
+          prev.map((it) =>
+            it.id === item.id
+              ? { ...it, status: "evaluated", candidate }
+              : it
+          )
+        );
+      } catch (err: any) {
+        console.error("Batch parse error:", item.file.name, err);
+        setItems((prev) =>
+          prev.map((it) =>
+            it.id === item.id
+              ? { ...it, status: "error", error: err?.message || "Failed to extract text" }
+              : it
+          )
+        );
+      }
+    }
+    setProcessing(false);
+    toast.success("Batch screening complete!");
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFiles(e.dataTransfer.files);
+    }
+  };
+
+  const readyCandidates = items
+    .filter((it) => it.status === "evaluated" && it.candidate && it.selected)
+    .map((it) => it.candidate!);
+
+  const handleIngestAll = () => {
+    if (readyCandidates.length === 0) {
+      toast.error("No evaluated candidates selected to ingest.");
+      return;
+    }
+    onCandidatesCreated(readyCandidates);
+    toast.success(`🎉 Ingested ${readyCandidates.length} evaluated candidates into pipeline for ${activeJob.title}!`);
+    setItems([]);
+    onOpenChange(false);
+  };
+
+  const toggleSelectAll = (checked: boolean) => {
+    setItems((prev) => prev.map((it) => ({ ...it, selected: checked })));
+  };
+
+  const completedCount = items.filter((it) => it.status === "evaluated" || it.status === "error").length;
+  const progressPercent = items.length > 0 ? Math.round((completedCount / items.length) * 100) : 0;
+  const tier1Count = items.filter((it) => it.candidate?.tier === 1).length;
+  const tier2Count = items.filter((it) => it.candidate?.tier === 2).length;
+  const tier3Count = items.filter((it) => it.candidate?.tier === 3).length;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-hidden flex flex-col p-6">
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-primary/20 text-primary">
+                <Files className="size-4" />
+              </span>
+              Bulk CV Import & Automated Screening
+            </DialogTitle>
+            <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+              {activeJob.title}
+            </span>
+          </div>
+          <DialogDescription>
+            Drop or select multiple CV files (PDF, DOCX, TXT). Lili parses each document, matches candidates against the {activeJob.title} rubric, and ranks them automatically.
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Dropzone */}
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+          onDragLeave={() => setDragActive(false)}
+          onDrop={handleDrop}
+          className={cn(
+            "relative mt-3 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center transition cursor-pointer",
+            dragActive ? "border-primary bg-primary/5 scale-[1.01]" : "border-border bg-card/50 hover:bg-accent/40"
+          )}
+          onClick={() => {
+            document.getElementById("bulk-file-input")?.click();
+          }}
+        >
+          <input
+            id="bulk-file-input"
+            type="file"
+            multiple
+            accept=".pdf,.docx,.doc,.txt"
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files) handleFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-2">
+            {processing ? <Loader2 className="size-6 animate-spin" /> : <FileUp className="size-6" />}
+          </div>
+          <p className="text-sm font-semibold text-foreground">
+            {processing ? "Batch Screening In Progress..." : "Drag & drop multiple CVs here, or click to browse"}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Supports batch processing 5, 10, 20+ resumes simultaneously (PDF, DOCX, TXT)
+          </p>
+        </div>
+
+        {/* Batch Progress Bar */}
+        {items.length > 0 && (
+          <div className="mt-4 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-medium text-foreground flex items-center gap-1.5">
+                {processing ? <Loader2 className="size-3.5 animate-spin text-primary" /> : <CheckCircle2 className="size-3.5 text-emerald-500" />}
+                Processed {completedCount} of {items.length} CVs ({progressPercent}%)
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-medium text-emerald-400">
+                  {tier1Count} Fast-Track (T1)
+                </span>
+                <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-[11px] font-medium text-amber-400">
+                  {tier2Count} Review (T2)
+                </span>
+                <span className="inline-flex items-center gap-1 rounded bg-rose-500/10 px-1.5 py-0.5 text-[11px] font-medium text-rose-400">
+                  {tier3Count} Below Bar (T3)
+                </span>
+              </div>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+              <div
+                className="h-full bg-primary transition-all duration-300"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Results Queue List */}
+        {items.length > 0 && (
+          <div className="mt-3 flex-1 overflow-y-auto max-h-[300px] rounded-lg border border-border bg-card/30">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card/90 px-3 py-2 text-xs backdrop-blur">
+              <label className="flex items-center gap-2 font-medium cursor-pointer">
+                <Checkbox
+                  checked={readyCandidates.length > 0 && readyCandidates.length === items.filter(i => i.status === "evaluated").length}
+                  onCheckedChange={(c) => toggleSelectAll(!!c)}
+                />
+                Select All Evaluated ({readyCandidates.length})
+              </label>
+              <button
+                type="button"
+                onClick={() => setItems([])}
+                className="text-muted-foreground hover:text-foreground text-[11px] flex items-center gap-1">
+                <Trash2 className="size-3" /> Clear Queue
+              </button>
+            </div>
+
+            <div className="divide-y divide-border/60">
+              {items.map((item) => {
+                const cand = item.candidate;
+                return (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between gap-3 p-3 text-xs transition hover:bg-accent/30"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Checkbox
+                        checked={item.selected}
+                        disabled={item.status !== "evaluated"}
+                        onCheckedChange={(checked) => {
+                          setItems((prev) =>
+                            prev.map((it) => (it.id === item.id ? { ...it, selected: !!checked } : it))
+                          );
+                        }}
+                      />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-foreground truncate">
+                            {cand?.name || item.file.name}
+                          </p>
+                          {cand && (
+                            <span className="text-[11px] text-muted-foreground truncate">
+                              ({cand.years} yrs exp)
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1.5 mt-0.5">
+                          <span className="font-mono text-[10px]">{item.file.name}</span>
+                          {cand?.contactEmail && (
+                            <>
+                              <span>•</span>
+                              <span>{cand.contactEmail}</span>
+                            </>
+                          )}
+                        </p>
+                        {cand && cand.matched.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {cand.matched.slice(0, 4).map((tech, idx) => (
+                              <span key={idx} className="rounded bg-secondary/80 px-1.5 py-0.2 text-[10px] text-muted-foreground">
+                                {tech}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      {item.status === "extracting" && (
+                        <span className="flex items-center gap-1 text-[11px] text-primary animate-pulse font-medium">
+                          <Loader2 className="size-3 animate-spin" /> Analyzing...
+                        </span>
+                      )}
+                      {item.status === "error" && (
+                        <span className="rounded bg-rose-500/10 px-2 py-0.5 text-[11px] font-medium text-rose-400">
+                          Parse Error
+                        </span>
+                      )}
+                      {item.status === "evaluated" && cand && (
+                        <div className="text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <span className={cn(
+                              "rounded px-2 py-0.5 text-xs font-bold",
+                              cand.tier === 1 ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" :
+                              cand.tier === 2 ? "bg-amber-500/15 text-amber-400 border border-amber-500/30" :
+                              "bg-rose-500/15 text-rose-400 border border-rose-500/30"
+                            )}>
+                              {cand.score}/100
+                            </span>
+                            <span className="text-[11px] font-medium text-muted-foreground">
+                              {tierMeta[cand.tier]?.label || `Tier ${cand.tier}`}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Footer Actions */}
+        <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="rounded-lg border border-border px-4 py-2 text-xs font-medium hover:bg-accent transition"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            disabled={readyCandidates.length === 0}
+            onClick={handleIngestAll}
+            className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Zap className="size-3.5" />
+            Ingest {readyCandidates.length} Candidates to Pipeline
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// UPLOAD CV & EVALUATION MODAL (SINGLE)
 function UploadModal({
-  open, onOpenChange, activeJob, onCandidateCreated,
+  open, onOpenChange, activeJob, onCandidateCreated, onOpenBulk,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   activeJob: JobRole;
   onCandidateCreated: (c: Candidate) => void;
+  onOpenBulk?: () => void;
 }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -1016,55 +1454,15 @@ function UploadModal({
     }
 
     const skills = skillsStr.split(",").map((s) => s.trim()).filter(Boolean);
-    const matchedMandatory = activeJob.mandatory.filter((m) =>
-      skills.some((s) => s.toLowerCase().includes(m.toLowerCase()))
-    );
-    const ratio = matchedMandatory.length / (activeJob.mandatory.length || 1);
-
-    let calculatedScore = 75;
-    if (exp < activeJob.minExp) {
-      calculatedScore = Math.min(55, Math.round(exp * 14));
-    } else {
-      calculatedScore = Math.round(50 + ratio * 35 + Math.min(exp * 2, 14));
-      if (calculatedScore > 98) calculatedScore = 96;
-    }
-
-    let tier: Tier = 2;
-    if (calculatedScore >= 85) tier = 1;
-    else if (calculatedScore < 60) tier = 3;
-
-    const candId = "cand_" + Date.now();
-    const newCand: Candidate = {
-      id: candId,
-      anonId: "Candidate C-" + Math.floor(10 + Math.random() * 89),
-      name: name.trim(),
-      contactEmail: email.trim() || undefined,
-      university: university || "Verified Degree",
-      location: location || "Remote / Verified",
-      roleId: activeJob.id,
-      score: calculatedScore,
-      tier: tier,
-      years: exp,
-      matched: skills.length > 0 ? skills : activeJob.mandatory.slice(0, 2),
-      missing: activeJob.mandatory.filter((m) => !skills.some((s) => s.toLowerCase().includes(m.toLowerCase()))),
-      takeaway: `${skills.slice(0, 3).join(", ")} experience (${exp} yrs). ${calculatedScore >= 85 ? `Matched ${matchedMandatory.length}/${activeJob.mandatory.length} mandatory skills.` : `Below role bar: requires ${activeJob.minExp}+ yrs.`}`,
-      breakdown: [
-        { label: "Technical Skills", weight: activeJob.weights.tech, score: Math.round(calculatedScore * 1.02) },
-        { label: "Experience", weight: activeJob.weights.exp, score: Math.round(calculatedScore * 0.98) },
-        { label: "Impact", weight: activeJob.weights.impact, score: Math.round(calculatedScore * 0.95) },
-        { label: "Leadership", weight: activeJob.weights.lead, score: 75 },
-      ],
-      strengths: [
-        { point: `Verified background in ${skills.slice(0, 2).join(", ") || "software engineering"}`, quote: "Demonstrated production experience from parsed resume." },
-      ],
-      gaps: [
-        { flag: exp < activeJob.minExp ? `Under mandatory ${activeJob.minExp}-year bar for this role` : "Standard technical verification recommended", severity: exp < activeJob.minExp ? "High" : "Low" },
-      ],
-      questions: [
-        { type: "Technical", q: "Walk us through your hands-on experience scaling production systems.", strong: "Cites concrete metrics, architecture trade-offs, and failure handling.", weak: "Theoretical answer with no production specifics." },
-      ],
-      email: `Subject: Next Steps: ${activeJob.title}\n\nHi ${name},\n\nThank you for applying. We reviewed your profile and experience in ${skills.join(", ") || "engineering"}.\n\n${tier === 1 ? "We would love to invite you to an initial screening call: [Insert Booking Link]" : "We are currently reviewing candidate cohorts and will follow up shortly."}\n\nBest,\nLili (Technical Recruiter)`,
-    };
+    const newCand = createEvaluatedCandidate({
+      name,
+      email,
+      exp,
+      skills,
+      location,
+      university,
+      activeJob,
+    });
 
     onCandidateCreated(newCand);
     setName("");
@@ -1086,6 +1484,21 @@ function UploadModal({
             Evaluating against <strong className="text-foreground">{activeJob.title}</strong>
           </DialogDescription>
         </DialogHeader>
+
+        {onOpenBulk && (
+          <div className="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5 font-medium text-foreground">
+              <Files className="size-3.5 text-primary" />
+              Need to evaluate multiple CVs at once?
+            </span>
+            <button
+              type="button"
+              onClick={onOpenBulk}
+              className="font-semibold text-primary hover:underline flex items-center gap-1 text-xs">
+              Open Bulk Importer ➔
+            </button>
+          </div>
+        )}
 
         <form onSubmit={handleIngest} className="space-y-4 pt-2 text-sm">
           {/* File Picker */}

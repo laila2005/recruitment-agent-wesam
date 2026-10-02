@@ -79,10 +79,15 @@
         Clear Demo Data
       </button>
 
-      <!-- Real Upload Resume Button -->
-      <button onclick="openUploadModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-zinc-950 hover:bg-emerald-400 transition shadow-sm">
-        <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i>
-        + Upload CV (PDF/Word)
+      <!-- Real Upload Resume Buttons -->
+      <button onclick="openUploadModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition shadow-sm">
+        <i data-lucide="file-up" class="w-3.5 h-3.5"></i>
+        Single CV
+      </button>
+
+      <button onclick="openBulkUploadModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-zinc-950 hover:bg-emerald-400 transition shadow-sm">
+        <i data-lucide="files" class="w-3.5 h-3.5"></i>
+        Bulk Import CVs
       </button>
     </div>
   </header>
@@ -197,9 +202,16 @@
           <p class="font-medium text-zinc-300">No candidates under this role</p>
           <p class="text-xs text-zinc-500 mt-0.5">Upload a PDF or Word CV to evaluate against this role.</p>
         </div>
-        <button onclick="openUploadModal()" class="px-3.5 py-1.5 rounded-lg bg-emerald-500 text-zinc-950 font-semibold text-xs transition hover:bg-emerald-400">
-          + Upload Real CV (PDF/Word)
-        </button>
+        <div class="flex items-center justify-center gap-2.5">
+          <button onclick="openUploadModal()" class="px-3 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800 text-zinc-300 font-medium text-xs transition hover:bg-zinc-700 flex items-center gap-1.5">
+            <i data-lucide="file-up" class="w-3.5 h-3.5"></i>
+            Single CV
+          </button>
+          <button onclick="openBulkUploadModal()" class="px-3.5 py-1.5 rounded-lg bg-emerald-500 text-zinc-950 font-semibold text-xs transition hover:bg-emerald-400 flex items-center gap-1.5">
+            <i data-lucide="files" class="w-3.5 h-3.5"></i>
+            Bulk Import CVs
+          </button>
+        </div>
       </div>
     </div>
   </main>
@@ -297,6 +309,71 @@
         </button>
         <button onclick="handleRealCandidateSubmit()" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-semibold transition">
           Ingest & Score Candidate
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BULK CV UPLOAD & SCREENING MODAL -->
+  <div id="bulk-upload-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-3xl w-full p-6 space-y-4 shadow-2xl max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+            <i data-lucide="files" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-zinc-100 flex items-center gap-2">
+              Bulk CV Import & Automated Screening
+              <span id="bulk-role-badge" class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-medium">Active Role</span>
+            </h3>
+            <p class="text-[11px] text-zinc-400">Drop 5, 10, 20+ CVs to parse, score, and rank each candidate simultaneously.</p>
+          </div>
+        </div>
+        <button onclick="closeBulkUploadModal()" class="text-zinc-500 hover:text-zinc-300">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- BULK DROPZONE -->
+      <div id="bulk-drop-zone" onclick="document.getElementById('bulk-file-input').click()" class="border-2 border-dashed border-zinc-700 hover:border-emerald-500/60 rounded-xl p-6 text-center cursor-pointer bg-zinc-800/20 hover:bg-zinc-800/40 transition">
+        <input type="file" id="bulk-file-input" multiple accept=".pdf,.docx,.doc,.txt" onchange="handleBulkFileSelect(event)" class="hidden">
+        <div class="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto text-emerald-400 mb-2">
+          <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+        </div>
+        <p class="text-xs text-zinc-200 font-semibold" id="bulk-drop-title">Drop multiple PDF or Word CVs here, or <span class="text-emerald-400 underline">browse files</span></p>
+        <p class="text-[10px] text-zinc-500 mt-1">Select multiple resumes at once (.pdf, .docx, .txt). Lili will analyze all candidates in parallel.</p>
+      </div>
+
+      <!-- PROGRESS & STATS -->
+      <div id="bulk-progress-container" class="hidden space-y-2">
+        <div class="flex items-center justify-between text-xs">
+          <span id="bulk-progress-text" class="text-zinc-300 font-medium flex items-center gap-1.5">
+            <i data-lucide="loader" class="w-3.5 h-3.5 animate-spin text-emerald-400"></i>
+            Processing 0 of 0 CVs (0%)
+          </span>
+          <div class="flex items-center gap-2">
+            <span id="bulk-t1-count" class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-medium">0 Fast-Track (T1)</span>
+            <span id="bulk-t2-count" class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 text-[10px] font-medium">0 Review (T2)</span>
+            <span id="bulk-t3-count" class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 text-[10px] font-medium">0 Below Bar (T3)</span>
+          </div>
+        </div>
+        <div class="h-2 w-full bg-zinc-800 rounded-full overflow-hidden">
+          <div id="bulk-progress-bar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- BULK QUEUE LIST -->
+      <div id="bulk-queue-container" class="hidden flex-1 overflow-y-auto max-h-[260px] border border-zinc-800 rounded-xl bg-zinc-950/50 divide-y divide-zinc-800">
+      </div>
+
+      <div class="flex items-center justify-between border-t border-zinc-800 pt-3">
+        <button onclick="closeBulkUploadModal()" class="px-4 py-2 rounded-lg bg-zinc-800 text-zinc-300 hover:text-white text-xs font-medium transition">
+          Cancel
+        </button>
+        <button id="btn-ingest-bulk" onclick="ingestBulkCandidates()" disabled class="px-5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5">
+          <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+          Ingest All Candidates to Pipeline
         </button>
       </div>
     </div>
@@ -959,6 +1036,264 @@
 
     function closeViewJdModal() {
       document.getElementById('view-jd-modal').classList.add('hidden');
+    }
+
+    // BULK CV IMPORT & PARSING ENGINE
+    let bulkQueue = [];
+    let isBulkProcessing = false;
+
+    function openBulkUploadModal() {
+      const activeJob = jobs.find(j => j.id === currentJobId) || jobs[0];
+      const badge = document.getElementById('bulk-role-badge');
+      if (badge) badge.textContent = activeJob.title;
+      document.getElementById('bulk-upload-modal').classList.remove('hidden');
+      initBulkDropZone();
+    }
+
+    function closeBulkUploadModal() {
+      document.getElementById('bulk-upload-modal').classList.add('hidden');
+    }
+
+    let bulkDropInitialized = false;
+    function initBulkDropZone() {
+      if (bulkDropInitialized) return;
+      const bulkDropZone = document.getElementById('bulk-drop-zone');
+      if (!bulkDropZone) return;
+
+      ['dragenter', 'dragover'].forEach(name => {
+        bulkDropZone.addEventListener(name, (e) => {
+          e.preventDefault();
+          bulkDropZone.classList.add('border-emerald-500', 'bg-zinc-800/60');
+        });
+      });
+      ['dragleave', 'drop'].forEach(name => {
+        bulkDropZone.addEventListener(name, (e) => {
+          e.preventDefault();
+          bulkDropZone.classList.remove('border-emerald-500', 'bg-zinc-800/60');
+        });
+      });
+      bulkDropZone.addEventListener('drop', (e) => {
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          processBulkFiles(Array.from(e.dataTransfer.files));
+        }
+      });
+      bulkDropInitialized = true;
+    }
+
+    function handleBulkFileSelect(event) {
+      if (event.target.files && event.target.files.length > 0) {
+        processBulkFiles(Array.from(event.target.files));
+      }
+      event.target.value = '';
+    }
+
+    async function processBulkFiles(files) {
+      const validFiles = files.filter(f => {
+        const ext = f.name.split('.').pop().toLowerCase();
+        return ext === 'pdf' || ext === 'docx' || ext === 'txt' || ext === 'md';
+      });
+
+      if (validFiles.length === 0) {
+        showToast('Please upload valid resume files (.pdf, .docx, .txt)');
+        return;
+      }
+
+      document.getElementById('bulk-progress-container').classList.remove('hidden');
+      document.getElementById('bulk-queue-container').classList.remove('hidden');
+
+      const activeJob = jobs.find(j => j.id === currentJobId) || jobs[0];
+      isBulkProcessing = true;
+      const btnIngest = document.getElementById('btn-ingest-bulk');
+      btnIngest.disabled = true;
+
+      for (let i = 0; i < validFiles.length; i++) {
+        const file = validFiles[i];
+        const queueItem = {
+          id: 'bulk_' + Date.now() + '_' + i,
+          file: file,
+          name: file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '),
+          email: '',
+          exp: 3.0,
+          skills: [],
+          status: 'extracting',
+          score: 0,
+          tier: 'tier2',
+          error: null
+        };
+        bulkQueue.unshift(queueItem);
+        renderBulkQueue();
+
+        try {
+          let text = '';
+          const ext = file.name.split('.').pop().toLowerCase();
+          if (ext === 'pdf') {
+            text = await parsePdfFile(file);
+          } else if (ext === 'docx') {
+            text = await parseDocxFile(file);
+          } else {
+            text = await file.text();
+          }
+
+          // Heuristic extraction
+          const emailMatch = text.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/);
+          if (emailMatch) queueItem.email = emailMatch[0];
+
+          const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2 && !l.toLowerCase().includes('resume'));
+          if (lines.length > 0 && lines[0].length < 35) {
+            queueItem.name = lines[0].replace(/[^a-zA-Z\s]/g, '').trim() || queueItem.name;
+          }
+
+          const commonTech = [
+            'React', 'Next.js', 'TypeScript', 'JavaScript', 'Python', 'FastAPI', 'Django', 
+            'PostgreSQL', 'Node.js', 'MongoDB', 'Redis', 'Docker', 'Kubernetes', 'AWS', 
+            'GCP', 'Azure', 'Storybook', 'Tailwind', 'GraphQL', 'LangChain', 'LlamaIndex', 
+            'Pinecone', 'Qdrant', 'Redux', 'Terraform', 'CI/CD', 'Git', 'C#', 'ASP.NET', '.NET'
+          ];
+          queueItem.skills = commonTech.filter(tech => new RegExp(`\\b${tech}\\b`, 'i').test(text));
+          if (queueItem.skills.length === 0) queueItem.skills = activeJob.mandatory.slice(0, 2);
+
+          const expMatch = text.match(/(\d+)\+?\s*years?\s*(of)?\s*(experience|exp)/i);
+          if (expMatch) {
+            queueItem.exp = parseFloat(expMatch[1]);
+          } else {
+            const years = text.match(/\b(20[0-2]\d)\b/g);
+            if (years && years.length >= 2) {
+              const numYears = years.map(Number);
+              const span = Math.max(...numYears) - Math.min(...numYears);
+              if (span >= 1 && span <= 25) queueItem.exp = span;
+            }
+          }
+
+          // Compute score
+          const matchedMandatory = activeJob.mandatory.filter(m => queueItem.skills.some(s => s.toLowerCase().includes(m.toLowerCase())));
+          const mandatoryMatchRatio = matchedMandatory.length / (activeJob.mandatory.length || 1);
+
+          let calculatedScore = 75;
+          if (queueItem.exp < activeJob.minExp) {
+            calculatedScore = Math.min(55, Math.round(queueItem.exp * 15));
+          } else {
+            calculatedScore = Math.round(50 + (mandatoryMatchRatio * 35) + Math.min(queueItem.exp * 2, 15));
+            if (calculatedScore > 98) calculatedScore = 96;
+          }
+
+          queueItem.score = calculatedScore;
+          if (calculatedScore >= 85) queueItem.tier = 'tier1';
+          else if (calculatedScore < 60) queueItem.tier = 'tier3';
+          else queueItem.tier = 'tier2';
+
+          queueItem.status = 'ready';
+        } catch (err) {
+          console.error('Bulk parse error:', err);
+          queueItem.status = 'error';
+          queueItem.error = err.message || 'Parse error';
+        }
+
+        // Update progress bar
+        const processed = i + 1;
+        const percent = Math.round((processed / validFiles.length) * 100);
+        document.getElementById('bulk-progress-bar').style.width = percent + '%';
+        document.getElementById('bulk-progress-text').innerHTML = `
+          <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i>
+          Processed ${processed} of ${validFiles.length} CVs (${percent}%)
+        `;
+
+        renderBulkQueue();
+      }
+
+      isBulkProcessing = false;
+      const readyCount = bulkQueue.filter(q => q.status === 'ready').length;
+      if (readyCount > 0) {
+        btnIngest.disabled = false;
+        btnIngest.innerHTML = `<i data-lucide="zap" class="w-3.5 h-3.5"></i> Ingest ${readyCount} Candidates to Pipeline`;
+      }
+      lucide.createIcons();
+      showToast(`Batch screening complete! ${readyCount} candidates ready.`);
+    }
+
+    function renderBulkQueue() {
+      const container = document.getElementById('bulk-queue-container');
+      if (!container) return;
+
+      const t1 = bulkQueue.filter(q => q.tier === 'tier1' && q.status === 'ready').length;
+      const t2 = bulkQueue.filter(q => q.tier === 'tier2' && q.status === 'ready').length;
+      const t3 = bulkQueue.filter(q => q.tier === 'tier3' && q.status === 'ready').length;
+
+      document.getElementById('bulk-t1-count').textContent = `${t1} Fast-Track (T1)`;
+      document.getElementById('bulk-t2-count').textContent = `${t2} Review (T2)`;
+      document.getElementById('bulk-t3-count').textContent = `${t3} Below Bar (T3)`;
+
+      container.innerHTML = bulkQueue.map(item => `
+        <div class="p-3 flex items-center justify-between text-xs hover:bg-zinc-900/60 transition">
+          <div class="min-w-0 pr-2">
+            <div class="flex items-center gap-2">
+              <span class="font-semibold text-zinc-100 truncate">${item.name}</span>
+              ${item.status === 'ready' ? `<span class="text-zinc-500 font-mono">(${item.exp.toFixed(1)} yrs exp)</span>` : ''}
+            </div>
+            <p class="text-[11px] text-zinc-400 truncate mt-0.5">
+              <span class="font-mono text-[10px] text-zinc-500">${item.file.name}</span>
+              ${item.email ? ` • <span>${item.email}</span>` : ''}
+            </p>
+            ${item.skills.length > 0 ? `
+              <div class="flex flex-wrap gap-1 mt-1">
+                ${item.skills.slice(0, 4).map(s => `<span class="px-1.5 py-0.2 rounded bg-zinc-800 text-[10px] text-zinc-400">${s}</span>`).join('')}
+              </div>
+            ` : ''}
+          </div>
+          <div class="shrink-0 text-right">
+            ${item.status === 'extracting' ? `
+              <span class="text-emerald-400 flex items-center gap-1 font-medium text-[11px]">
+                <i data-lucide="loader" class="w-3 h-3 animate-spin"></i> Analyzing...
+              </span>
+            ` : item.status === 'error' ? `
+              <span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-medium">Error</span>
+            ` : `
+              <div class="flex items-center gap-1.5">
+                <span class="px-2 py-0.5 rounded text-xs font-bold ${
+                  item.tier === 'tier1' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' :
+                  item.tier === 'tier2' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' :
+                  'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                }">${item.score}/100</span>
+                <span class="text-[10px] text-zinc-400">${item.tier === 'tier1' ? 'T1' : item.tier === 'tier2' ? 'T2' : 'T3'}</span>
+              </div>
+            `}
+          </div>
+        </div>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    function ingestBulkCandidates() {
+      const readyItems = bulkQueue.filter(q => q.status === 'ready');
+      if (readyItems.length === 0) return;
+
+      const activeJob = jobs.find(j => j.id === currentJobId) || jobs[0];
+
+      readyItems.forEach((item) => {
+        const newCand = {
+          id: `C-0${candidates.length + 1}`,
+          name: item.name,
+          email: item.email || 'candidate@email.com',
+          roleId: currentJobId,
+          score: item.score,
+          tier: item.tier,
+          status: item.tier === 'tier1' ? 'Fast-Track' : item.tier === 'tier2' ? 'Bench / Review' : 'Does Not Meet Bar',
+          skills: item.skills,
+          exp: item.exp,
+          takeaway: `${item.skills.slice(0, 3).join(', ')} experience (${item.exp.toFixed(1)} yrs). ${item.score >= 85 ? `Matched mandatory skills.` : `Below role bar: requires ${activeJob.minExp}+ yrs.`}`,
+          strengths: [`Demonstrated hands-on experience in ${item.skills.join(', ')}.`, `${item.exp.toFixed(1)} years total professional experience.`],
+          gaps: [item.exp < activeJob.minExp ? `Under mandatory ${activeJob.minExp}-year bar for this role.` : 'Standard technical screening verification.'],
+          emailDraft: `Subject: Update regarding your application for ${activeJob.title}\n\nHi ${item.name},\nThank you for applying. We reviewed your profile and experience in ${item.skills.join(', ')}.\n\n${item.tier === 'tier1' ? 'We would love to invite you to an initial screening call: [Insert Booking Link]' : 'We are currently reviewing candidate cohorts and will follow up.'}\n\nBest,\nTalentScout Hiring Team`
+        };
+        candidates.unshift(newCand);
+      });
+
+      saveCandidates();
+      renderCandidates();
+      updateStats();
+      showToast(`🎉 Successfully ingested ${readyItems.length} candidates into pipeline!`);
+      bulkQueue = [];
+      closeBulkUploadModal();
     }
 
     // REAL CV UPLOAD & DOCUMENT PARSING
