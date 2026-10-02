@@ -1,7 +1,7 @@
 ---
 name: ats-sync
 skill: ats-sync
-description: Autonomous screening run. Pulls emailed CVs into the TalentScout pipeline, evaluates every queued candidate, drafts invites and rejections in Gmail, and reports a shortlist.
+description: Autonomous screening run. Pulls emailed CVs into the TalentScout pipeline, evaluates every queued candidate, writes invites and rejections for one-click approval on the dashboard, and reports a shortlist.
 triggers:
   - screen new applicants
   - run screening
@@ -20,7 +20,7 @@ URL-encode every parameter value (spaces → %20, | stays as the list separator)
 
   {{LILI_API_BASE}}/next?t=…                      → the oldest candidate waiting for you: candidate_id, cv_text, role (job description, must_haves, weights, min_years), scoring_rules. {"done": true} when nothing is waiting.
   {{LILI_API_BASE}}/submit?id=…&score=…&summary=…&strengths=a|b&gaps=x|y&t=…   → save your evaluation (the tier is computed from the score)
-  {{LILI_API_BASE}}/outreach?id=…&type=invite|reject|hold&subject=…&body=…&draft_id=…&t=…   → record the Gmail draft you created
+  {{LILI_API_BASE}}/outreach?id=…&type=invite|reject|hold&subject=…&body=…&t=…   → record the email you wrote (shown on the dashboard for approval)
   {{LILI_API_BASE}}/roles?t=…                     → open roles (role_id, title, must_haves) for routing emailed CVs
   {{LILI_API_BASE}}/ingest?role_id=…&name=…&email=…&ref=<gmail message id>&cv=<CV text, max 4000 chars>&t=…   → add an emailed applicant (repeat-safe)
   {{LILI_API_BASE}}/help                          → this list
