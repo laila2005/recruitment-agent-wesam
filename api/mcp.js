@@ -21,7 +21,11 @@ const TOOLS = [
     name: 'list_roles',
     rpc: 'lili_list_roles',
     description: "List the recruiter's open job roles (role_id, title, min_years, must_haves). Use it to route an emailed application to the right role.",
-    inputSchema: { type: 'object', properties: {} },
+    // A non-empty properties object: some agent platforms reject parameterless OBJECT schemas
+    inputSchema: {
+      type: 'object',
+      properties: { note: { type: 'string', description: 'Optional. Why you are listing roles (not used for filtering).' } }
+    },
     args: () => ({ p_owner_email: RECRUITER_EMAIL })
   },
   {
@@ -52,8 +56,8 @@ const TOOLS = [
     name: 'pending_candidates',
     rpc: 'lili_pending_candidates',
     description: 'List candidates waiting for Lili\'s evaluation (oldest first). Returns [] when there is nothing to do.',
-    inputSchema: { type: 'object', properties: { limit: { type: 'integer', minimum: 1, maximum: 25, default: 10 } } },
-    args: a => ({ p_limit: a.limit || 10 })
+    inputSchema: { type: 'object', properties: { limit: { type: 'integer', description: 'How many to return, 1-25. Use 10 if unsure.' } } },
+    args: a => ({ p_limit: Math.min(Math.max(parseInt(a.limit, 10) || 10, 1), 25) })
   },
   {
     name: 'get_candidate',
@@ -71,11 +75,21 @@ const TOOLS = [
       required: ['candidate_id', 'score', 'summary'],
       properties: {
         candidate_id: { type: 'string' },
-        score: { type: 'integer', minimum: 0, maximum: 100 },
+        score: { type: 'integer', description: 'Final score 0-100 after caps' },
         summary: { type: 'string', description: '1-2 sentence verdict and main reason' },
         strengths: { type: 'array', items: { type: 'string' }, description: 'Strengths, each with its CV source' },
         gaps: { type: 'array', items: { type: 'string' }, description: 'Gaps or verification questions' },
-        evidence: { type: 'array', items: { type: 'object' }, description: '[{ "claim": "...", "source": "Resume, <section>" }]' }
+        evidence: {
+          type: 'array',
+          description: 'Claims with their CV source',
+          items: {
+            type: 'object',
+            properties: {
+              claim: { type: 'string', description: 'What the CV shows' },
+              source: { type: 'string', description: 'Where, e.g. Resume, Experience section' }
+            }
+          }
+        }
       }
     },
     args: a => ({
@@ -96,7 +110,7 @@ const TOOLS = [
       required: ['candidate_id', 'type'],
       properties: {
         candidate_id: { type: 'string' },
-        type: { type: 'string', enum: ['invite', 'reject', 'hold'] },
+        type: { type: 'string', description: 'One of: invite, reject, hold' },
         subject: { type: 'string' },
         body: { type: 'string' },
         gmail_draft_id: { type: 'string' }
