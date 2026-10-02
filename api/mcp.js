@@ -8,8 +8,11 @@
 //   SUPABASE_SERVICE_ROLE_KEY  service_role key (server-side only; the only key allowed to call lili_*)
 //   LILI_MCP_KEY               shared secret; Wesam connects with https://<app>/api/mcp?key=<LILI_MCP_KEY>
 
+import { timingSafeEqual } from 'node:crypto';
+
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ppjxzlepqstqvcrkqscz.supabase.co';
-const RECRUITER_EMAIL = 'laila.mohamed.fikry@gmail.com';
+// The recruiter this key acts for is fixed server-side; the agent cannot choose another tenant
+const RECRUITER_EMAIL = process.env.LILI_OWNER_EMAIL || 'laila.mohamed.fikry@gmail.com';
 const SERVER_INFO = { name: 'talentscout-ats', version: '1.0.0' };
 const SUPPORTED_VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'];
 
@@ -18,11 +21,8 @@ const TOOLS = [
     name: 'list_roles',
     rpc: 'lili_list_roles',
     description: "List the recruiter's open job roles (role_id, title, min_years, must_haves). Use it to route an emailed application to the right role.",
-    inputSchema: {
-      type: 'object',
-      properties: { owner_email: { type: 'string', description: `Recruiter account email. Default ${RECRUITER_EMAIL}` } }
-    },
-    args: a => ({ p_owner_email: a.owner_email || RECRUITER_EMAIL })
+    inputSchema: { type: 'object', properties: {} },
+    args: () => ({ p_owner_email: RECRUITER_EMAIL })
   },
   {
     name: 'ingest_application',
@@ -36,12 +36,11 @@ const TOOLS = [
         name: { type: 'string', description: "Applicant's full name" },
         email: { type: 'string', description: "Applicant's email address" },
         cv_text: { type: 'string', description: 'Full plain-text CV (from the attachment or email body), at least 80 characters' },
-        source_ref: { type: 'string', description: 'Gmail message id, used to avoid duplicates' },
-        owner_email: { type: 'string', description: `Recruiter account email. Default ${RECRUITER_EMAIL}` }
+        source_ref: { type: 'string', description: 'Gmail message id, used to avoid duplicates' }
       }
     },
     args: a => ({
-      p_owner_email: a.owner_email || RECRUITER_EMAIL,
+      p_owner_email: RECRUITER_EMAIL,
       p_role_id: a.role_id,
       p_name: a.name,
       p_email: a.email || null,
@@ -133,6 +132,13 @@ async function callRpc(fn, params) {
   return data;
 }
 
+// Constant-time comparison so response timing doesn't leak how much of the key matched
+function safeEqual(a, b) {
+  const left = Buffer.from(a);
+  const right = Buffer.from(b);
+  return left.length === right.length && timingSafeEqual(left, right);
+}
+
 function rpcResult(id, result) {
   return { jsonrpc: '2.0', id, result };
 }
@@ -184,8 +190,9 @@ async function handleMessage(msg) {
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
 
-  const key = req.query.key || req.headers['x-lili-mcp-key'] || (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-  if (!process.env.LILI_MCP_KEY || key !== process.env.LILI_MCP_KEY) {
+  // Prefer the Authorization header; ?key= is a fallback for MCP clients that only accept a URL
+  const key = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || req.headers['x-lili-mcp-key'] || req.query.key || '';
+  if (!process.env.LILI_MCP_KEY || !safeEqual(String(key), process.env.LILI_MCP_KEY)) {
     return res.status(401).json(rpcError(null, -32001, 'Unauthorized'));
   }
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
