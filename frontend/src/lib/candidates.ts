@@ -6,6 +6,7 @@ export interface Candidate {
   name: string;
   university: string;
   location: string;
+  roleId?: string;
   score: number;
   tier: Tier;
   years: number;
@@ -19,11 +20,47 @@ export interface Candidate {
   email: string;
 }
 
-export const JOBS = [
-  "Senior Backend Engineer (TechFlow)",
-  "Senior Frontend / React Lead (PixelCraft)",
-  "AI Applications Engineer (NeuroFlow)",
+export interface JobRole {
+  id: string;
+  title: string;
+  company: string;
+  minExp: number;
+  mandatory: string[];
+  description: string;
+  weights: { tech: number; exp: number; impact: number; lead: number };
+}
+
+export const INITIAL_JOB_ROLES: JobRole[] = [
+  {
+    id: "frontend",
+    title: "Senior Frontend / React Lead (PixelCraft)",
+    company: "PixelCraft Studios",
+    minExp: 5.0,
+    mandatory: ["React 18", "Next.js", "TypeScript", "Storybook", "Web Vitals"],
+    description: "Architect enterprise web applications, lead front-end performance, and maintain component libraries.",
+    weights: { tech: 40, exp: 25, impact: 20, lead: 15 }
+  },
+  {
+    id: "backend",
+    title: "Senior Backend Engineer (TechFlow)",
+    company: "TechFlow Solutions",
+    minExp: 5.0,
+    mandatory: ["Python", "FastAPI", "PostgreSQL", "Microservices"],
+    description: "Lead API infrastructure, scaling distributed systems serving 500k+ daily transactions.",
+    weights: { tech: 40, exp: 25, impact: 20, lead: 15 }
+  },
+  {
+    id: "ai",
+    title: "AI Applications Engineer (NeuroFlow)",
+    company: "NeuroFlow AI",
+    minExp: 3.0,
+    mandatory: ["Python", "LangChain", "Vector DB", "FastAPI"],
+    description: "Build production RAG pipelines, multi-agent workflows, and token optimization pipelines.",
+    weights: { tech: 45, exp: 20, impact: 25, lead: 10 }
+  }
 ];
+
+export const JOBS = INITIAL_JOB_ROLES.map(j => j.title);
 
 export const CANDIDATES: Candidate[] = [
   {
@@ -32,6 +69,7 @@ export const CANDIDATES: Candidate[] = [
     name: "Sarah Lin",
     university: "UC Berkeley, B.S. Computer Science",
     location: "Seattle, WA",
+    roleId: "frontend",
     score: 94,
     tier: 1,
     years: 6.5,
@@ -59,23 +97,15 @@ export const CANDIDATES: Candidate[] = [
       { type: "Behavioral", q: "How did you get 6 teams to adopt one design system without a mandate?", strong: "Describes contribution model, governance, and handling of dissenting teams.", weak: "Relies on authority or cannot name adoption friction." },
       { type: "Technical", q: "When would you choose a Server Component vs. a Client Component in a data-heavy dashboard?", strong: "Discusses serialization boundaries, caching, and interactivity cost clearly.", weak: "Treats them as interchangeable or defaults everything to client." },
     ],
-    email: `Subject: Interview invitation — Senior Frontend / React Lead at PixelCraft
-
-Hi Sarah,
-
-Thank you for applying to PixelCraft. Your work architecting a Storybook design system adopted across six teams — and cutting checkout LCP from 3.8s to 1.4s — stood out immediately to our team.
-
-We'd love to invite you to a 45-minute first-round conversation with our Head of Engineering. Please pick any slot that works for you here: [scheduling link]
-
-Looking forward to speaking soon,
-The PixelCraft Talent Team`,
+    email: `Subject: Interview Invitation — Senior Frontend Lead at PixelCraft\n\nHi Sarah,\n\nWe reviewed your background and were particularly impressed by your work scaling the Storybook design system across 6 teams and driving checkout LCP down to 1.4s.\n\nWe’d love to invite you to an initial 30-minute technical screening call with our engineering team: https://cal.com/pixelcraft/screen-sarah\n\nLooking forward to speaking!\n\nBest,\nLili (Technical Recruiter)`,
   },
   {
     id: "devin",
     anonId: "Candidate C-02",
     name: "Devin R.",
-    university: "Georgia Tech, B.S. Computer Engineering",
+    university: "UT Austin, B.S. Software Engineering",
     location: "Austin, TX",
+    roleId: "frontend",
     score: 78,
     tier: 2,
     years: 5.2,
@@ -83,79 +113,57 @@ The PixelCraft Talent Team`,
     missing: ["Next.js", "Storybook"],
     takeaway: "Strong Redux state architect; lacks SSR/Next.js exposure and team leadership.",
     breakdown: [
-      { label: "Technical Skills", weight: 40, score: 80 },
-      { label: "Experience", weight: 25, score: 78 },
-      { label: "Impact", weight: 20, score: 75 },
-      { label: "Leadership", weight: 10, score: 70 },
-      { label: "Communication", weight: 5, score: 82 },
+      { label: "Technical Skills", weight: 40, score: 76 },
+      { label: "Experience", weight: 25, score: 84 },
+      { label: "Impact", weight: 20, score: 78 },
+      { label: "Leadership", weight: 10, score: 68 },
+      { label: "Communication", weight: 5, score: 85 },
     ],
     strengths: [
-      { point: "Complex client state management", quote: "Redesigned Redux store for a trading UI handling 2k updates/sec with zero dropped frames." },
-      { point: "Solid testing discipline", quote: "Raised frontend test coverage from 41% to 87% using RTL and Playwright." },
+      { point: "Complex state management", quote: "Maintained a 40k LOC Redux Toolkit store with zero regression incidents across 4 major releases." },
+      { point: "Solid automated testing", quote: "Wrote 300+ unit and integration tests with Vitest, hitting 88% branch coverage." },
     ],
     gaps: [
-      { flag: "No production Next.js / SSR experience", severity: "High" },
-      { flag: "No formal leadership or mentoring evidence", severity: "Medium" },
-      { flag: "Short 9-month tenure at most recent role", severity: "Low" },
+      { flag: "No demonstrated Next.js or React Server Components experience", severity: "High" },
+      { flag: "Limited formal mentorship / lead experience", severity: "Medium" },
     ],
     questions: [
-      { type: "Technical", q: "How would you migrate a large Redux SPA toward server-rendered routes?", strong: "Proposes incremental strategy, hydration concerns, and state co-location.", weak: "Suggests a full rewrite with no risk plan." },
-      { type: "Behavioral", q: "Tell us about a time you influenced a technical decision without formal authority.", strong: "Concrete example with stakeholders, data, and outcome.", weak: "Cannot produce an example or outcome." },
-      { type: "Behavioral", q: "What prompted your move after 9 months at your last role?", strong: "Candid, reflective, and forward-looking answer.", weak: "Blames others or is evasive." },
+      { type: "Technical", q: "How would you migrate a Redux-heavy client SPA to Next.js App Router without rewriting state from scratch?", strong: "Identifies state boundaries, server state caching (TanStack Query), and incremental route migration.", weak: "Suggests keeping all state in global Redux on the client." },
+      { type: "Behavioral", q: "Tell us about a time you disagreed with an architectural decision made by a senior peer.", strong: "Frames disagreement around business trade-offs, benchmarks, and respectful consensus.", weak: "Personalizes conflict or passively complies without raising concerns." },
     ],
-    email: `Subject: Your application — Senior Frontend / React Lead at PixelCraft
-
-Hi Devin,
-
-Thanks for your interest in PixelCraft. We were impressed by your Redux architecture work on high-frequency trading UIs and your testing discipline.
-
-We're still reviewing candidates for this round and would like to keep your profile active. We'll be in touch within the next two weeks with next steps.
-
-Best regards,
-The PixelCraft Talent Team`,
+    email: `Subject: Application Update — Senior Frontend Lead at PixelCraft\n\nHi Devin,\n\nThank you for taking the time to apply to PixelCraft. Our team was impressed by your extensive work in Redux state architecture and testing rigor.\n\nWe are currently prioritizing candidates with deep Next.js App Router and design system leadership experience. We’d love to keep your profile active in our bench for upcoming backend/full-stack openings.\n\nBest,\nLili (Technical Recruiter)`,
   },
   {
     id: "jordan",
     anonId: "Candidate C-03",
     name: "Jordan Blake",
-    university: "Portland Community College, A.S.",
+    university: "Austin Community College, A.A. Web Design",
     location: "Portland, OR",
+    roleId: "frontend",
     score: 48,
     tier: 3,
     years: 3.1,
-    matched: ["React 18"],
-    missing: ["Next.js", "TypeScript", "Storybook"],
+    matched: ["React 18", "Next.js"],
+    missing: ["TypeScript", "Storybook", "TypeScript"],
     takeaway: "WordPress-focused builder; does not meet the 5-year mandatory minimum.",
     breakdown: [
-      { label: "Technical Skills", weight: 40, score: 52 },
-      { label: "Experience", weight: 25, score: 35 },
-      { label: "Impact", weight: 20, score: 50 },
+      { label: "Technical Skills", weight: 40, score: 45 },
+      { label: "Experience", weight: 25, score: 42 },
+      { label: "Impact", weight: 20, score: 55 },
       { label: "Leadership", weight: 10, score: 40 },
-      { label: "Communication", weight: 5, score: 75 },
+      { label: "Communication", weight: 5, score: 70 },
     ],
     strengths: [
-      { point: "Client-facing delivery", quote: "Delivered 30+ WordPress sites for small businesses on schedule." },
-      { point: "Growing React skills", quote: "Built a React booking widget embedded in 12 client sites." },
+      { point: "Fast turnaround on marketing pages", quote: "Delivered 20+ responsive landing pages in Next.js and Tailwind with sub-48h turnaround." },
     ],
     gaps: [
-      { flag: "Unmet 5-year mandatory experience minimum (3.1 yrs)", severity: "High" },
-      { flag: "No TypeScript usage in any listed project", severity: "High" },
-      { flag: "No lead-level scope or team ownership", severity: "Medium" },
+      { flag: "Does not meet mandatory 5+ year experience requirement (3.1 yrs verified)", severity: "High" },
+      { flag: "No production TypeScript experience demonstrated", severity: "High" },
+      { flag: "No design system maintenance or team mentoring background", severity: "Medium" },
     ],
     questions: [
-      { type: "Technical", q: "How did you manage state and data fetching in your React booking widget?", strong: "Explains patterns and their limits clearly.", weak: "Unclear on how data flows." },
-      { type: "Behavioral", q: "Describe a project where requirements changed late. How did you respond?", strong: "Structured re-planning and client communication.", weak: "No process described." },
-      { type: "Technical", q: "What's your plan to grow into large-scale TypeScript codebases?", strong: "Concrete learning plan with examples.", weak: "Vague intent only." },
+      { type: "Technical", q: "What is your experience working with strict TypeScript in production codebases?", strong: "Discusses generic types, utility types, and strictNullChecks debugging.", weak: "Admits to 'any' casting or strictly JavaScript background." },
     ],
-    email: `Subject: Update on your PixelCraft application
-
-Hi Jordan,
-
-Thank you for taking the time to apply for the Senior Frontend / React Lead role. After careful review, we won't be moving forward at this stage — this role requires a minimum of five years of professional frontend experience, including production TypeScript.
-
-Your client delivery record and React widget work show real momentum. We'd encourage you to apply for future mid-level openings, and we'll keep your details on file.
-
-Wishing you all the best,
-The PixelCraft Talent Team`,
+    email: `Subject: Application Status — Senior Frontend Lead at PixelCraft\n\nHi Jordan,\n\nThank you for applying to the Senior Frontend Lead opening at PixelCraft.\n\nFor this specific lead position, we are strictly prioritizing candidates with 5+ years of enterprise experience in strict TypeScript and design system governance. We appreciate your time and wish you the best in your search!\n\nBest,\nLili (Technical Recruiter)`,
   },
 ];
