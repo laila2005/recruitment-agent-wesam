@@ -1615,10 +1615,14 @@
       const text = document.getElementById('supabase-status-text');
       if (isCloud()) {
         if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-        if (text) text.textContent = session.user.email;
+        if (text) text.textContent = 'Cloud sync on';
+        const chip = document.getElementById('btn-supabase-status');
+        if (chip) chip.title = `Signed in as ${session.user.email}`;
       } else {
         if (dot) dot.className = 'w-2 h-2 rounded-full bg-zinc-600';
         if (text) text.textContent = 'Sign in · Local mode';
+        const chip = document.getElementById('btn-supabase-status');
+        if (chip) chip.title = 'Sign in to sync privately across devices';
       }
     }
 
@@ -1854,12 +1858,17 @@
         let offered = false;
         try { offered = localStorage.getItem(offeredKey) === '1'; } catch (e) {}
         if (localOnly.length > 0 && !offered) {
-          try { localStorage.setItem(offeredKey, '1'); } catch (e) {}
           if (confirm(`Upload ${localOnly.length} candidate${localOnly.length > 1 ? 's' : ''} from this browser to your private cloud pipeline?`)) {
-            const { error } = await sb.from('candidates').upsert(localOnly.map(candidateToRow), { onConflict: 'id' });
+            // Fresh IDs: these rows may already exist in the cloud from before login (unowned),
+            // and updating a row you don't own is rejected by row-level security
+            const uploads = localOnly.map(c => ({ ...c, id: newCandidateId() }));
+            const { error } = await sb.from('candidates').insert(uploads.map(candidateToRow));
             if (error) throw error;
-            cloudCandidates = [...localOnly, ...cloudCandidates];
+            cloudCandidates = [...uploads, ...cloudCandidates];
+            liliLog('cloud-upload', `Uploaded ${uploads.length} local candidate${uploads.length > 1 ? 's' : ''} to your account`, 'success');
           }
+          // Only remember the answer once the upload succeeded or was declined, so a failure re-offers it
+          try { localStorage.setItem(offeredKey, '1'); } catch (e) {}
         }
 
         jobs = cloudJobs;
@@ -2491,7 +2500,7 @@
         recruiterName: localStorage.getItem('recruiter_name') || 'Laila Mohamed',
         recruiterEmail: localStorage.getItem('recruiter_email') || 'laila.mohamed.fikry@gmail.com',
         bookingLink: localStorage.getItem('recruiter_booking_link') || 'https://cal.com/laila-recruiter/30min',
-        wesamUrl: localStorage.getItem('wesam_agent_url') || '',
+        wesamUrl: localStorage.getItem('wesam_agent_url') || 'https://prod.wesam.ai/w/ws_40136b5b2d864165/dm/recruitment-pre-scre-2d7b/c/ch_693d29f638dd4aad',
         deliveryMode: localStorage.getItem('email_delivery_mode') || 'gmail',
         resendKey: localStorage.getItem('resend_api_key') || ''
       };

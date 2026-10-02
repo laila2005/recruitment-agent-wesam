@@ -10,7 +10,10 @@ triggers:
   - evaluate C-
 ---
 
-You are executing the ATS Sync skill. The recruiter's dashboard (https://lili-hr-agent.vercel.app) stores candidates in Supabase. You read and write them ONLY through two database functions, using the connected Supabase integration (run a SQL query / call an RPC function, whichever the tool offers).
+You are executing the ATS Sync skill. The recruiter's dashboard (https://lili-hr-agent.vercel.app) stores candidates in Supabase. You read and write them ONLY through two database functions.
+
+TOOL: Supabase integration → "Execute project database query"
+PROJECT REF: ppjxzlepqstqvcrkqscz (pass this as `ref` / project_ref; do not list or touch any other project)
 
 TRIGGER:
 The recruiter sends a message like "Evaluate candidate C-7K2QX". The ID always starts with "C-".
