@@ -1,245 +1,206 @@
-# TalentScout AI — Lili: The Autonomous "Zero-Dollar ATS" for Startups 🚀
+<div align="center">
 
-> **Hackathon:** Agents at Work — 1st Edition (BrainsMingle / Untap) | **Deadline:** October 3, 2026  
-> **Platform Engine:** [Wesam.ai](https://wesam.ai) | **Cloud Host:** [Vercel](https://vercel.com) | **Database:** [Supabase](https://supabase.com)  
-> **Author:** Laila Mohamed Fikry (`laila.mohamed.fikry@gmail.com`)  
-> **Repository:** [github.com/laila2005/recruitment-agent-wesam](https://github.com/laila2005/recruitment-agent-wesam)
+# TalentScout AI · Meet Lili
 
-[![Live on Vercel](https://img.shields.io/badge/Production-Live%20on%20Vercel-000000?style=for-the-badge&logo=vercel)](https://lili-hr-agent.vercel.app)
-[![Supabase Database](https://img.shields.io/badge/Database-Supabase%20Cloud-3ECF8E?style=for-the-badge&logo=supabase)](https://ppjxzlepqstqvcrkqscz.supabase.co)
-[![Lovable Mirror](https://img.shields.io/badge/Mirror-Lovable.app-FF3366?style=for-the-badge)](https://pixel-perfect-render-84515.lovable.app)
-[![EEOC Compliant](https://img.shields.io/badge/Compliance-Bias--Free%20EEOC-blue?style=for-the-badge&logo=shield)](https://lili-hr-agent.vercel.app)
+**An autonomous AI technical recruiter for startups and small recruiting teams.**
+Lili screens every CV, explains every score, and replies to every candidate, on a $0/month stack.
 
----
+[![Watch the demo](https://img.shields.io/badge/▶_Watch_the_demo-2_min-10B981?style=for-the-badge)](https://drive.google.com/file/d/17_2I2OlNHWvJzR-4_IhUwPJeL-r4SncT/view?usp=sharing)
+[![Live app](https://img.shields.io/badge/Live_app-lili--hr--agent.vercel.app-000000?style=for-the-badge&logo=vercel)](https://lili-hr-agent.vercel.app)
+[![Agent](https://img.shields.io/badge/Agent-Wesam.ai-7C3AED?style=for-the-badge)](https://wesam.ai)
+[![Database](https://img.shields.io/badge/Database-Supabase-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com)
 
-## 🔗 Quick Links & Live Demonstrations
+*Agents at Work Hackathon · 1st Edition · Built by Laila Mohamed Fikry*
 
-* 🌐 **Live Web Application (Vercel):** [https://lili-hr-agent.vercel.app](https://lili-hr-agent.vercel.app)
-* 🌐 **Alternative Lovable Mirror:** [https://pixel-perfect-render-84515.lovable.app](https://pixel-perfect-render-84515.lovable.app)
-* 🤖 **Wesam.ai Agent Identity:** `Lili (Technical Recruiter)`
-* 🗄️ **Supabase Cloud Project:** `Lili-HR-agent` (`https://ppjxzlepqstqvcrkqscz.supabase.co`)
-* 🎥 **2.5-Minute Video Recording Script:** [`docs/demo-script.md`](docs/demo-script.md)
-* 📑 **Executive Presentation Slides (3-Slide Deck):** [`docs/impact-slides-content.md`](docs/impact-slides-content.md)
-* 📋 **Complete Database Migration:** [`supabase/schema.sql`](supabase/schema.sql)
+</div>
 
 ---
 
-## 🎯 The Problem: Big-Company Expectations on a Zero-Dollar Budget
+## 🎬 Demo
 
-Early-stage technology startups, boutique engineering agencies, and solo founders cannot afford enterprise Applicant Tracking Systems (ATS) like **Greenhouse (\$10,000/yr)**, **Gem (\$5,000/yr)**, or **HackerRank (\$2,500/yr)**.
+**[▶ Watch the 2-minute demo video](https://drive.google.com/file/d/17_2I2OlNHWvJzR-4_IhUwPJeL-r4SncT/view?usp=sharing)**
 
-As a result, lean hiring teams suffer from:
-1. **15+ Hours Lost per Hiring Cycle:** HR managers and technical founders manually sift through dozens of multi-column PDF resumes.
-2. **Messy Spreadsheets & Gut-Feel Bias:** Teams track applicants across fragmented Google Sheets where candidate assessment is subjective, uncalibrated, and vulnerable to demographic bias.
-3. **Talent Ghosting & Damaged Employer Brand:** 60%+ of applicants receive no response because small teams lack time to write personalized feedback, turning rejected candidates into vocal brand detractors.
-4. **Slow Screening Delays (3–4 Weeks):** High-caliber engineers accept competing offers while founders slowly coordinate interview schedules.
+In the video, 4 CVs are bulk-imported and queued. Lili picks them up on her own after one instruction, scores each against the role's rubric with cited evidence, writes a personal invite or constructive rejection for each, and her verdicts appear on the dashboard live. An interview invite then arrives in a real inbox via Brevo.
+
+**Try it yourself:** [lili-hr-agent.vercel.app](https://lili-hr-agent.vercel.app). See [How to test it](#-how-to-test-it).
 
 ---
 
-## 💡 The Solution: TalentScout AI (Dual-Engine Architecture)
+## 🎯 The problem
 
-TalentScout AI combines an **autonomous recruiting agent on Wesam.ai (Lili)** with a **high-speed, zero-cost executive web application** backed by **Supabase PostgreSQL** to deliver an enterprise-grade hiring workflow for **\$0**.
+Small tech companies and boutique recruiting agencies hire like big companies, without a recruiting team:
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                 FRONTEND: VERCEL RECRUITER DASHBOARD                        │
-│  • 100% In-Browser PDF.js & Mammoth Parser (Zero Backend Latency)           │
-│  • ⚡ Bulk CV Import Engine (Multi-File Drag & Drop + Parallel Screening)   │
-│  • Dynamic Role Creator (+ Post Role, Calibrated Weight Sliders, Delete)    │
-│  • 1-Click EEOC Bias-Free Anonymize Mode (Candidate C-01)                   │
-│  • Connected Inbox & Candidate Drawer (Editable Email + Gmail Launcher)     │
-└──────────────────────────────────────┬──────────────────────────────────────┘
-                                       │ Realtime Cloud Sync (Supabase Realtime + owner-only RLS)
-                                       ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                 CLOUD DATABASE: SUPABASE POSTGRESQL                         │
-│  • Tables: public.job_roles, public.candidates                              │
-│  • Row-Level Security (RLS) & Realtime Change Subscriptions                 │
-│  • Automatic Merge-Duplicate Offline/Online Fallback                        │
-└──────────────────────────────────────▲──────────────────────────────────────┘
-                                       │ Evaluation Standards & Auditing
-                                       ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                 BACKEND: WESAM.AI AUTONOMOUS AGENT (LILI)                   │
-│  • Core Intelligence: GPT-5.5 with Evidence-Referenced Guardrails           │
-│  • Universal Role Ingestion: Automatically decomposes any ad-hoc JD         │
-│  • Mathematical Score Caps: ≤69 if under min exp; ≤74 if missing a must-have│
-│  • MCP Integrations: GitMCP (GitHub Code Inspection) & Tavily Search        │
-│  • Autonomous Workflow: Daily 8:00 AM Hiring Market & Salary Brief          │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+- **Every role gets 50–200 CVs,** and a founder or office manager screens them on top of their real job. That's about 20 minutes per candidate to read, score, and reply.
+- **Screening is inconsistent.** Gut feel, spreadsheets, and unconscious bias from names, photos, or universities.
+- **Candidates get ghosted.** Strong applicants wait days and accept other offers; rejected ones usually hear nothing.
+- **Enterprise ATS tools cost thousands of dollars a year** and still need a human to do the screening.
+
+## 💡 The solution
+
+**TalentScout AI** pairs a recruiter dashboard with **Lili**, an autonomous agent on [Wesam.ai](https://wesam.ai):
+
+| | What happens | Who does it |
+|---|---|---|
+| 1 | Post a role: must-haves, minimum years, weighted rubric | Recruiter |
+| 2 | Drop CVs; they're parsed in the browser and pre-screened instantly | Dashboard |
+| 3 | Candidates are queued; Lili pulls each one through her own ATS tools | **Lili** |
+| 4 | Evidence-cited score against the rubric, with hard caps enforced | **Lili** |
+| 5 | Personal interview invite or constructive rejection, written and sent | **Lili** |
+| 6 | Live, ranked shortlist with every reason visible; recruiter reviews and approves | Recruiter |
+
+No copy-paste between tools: Lili finds the queued work herself.
 
 ---
 
-## ⚡ Key Capabilities & Feature Highlights
+## ✨ Features
 
-### 1. ⚡ Bulk Resume Ingestion & Parallel Screening
-* **Batch Processing:** HR can drag and drop **5, 10, 20+ resumes at once** (`.pdf`, `.docx`, `.doc`, `.txt`).
-* **Live Progress Bar:** Shows `Processed X of Y CVs (Z%)` with real-time counters for **🟢 Fast-Track (T1)**, **🟡 Bench / Review (T2)**, and **🔴 Below Bar (T3)**.
-* **One-Click Ingest:** Instantly populates the active hiring pipeline with fully scored candidate records.
+**Screening and scoring**
+- **Bulk CV import:** drop many PDF, DOCX, or TXT files at once. They're parsed **in the browser** (PDF.js, Mammoth.js), 3 at a time, with a live Read → Extract → Match → Score → Tier pipeline per CV. Scanned PDFs and legacy `.doc` files are detected and flagged, never guessed.
+- **Weighted rubric per role:** Technical stack 40% · Experience 25% · Production impact 20% · Leadership 15% by default, adjustable when you post a role.
+- **One scoring standard everywhere:** the dashboard, Lili's prompts, and the database all use the same rules:
 
-### 2. 📄 100% Client-Side High-Precision Document Parser
-* **Zero Backend Lag:** Uses Mozilla `PDF.js` and `Mammoth.js` directly in the browser to extract text from multi-column, complex CV layouts without sending sensitive resume files to external servers.
-* **Intelligent Heuristic Extraction:** Automatically identifies Candidate Full Name, Email, Years of Experience, Education/University, and matches against a 30+ keyword technical stack dictionary.
+  | Rule | Effect |
+  |---|---|
+  | Tier 1 · Fast-Track | score ≥ 85 |
+  | Tier 2 · Bench | 70–84 |
+  | Tier 3 · Below bar | < 70 |
+  | Fewer years than the role's minimum | score capped at **69** |
+  | Any must-have not demonstrated | score capped at **74** (can't be Tier 1) |
 
-### 3. 🎯 Universal Dynamic Role Lifecycle (Never Restricted to 3 Roles)
-* **Dynamic Role Creation:** HR admins can click **`+ Post Role`** to introduce *any* arbitrary role (e.g., DevOps Engineer, Mobile Lead, Product Manager, Cybersecurity Architect, QA Lead).
-* **Calibrated Rubric Sliders:** Customize weights across Technical Match (40%), Experience Depth (25%), Demonstrated Impact (20%), and Leadership (15%).
-* **In-Place Role Management:** View, edit, or delete any job opening with instantaneous pipeline recalculation.
-* **Lili Adapts On The Fly:** Whether on the dashboard or chatting on Wesam.ai, Lili parses any ad-hoc JD and calibrates her evaluation criteria dynamically.
+- **Two honest layers of scoring:** an *instant pre-screen* (rule-based, in the browser) plus **Lili's deep evaluation** (LLM, evidence-cited), shown separately with a violet "Lili" badge.
 
-### 4. 🛡️ Defensible Scoring & Strict Hard Bar Score Caps
-* **Mandatory Minimum Experience Hard Bar:** If a candidate has fewer years of experience than the mandatory requirement, their total score is **strictly capped at $\le 69/100$** (Tier 3: Does Not Meet Bar / Archive).
-* **Missing Core Stack Cap:** If a candidate lacks a mandatory must-have, their score is **capped at $\le 74/100$** (Tier 2: Bench / Review).
-* **Tier 1 Fast-Track ($\ge 85/100$):** Requires verified production evidence, measurable scale, and progression.
-* **Tier 2 Bench / Review (70–84)** and **Tier 3 Below Bar (< 70)**. The same four numbers are used by the dashboard (`SCORING` in `index.html`), Lili's prompts, and the database function that records her verdict.
+**Explainability and fairness**
+- **"Why this score":** per-dimension bars, matched and missing must-haves, CV evidence, gaps, and which cap applied.
+- **Bias-Free Mode:** hides names and emails across the table, drawer, comparison, and export. Lili is instructed to ignore name, gender, age, nationality, photo, and university prestige, and to flag (not obey) instructions hidden inside a CV.
+- **Candidate-specific interview guide:** questions generated from each candidate's gaps and strongest skills.
 
-### 5. ⚖️ 1-Click Bias-Free Screening Mode (EEOC Compliant)
-* Strips all demographic proxies: names, age indicators, graduation dates, universities, photos, gender, and nationality.
-* Replaces identities with anonymized identifiers (`Candidate C-42`), ensuring 100% objective, merit-based candidate evaluation.
-
-### 6. 📧 Connected Recruiter Inbox & Editable Outreach Studio
-* **Candidate Detail Drawer:** Displays complete scorecard, radar breakdown, verbatim resume quotes, flagged gaps, and tailored interview questions with **Strong Signal** vs. **Weak Signal** anchors.
-* **Editable Email Studio:** HR can edit the generated outreach email directly in the app.
-* **⚡ Send via Connected Inbox:** Dispatches directly under the recruiter's identity (`laila.mohamed.fikry@gmail.com`) and updates the candidate's status badge to `Invite Sent ✉️`.
-* **📧 Open in Gmail:** 1-click launcher opens Gmail with recipient, subject, and body pre-populated.
-
-### 7. ☁️ Direct Supabase Cloud Database Integration
-* Connects directly to **Supabase PostgreSQL** via PostgREST without requiring paid third-party connectors.
-* Auto-syncs all candidate updates, status changes, and newly created job roles.
-* Dual-layer storage: Realtime cloud persistence with seamless offline `localStorage` fallback.
-
-### 8. 🌅 Autonomous Morning Market Workflow
-* Scheduled cron workflow running daily at **8:00 AM**.
-* Queries real-time engineering market trends and compensation data using the **Tavily MCP** tool, delivering an executive briefing to recruiters before their workday starts.
+**Pipeline and outreach**
+- **Live pipeline:** Supabase Realtime pushes Lili's verdicts and changes from other devices to the dashboard instantly, with an activity log narrating each step.
+- **Outreach:** Lili writes the invite or feedback; emails are sent via **Brevo**. The recruiter can also send from the drawer (Brevo or a one-click Gmail draft).
+- **Compare matrix and CSV export** for hiring-manager handoff.
+- **Responsive UI:** works on full desktop, split-screen, and phone.
 
 ---
 
-## 📈 Measured Impact & ROI
+## 🏗️ Architecture
 
-| Metric | Before TalentScout AI (Manual) | With TalentScout AI (Lili + Dashboard) | Measured ROI |
-|---|---|---|---|
-| **Time per Hiring Cycle** | 15+ hours across spreadsheets | **Under 2 hours** end-to-end | **85% reduction** |
-| **Recruiting Software Costs** | \$10,000 – \$17,000 / year | **\$0 (Free Tier Vercel + Supabase + Wesam)** | **100% cost elimination** |
-| **Scoring Consistency** | Subjective / Gut-feeling | **Defensible 100-Point Calibrated Rubric** | **100% auditable** |
-| **Demographic Bias Surface** | High (name, photo, pedigree) | **Zero (1-Click Bias-Free Mode)** | **EEOC compliant** |
-| **Candidate Ghosting Rate** | ~60% of applicants | **0% (Automated, personalized drafts)** | **Protects employer brand** |
-| **Candidate Evaluation Speed** | 20–30 mins per resume | **< 3 seconds per candidate (Bulk Mode)** | **600x acceleration** |
-
----
-
-## 📂 Repository Directory Structure
-
-```text
-recruitment-agent-wesam/
-├── README.md                          # Master project documentation
-├── index.html                         # Production dashboard (Deployed to Vercel)
-├── vercel.json                        # Vercel deployment configuration
-│
-├── agent-instructions/
-│   ├── lili-system-prompt.md          # Lili's core system prompt & behavioral guardrails
-│   ├── skill-resume-parsing.md        # Document parsing and entity extraction instructions
-│   ├── skill-rubric-scoring.md        # 100-point rubric with strict mathematical caps
-│   └── skill-interview-guide.md       # Behavioral questions with 1-4 signal anchors
-│
-├── docs/
-│   ├── architecture.md                # System prompt hierarchy & MCP integration design
-│   ├── impact-slides-content.md       # Complete 3-slide deck content (Problem, Solution, ROI)
-│   ├── demo-script.md                 # 2.5-minute video walkthrough script
-│   ├── dashboard-specification.md     # Frontend architectural specification
-│   └── hackathon-readiness.md         # End-to-end test plan & demo checklist
-│
-├── dashboard/
-│   └── index.html                     # Byte-identical copy of index.html (served at /dashboard)
-│
-├── frontend/                          # ARCHIVED Lovable prototype (not deployed; index.html is the live app)
-│   ├── package.json
-│   ├── vite.config.ts
-│   └── src/
-│       ├── routes/index.tsx           # Full interactive dashboard with PDF.js & Bulk Import
-│       └── lib/candidates.ts          # Core data models, initial roles, and types
-│
-├── supabase/
-│   ├── schema.sql                     # Base PostgreSQL schema
-│   └── migrations/
-│       └── 002_auth_private_rows.sql  # Recruiter login, owner-only RLS, realtime, Lili's DB functions
-│
-├── wesam-skills/
-│   ├── skill-resume-evaluation.md     # Resume-to-Job evaluation skill specification
-│   ├── skill-portfolio-assessment.md  # Technical GitHub inspection & code quality vetting
-│   ├── skill-candidate-ranking.md     # High-throughput candidate triage & comparison matrix
-│   ├── skill-screening-guide.md       # Behavioral screening interview generator
-│   ├── skill-candidate-outreach.md    # Automated candidate outreach & follow-up drafts
-│   └── skill-ats-sync.md              # Reads a candidate from Supabase, writes Lili's verdict back live
-│
-└── sample-data/
-    ├── evaluation_rubric_standards.md # Formal scoring rubric & dynamic ingestion protocol
-    ├── jd_frontend_lead.txt           # Benchmark Role 1: Frontend Lead Engineer
-    ├── jd_backend_engineer.txt        # Benchmark Role 2: Senior Backend Engineer
-    ├── jd_ai_engineer.txt             # Benchmark Role 3: AI / ML Systems Engineer
-    ├── resume_frontend_strong.txt     # Test Candidate 1: Sarah Lin (Fast-Track Tier 1)
-    ├── resume_frontend_junior_gap.txt # Test Candidate 2: Jordan Blake (Below Bar Tier 3 Cap)
-    ├── resume_ai_candidate.txt        # Test Candidate 3: Marcus Vance (Review Tier 2)
-    ├── sample_resume.txt              # Test Candidate 4: Alex Chen (Senior Backend)
-    ├── sample_output.md               # Verified sample evaluation output format
-    ├── sample_comparison_dashboard.md # Multi-candidate executive triage comparison
-    └── candidate_pipeline_export.csv  # Sample exportable ATS pipeline spreadsheet
+```mermaid
+flowchart LR
+    R([Recruiter]) -->|roles, CVs, approvals| D["Dashboard<br/>index.html on Vercel<br/>in-browser CV parsing + pre-screen"]
+    D <-->|"login, owner-only RLS,<br/>Realtime updates"| S[("Supabase Postgres<br/>job_roles · candidates<br/>lili_* SQL functions")]
+    L["Lili<br/>Wesam.ai agent + skills"] -->|"one instruction<br/>(or scheduled run)"| A["Lili ATS API<br/>Vercel serverless<br/>/api/lili · /api/mcp"]
+    A -->|"service role, narrow<br/>SECURITY DEFINER functions"| S
+    A -->|send outreach| B["Brevo"]
+    B --> C([Candidate inbox])
 ```
 
+**Why it's built this way**
+- **Lili never gets raw database access.** Her tools are six narrow operations: list roles, ingest an application, get pending candidates, get one candidate, submit an evaluation, record or send outreach. They're backed by `SECURITY DEFINER` SQL functions that browsers can't call.
+- **Two ways in for the agent:** a Streamable-HTTP **MCP server** (`/api/mcp`) and a plain key-protected **web API** (`/api/lili/<key>/<action>`), because some agent runtimes can only "read a web page".
+- **Private by default:** each row carries an `owner_id`; row-level security lets a recruiter see only their own pipeline. Signed out, the app runs in local demo mode (browser storage only).
+- **Safe email by default:** `LILI_SEND_MODE` defaults to `demo`, which delivers every email to the recruiter's own inbox (tagged with the intended recipient) so sample CVs never email real strangers.
+
+**Tech stack:** Vanilla JS + Tailwind (no build step) · PDF.js · Mammoth.js · Supabase (Postgres, Auth, RLS, Realtime) · Vercel (hosting + serverless functions) · Wesam.ai (agent runtime) · Brevo (transactional email).
+
 ---
 
-## 🚀 Setup & Quickstart Guide
+## 🧪 How to test it
 
-### 1. Run the Dashboard Locally
-No build tools or servers needed:
+**In the browser (about 2 minutes, no install):**
+1. Open **[lili-hr-agent.vercel.app](https://lili-hr-agent.vercel.app)**. Use local demo mode, or click **Sign in → Create account** (email and password, no confirmation email) for a private cloud pipeline.
+2. Click **Bulk Import CVs** and drop the sample CVs from [`sample-data/`](sample-data): `resume_frontend_strong.txt`, `resume_frontend_junior_gap.txt`, `resume_ai_candidate.txt`, `sample_resume.txt`.
+3. Expected against the default **Senior Frontend / React Lead** role: Sarah Lin is **Tier 1**; the others are **Tier 3** with the experience and must-have caps explained.
+4. Open a **Scorecard**, toggle **Bias-Free Mode**, select 2–3 rows → **Compare**, then **Export CSV**.
+
+**Lili's autonomous run** happens on Wesam.ai in the author's workspace (shown end to end in the [demo video](https://drive.google.com/file/d/17_2I2OlNHWvJzR-4_IhUwPJeL-r4SncT/view?usp=sharing)). Signed-in candidates are queued for her automatically; when she runs, her scores appear on the dashboard live.
+
+A detailed test plan, including edge cases (scanned PDFs, empty files, injected prompts, two-window live sync), is in [`docs/hackathon-readiness.md`](docs/hackathon-readiness.md).
+
+---
+
+## 🚀 Run your own copy
+
+**1. Dashboard (no build step)**
 ```bash
-# Clone the repository
 git clone https://github.com/laila2005/recruitment-agent-wesam.git
 cd recruitment-agent-wesam
-
-# Open directly in any modern web browser
-start index.html
+# Open index.html in a browser, or serve the folder:
+python -m http.server 5173
 ```
 
-### 2. Configure Supabase (recruiter login + private cloud pipeline)
-Signed out, the dashboard runs in **local demo mode** (browser storage only). Signed in, every recruiter gets a private pipeline that syncs live across devices.
-1. Open your project on [Supabase.com](https://supabase.com) → **SQL Editor**.
-2. Run [`supabase/schema.sql`](supabase/schema.sql), then [`supabase/migrations/002_auth_private_rows.sql`](supabase/migrations/002_auth_private_rows.sql).
-3. **Authentication → Providers → Email:** turn off *Confirm email* for demos (or confirm once by email). **URL Configuration → Site URL:** `https://lili-hr-agent.vercel.app`.
-4. Open the app, click **Sign in · Local mode** in the navbar → **Create account**. The project URL and public anon key are built in (`SUPABASE_ANON_KEY` in `index.html`).
+**2. Database (Supabase).** In the SQL editor, run in order:
+[`supabase/schema.sql`](supabase/schema.sql) → [`migrations/002_auth_private_rows.sql`](supabase/migrations/002_auth_private_rows.sql) → [`migrations/003_lili_autonomous.sql`](supabase/migrations/003_lili_autonomous.sql).
+Then set your project URL and public anon key in `index.html` (`SUPABASE_URL_DEFAULT`, `SUPABASE_ANON_KEY`) and, for demos, turn off *Confirm email* under Authentication → Sign In / Providers.
 
-### Security & privacy
-- **Owner-only Row Level Security:** each table row carries `owner_id`; policies only let the signed-in recruiter read or change their own candidates and roles. The anon key alone returns nothing.
-- **Lili can't be impersonated from the browser:** her verdict is written only through `lili_submit_evaluation()`, which is not executable by `anon`/`authenticated` users.
-- **Signing out clears** that recruiter's cached candidate data from the browser.
-- **Wesam connection:** Wesam's Supabase integration needs the project's `service_role` key, which bypasses RLS. Keep the Wesam workspace private, rotate the key after the hackathon, and use fake CVs in public demos.
-- **Scoring is two-layered and labelled honestly:** the dashboard shows an *instant pre-screen* (rule-based, in your browser); **Lili's evidence-cited deep evaluation** (LLM, on Wesam) arrives separately as a "Lili verified" badge.
+**3. Deploy (Vercel)** with these environment variables:
 
-### 3. Deploy to Vercel (1 Command)
+| Variable | Purpose |
+|---|---|
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-side access for Lili's ATS API (never exposed to browsers) |
+| `LILI_MCP_KEY` | Secret that protects `/api/mcp` and `/api/lili` |
+| `BREVO_API_KEY` | Brevo API key (`xkeysib-…`) for sending outreach |
+| `BREVO_SENDER` | Sender address verified in Brevo |
+| `LILI_SEND_MODE` | Optional. `demo` (default) sends to the recruiter; `live` emails candidates |
+| `LILI_OWNER_EMAIL` | Optional. The recruiter account Lili works for |
+
 ```bash
 vercel --prod
 ```
 
-### 4. Deploy Lili on Wesam.ai
-1. Create a new agent named **Lili** on [Wesam.ai](https://wesam.ai).
-2. Paste the contents of [`agent-instructions/lili-system-prompt.md`](agent-instructions/lili-system-prompt.md) into the Instructions box. This is the canonical system prompt; there is no separate `lili-wesam-prompt.md`.
-3. Upload the skills from `wesam-skills/` (including `skill-ats-sync.md`) and reference benchmarks from `sample-data/`. `agent-instructions/skill-*.md` are the detailed rubric modules the system prompt routes to.
-4. **Integrations → Supabase → Connect** with your project URL and `service_role` key, and enable it for Lili.
-5. Paste Lili's chat link into the dashboard's **Inbox settings → Lili agent link**. In any candidate drawer, **Deep evaluate** copies `Evaluate candidate C-XXXX` and opens Lili; her verdict appears on the dashboard within a second.
-6. Click **Publish**!
+**4. Agent (Wesam.ai)**
+1. Create an agent named **Lili**; paste [`agent-instructions/lili-system-prompt.md`](agent-instructions/lili-system-prompt.md) as her instructions.
+2. Upload the skills in [`wesam-skills/`](wesam-skills). In `skill-ats-sync.md`, replace `{{LILI_API_BASE}}` with `https://<your-app>/api/lili/<LILI_MCP_KEY>` in a **private copy**. Don't commit it; `wesam-skills/private/` is gitignored.
+3. Optionally add `https://<your-app>/api/mcp/<LILI_MCP_KEY>` under **Tools → Add MCP server**.
+4. Run her with: *"Run the ats-sync skill now: screen all pending candidates using the API addresses in the skill, write and send the outreach per the skill, then give me the screening report."*
 
 ---
 
-## 🏆 Hackathon Submission Deliverables
+## 📈 Impact
 
-- **Submission Program:** Agents at Work — 1st Edition via BrainsMingle / Untap
-- **Project Title:** TalentScout AI (Agent: Lili)
-- **Live Recruiter Dashboard:** [https://lili-hr-agent.vercel.app](https://lili-hr-agent.vercel.app)
-- **GitHub Repository:** [https://github.com/laila2005/recruitment-agent-wesam](https://github.com/laila2005/recruitment-agent-wesam)
-- **Executive Slide Deck:** [`docs/impact-slides-content.md`](docs/impact-slides-content.md)
-- **2.5-Minute Video Recording Script:** [`docs/demo-script.md`](docs/demo-script.md)
-- **Contact:** Laila Mohamed Fikry (`laila.mohamed.fikry@gmail.com`)
+| | Manual screening | With Lili |
+|---|---|---|
+| Time per candidate | ~20 min to read, score, and reply *(estimate)* | Seconds of review per candidate |
+| Real run in the demo | n/a | 4 CVs → ranked shortlist + 4 written emails, ~80 recruiter-minutes saved (Lili's own report) |
+| Consistency | Gut feel | Same weighted rubric and hard caps for every candidate, with evidence |
+| Candidate experience | Slow replies, frequent ghosting | Every applicant gets a specific, respectful reply |
+| Running cost | Paid ATS and/or recruiter hours | **$0/month** on free tiers (Vercel, Supabase, Brevo); agent on Wesam.ai |
+
+*Time savings are estimates based on a structured manual review; your numbers will vary with role complexity.*
 
 ---
 
-*Built with ❤️ for early-stage founders and high-growth engineering teams.*
+## 📂 Repository structure
+
+```text
+├── index.html                    # The live dashboard (single file, no build)
+├── dashboard/index.html          # Copy served at /dashboard
+├── api/
+│   ├── lili/[key]/[action].js    # Lili's ATS web API (next, submit, outreach, send, …)
+│   ├── mcp.js, mcp/[key].js      # Same tools as an MCP server
+│   ├── _lib/send-outreach.js     # Brevo sending with demo-mode safety
+│   └── send-email.js             # Recruiter-initiated sending (Brevo / Resend)
+├── supabase/                     # Schema + migrations (RLS, realtime, lili_* functions)
+├── agent-instructions/           # Lili's system prompt and rubric modules
+├── wesam-skills/                 # Skills uploaded to Lili on Wesam.ai
+├── sample-data/                  # Sample JDs and CVs for testing
+├── docs/                         # Architecture notes and test plan
+└── frontend/                     # Archived early prototype (not deployed)
+```
+
+---
+
+## 🔒 Security notes
+
+- Row-level security restricts every query to the signed-in recruiter's own rows; the public anon key alone returns nothing.
+- Lili's write path is a fixed set of SQL functions that browsers can't execute, so a browser can't forge "Lili verified" results.
+- All CV-derived text is HTML-escaped before rendering; CSV export neutralizes spreadsheet formulas.
+- Agent API keys live in Vercel environment variables, never in the repository. Rotate `LILI_MCP_KEY` if a URL containing it is shared.
+
+---
+
+<div align="center">
+
+**TalentScout AI · Lili** — Built by **Laila Mohamed Fikry** for the **Agents at Work** hackathon.
+[Demo video](https://drive.google.com/file/d/17_2I2OlNHWvJzR-4_IhUwPJeL-r4SncT/view?usp=sharing) · [Live app](https://lili-hr-agent.vercel.app) · [Contact](mailto:laila.mohamed.fikry@gmail.com)
+
+</div>
