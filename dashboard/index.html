@@ -60,9 +60,9 @@
         </div>
         <span class="font-bold text-lg tracking-tight whitespace-nowrap hidden sm:inline">TalentScout <span class="text-emerald-400">AI</span></span>
       </div>
-      <button id="lili-badge" onclick="toggleLiliFeed()" aria-controls="lili-feed" title="Show what Lili is doing" class="relative shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition">
-        <span class="lili-dot w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-        <span id="lili-badge-text">Lili Agent Live</span>
+      <button id="lili-badge" onclick="toggleLiliFeed()" aria-controls="lili-feed" title="Show the activity log" class="relative min-w-0 shrink inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap bg-zinc-800/60 text-zinc-400 border border-zinc-700 hover:bg-zinc-800 transition">
+        <span id="lili-badge-dot" class="lili-dot w-1.5 h-1.5 rounded-full bg-zinc-500"></span>
+        <span id="lili-badge-text" class="truncate max-w-[4.5rem] sm:max-w-none">Lili · sign in to connect</span>
         <span id="lili-unread" class="hidden absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-emerald-500 text-zinc-950 text-[10px] font-bold leading-4 text-center">0</span>
       </button>
       <div class="hidden md:block h-4 w-px bg-zinc-800 shrink-0"></div>
@@ -85,10 +85,10 @@
     <div class="flex items-center gap-1.5 sm:gap-2 w-full xl:w-auto justify-end flex-wrap xl:flex-nowrap">
       <!-- Bias-Free Anonymize Toggle -->
       <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-zinc-400 select-none whitespace-nowrap" title="Bias-Free Mode: hide names and emails">
-        <i data-lucide="eye-off" class="w-3.5 h-3.5 md:hidden xl:inline 2xl:hidden"></i>
-        <span class="hidden md:inline xl:hidden 2xl:inline">Bias-Free</span>
+        <i data-lucide="eye-off" class="w-3.5 h-3.5 md:hidden"></i>
+        <span class="hidden md:inline">Bias-Free</span>
         <div class="relative">
-          <input type="checkbox" id="anonymize-toggle" onchange="renderTable()" class="sr-only peer" aria-label="Bias-Free Mode">
+          <input type="checkbox" id="anonymize-toggle" onchange="onAnonToggle()" class="sr-only peer" aria-label="Bias-Free Mode">
           <div class="w-9 h-5 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
         </div>
       </label>
@@ -103,7 +103,7 @@
       <button onclick="openSupabaseModal()" id="btn-supabase-status" class="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 transition shadow-sm">
         <span id="supabase-indicator-dot" class="w-2 h-2 rounded-full bg-zinc-600"></span>
         <i data-lucide="database" class="w-3.5 h-3.5 text-emerald-400"></i>
-        <span id="supabase-status-text" class="hidden md:inline xl:hidden 2xl:inline">Connect Supabase</span>
+        <span id="supabase-status-text" class="hidden md:inline">Sign in</span>
       </button>
 
       <!-- HR Recruiter Inbox & Dispatch Config Button -->
@@ -147,6 +147,25 @@
       </div>
     </div>
 
+    <!-- LILI STATUS STRIP (cloud only: what the agent has actually done for this role) -->
+    <div id="lili-strip" class="hidden -mt-3 px-4 py-2 rounded-xl border border-violet-500/20 bg-violet-500/5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-zinc-400" aria-label="Lili status for this role"></div>
+
+    <!-- FIRST-VISIT WELCOME BANNER (dismissible, only while this role is empty) -->
+    <div id="welcome-banner" class="hidden p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="flex items-start gap-3">
+        <div class="w-8 h-8 shrink-0 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400"><i data-lucide="rocket" class="w-4 h-4"></i></div>
+        <div>
+          <p class="font-semibold text-sm text-zinc-100">See Lili screen real CVs in 20 seconds</p>
+          <p class="text-xs text-zinc-400 mt-0.5">Runs 4 sample resumes through the live pipeline (Read → Extract → Match → Score → Tier) against the Senior Frontend role. Nothing to upload.</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 shrink-0">
+        <button onclick="runSampleCvs(this)" class="sample-cv-btn px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold text-xs transition flex items-center gap-1.5"><i data-lucide="play" class="w-3.5 h-3.5"></i> Try with 4 sample CVs</button>
+        <a href="https://drive.google.com/file/d/17_2I2OlNHWvJzR-4_IhUwPJeL-r4SncT/view?usp=sharing" target="_blank" rel="noopener" class="text-xs text-violet-300 hover:text-violet-200 underline whitespace-nowrap">▶ Watch Lili's autonomous run (2 min)</a>
+        <button onclick="dismissWelcomeBanner()" aria-label="Dismiss" class="p-1 rounded text-zinc-500 hover:text-zinc-300"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+    </div>
+
     <!-- KPI CARDS -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="p-4 rounded-xl border border-zinc-800/80 bg-zinc-900/40">
@@ -169,6 +188,7 @@
           <i data-lucide="bar-chart-3" class="w-4 h-4 text-sky-400"></i>
         </div>
         <div class="text-2xl font-bold mt-2 text-zinc-100" id="kpi-avg">0.0 <span class="text-xs font-normal text-zinc-500">/ 100</span></div>
+        <p class="text-[10px] text-violet-300/80 mt-0.5">Lili-verified where available</p>
       </div>
       <div class="p-4 rounded-xl border border-zinc-800/80 bg-zinc-900/40">
         <div class="flex items-center justify-between text-zinc-400 text-xs">
@@ -176,28 +196,58 @@
           <i data-lucide="clock" class="w-4 h-4 text-emerald-400"></i>
         </div>
         <div class="text-2xl font-bold mt-2 text-emerald-400" id="kpi-time">0h <span class="text-xs font-normal text-zinc-500">saved</span></div>
+        <p class="text-[10px] text-zinc-500 mt-0.5" id="kpi-time-caption">estimate · 20 min per CV</p>
       </div>
     </div>
+
+    <!-- BUSINESS IMPACT (judging criteria: works · time saved · cost saved · revenue) -->
+    <details id="impact-panel" class="group rounded-xl border border-zinc-800/80 bg-zinc-900/40" ontoggle="onImpactToggle(this)">
+      <summary class="list-none cursor-pointer select-none px-4 py-3 flex items-center justify-between gap-3">
+        <span class="flex items-center gap-2 font-semibold text-sm text-zinc-100"><i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i> Business impact for this SME
+          <span id="impact-summary" class="hidden sm:inline font-normal text-xs text-zinc-500"></span></span>
+        <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-500 transition group-open:rotate-180"></i>
+      </summary>
+      <div class="px-4 pb-4 space-y-3">
+        <div id="impact-tiles" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
+        <div class="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
+          <p class="text-[10px] uppercase tracking-wider font-semibold text-zinc-500 mb-2">Assumptions · your numbers (saved in this browser)</p>
+          <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 text-[11px]">
+            <label class="block text-zinc-400">Manual screening min / CV
+              <input type="number" min="0" step="1" id="bi-minutes" oninput="onImpactInput()" class="mt-1 w-full bg-zinc-800/80 border border-zinc-700 rounded-lg px-2 py-1 text-zinc-100 font-mono focus:outline-none focus:border-emerald-500"></label>
+            <label class="block text-zinc-400">Recruiter cost (USD / h)
+              <input type="number" min="0" step="1" id="bi-rate" oninput="onImpactInput()" class="mt-1 w-full bg-zinc-800/80 border border-zinc-700 rounded-lg px-2 py-1 text-zinc-100 font-mono focus:outline-none focus:border-emerald-500"></label>
+            <label class="block text-zinc-400">ATS / tool avoided (USD / mo)
+              <input type="number" min="0" step="1" id="bi-subscription" oninput="onImpactInput()" class="mt-1 w-full bg-zinc-800/80 border border-zinc-700 rounded-lg px-2 py-1 text-zinc-100 font-mono focus:outline-none focus:border-emerald-500">
+              <span class="block text-[10px] text-zinc-600 mt-0.5">e.g. Greenhouse ≈ $400/mo</span></label>
+            <label class="block text-zinc-400">Value of a filled role / agency fee (USD)
+              <input type="number" min="0" step="100" id="bi-placement" oninput="onImpactInput()" class="mt-1 w-full bg-zinc-800/80 border border-zinc-700 rounded-lg px-2 py-1 text-zinc-100 font-mono focus:outline-none focus:border-emerald-500"></label>
+            <label class="block text-zinc-400">Days faster to shortlist
+              <input type="number" min="0" step="1" id="bi-days" oninput="onImpactInput()" class="mt-1 w-full bg-zinc-800/80 border border-zinc-700 rounded-lg px-2 py-1 text-zinc-100 font-mono focus:outline-none focus:border-emerald-500">
+              <span class="block text-[10px] text-zinc-600 mt-0.5">measured: Lili screens within minutes of the CV arriving</span></label>
+          </div>
+        </div>
+      </div>
+    </details>
 
     <!-- TABLE CONTROLS (TABS & SEARCH) -->
     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-1">
       <div class="flex items-center gap-1 p-1 bg-zinc-900/60 rounded-lg border border-zinc-800/80 w-full lg:w-auto overflow-x-auto text-xs">
-        <button onclick="setFilter('all')" id="tab-all" class="whitespace-nowrap px-3 py-1.5 rounded-md font-medium bg-zinc-800 text-zinc-100 shadow-sm transition">All (<span id="count-all">0</span>)</button>
+        <button onclick="setFilter('all')" id="tab-all" class="whitespace-nowrap px-3 py-1.5 rounded-md font-medium bg-zinc-800 text-zinc-100 shadow-sm transition flex items-center gap-1.5"><span>All (<span id="count-all">0</span>)</span></button>
         <button onclick="setFilter('tier1')" id="tab-tier1" class="whitespace-nowrap px-3 py-1.5 rounded-md font-medium text-zinc-400 hover:text-zinc-200 transition flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Fast-Track (<span id="count-tier1">0</span>)
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span><span>Fast-Track (<span id="count-tier1">0</span>)</span>
         </button>
         <button onclick="setFilter('tier2')" id="tab-tier2" class="whitespace-nowrap px-3 py-1.5 rounded-md font-medium text-zinc-400 hover:text-zinc-200 transition flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full bg-amber-400"></span> Bench (<span id="count-tier2">0</span>)
+          <span class="w-2 h-2 rounded-full bg-amber-400"></span><span>Bench (<span id="count-tier2">0</span>)</span>
         </button>
         <button onclick="setFilter('tier3')" id="tab-tier3" class="whitespace-nowrap px-3 py-1.5 rounded-md font-medium text-zinc-400 hover:text-zinc-200 transition flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full bg-rose-400"></span> Archive (<span id="count-tier3">0</span>)
+          <span class="w-2 h-2 rounded-full bg-rose-400"></span><span>Archive (<span id="count-tier3">0</span>)</span>
         </button>
       </div>
 
       <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full lg:w-auto">
-        <button onclick="importSampleCsv()" class="whitespace-nowrap px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium transition flex items-center gap-1.5">
-          <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
-          Import Sample Pipeline CSV
+        <button onclick="runSampleCvs(this)" title="Screen 4 sample resumes against the Senior Frontend role" class="sample-cv-btn whitespace-nowrap px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium transition flex items-center gap-1.5">
+          <i data-lucide="play" class="w-3.5 h-3.5"></i>
+          Try 4 sample CVs
         </button>
         <button onclick="exportPipelineCsv()" class="whitespace-nowrap px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium transition flex items-center gap-1.5">
           <i data-lucide="download" class="w-3.5 h-3.5"></i>
@@ -210,6 +260,11 @@
       </div>
     </div>
 
+    <div id="filter-chip" class="hidden -mt-2"></div>
+
+    <!-- TALENT REDISCOVERY (past applicants from other roles who fit this one) -->
+    <div id="rediscovery-card" class="hidden"></div>
+
     <!-- CANDIDATES TABLE -->
     <div class="border border-zinc-800 rounded-xl overflow-hidden bg-zinc-900/30">
       <div class="overflow-x-auto">
@@ -217,7 +272,7 @@
           <thead>
             <tr class="border-b border-zinc-800 bg-zinc-900/80 text-zinc-400 uppercase text-[10px] tracking-wider font-semibold select-none">
               <th class="p-3 pl-4 w-10">
-                <input type="checkbox" id="select-all" onchange="toggleSelectAll()" class="rounded bg-zinc-800 border-zinc-700 text-emerald-500 focus:ring-0 cursor-pointer">
+                <input type="checkbox" id="select-all" onchange="toggleSelectAll()" aria-label="Select all visible candidates" class="rounded bg-zinc-800 border-zinc-700 text-emerald-500 focus:ring-0 cursor-pointer">
               </th>
               <th class="p-3">Rank & Candidate</th>
               <th class="p-3 text-center" title="Instant rule-based pre-screen. Lili's deep evaluation appears as a separate badge.">Pre-screen</th>
@@ -239,18 +294,23 @@
         <i data-lucide="inbox" class="w-10 h-10 mx-auto text-zinc-600"></i>
         <div>
           <p class="font-medium text-zinc-300">No candidates under this role</p>
-          <p class="text-xs text-zinc-500 mt-0.5">Upload a PDF or Word CV to evaluate against this role.</p>
+          <p class="text-xs text-zinc-500 mt-0.5">Upload a PDF or Word CV to evaluate against this role, or try it with sample resumes.</p>
         </div>
-        <div class="flex items-center justify-center gap-2.5">
+        <div class="flex flex-wrap items-center justify-center gap-2.5 px-4">
+          <button onclick="runSampleCvs(this)" class="sample-cv-btn px-3.5 py-1.5 rounded-lg bg-emerald-500 text-zinc-950 font-semibold text-xs transition hover:bg-emerald-400 flex items-center gap-1.5">
+            <i data-lucide="play" class="w-3.5 h-3.5"></i>
+            Try with 4 sample CVs
+          </button>
           <button onclick="openUploadModal()" class="px-3 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800 text-zinc-300 font-medium text-xs transition hover:bg-zinc-700 flex items-center gap-1.5">
             <i data-lucide="file-up" class="w-3.5 h-3.5"></i>
             Single CV
           </button>
-          <button onclick="openBulkUploadModal()" class="px-3.5 py-1.5 rounded-lg bg-emerald-500 text-zinc-950 font-semibold text-xs transition hover:bg-emerald-400 flex items-center gap-1.5">
+          <button onclick="openBulkUploadModal()" class="px-3 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800 text-zinc-300 font-medium text-xs transition hover:bg-zinc-700 flex items-center gap-1.5">
             <i data-lucide="files" class="w-3.5 h-3.5"></i>
             Bulk Import CVs
           </button>
         </div>
+        <a href="https://drive.google.com/file/d/17_2I2OlNHWvJzR-4_IhUwPJeL-r4SncT/view?usp=sharing" target="_blank" rel="noopener" class="inline-block text-xs text-violet-300 hover:text-violet-200 underline">▶ Watch Lili's autonomous run (2 min)</a>
       </div>
     </div>
   </main>
@@ -258,19 +318,20 @@
   <!-- LILI ACTIVITY LOG (toggled from the navbar badge) -->
   <section id="lili-feed" aria-label="Lili activity log" aria-hidden="true" class="fixed bottom-6 left-6 z-40 w-80 max-w-[calc(100vw-3rem)] bg-zinc-900/95 border border-zinc-700/80 rounded-xl shadow-2xl backdrop-blur text-xs">
     <div class="flex items-center justify-between px-3 py-2 border-b border-zinc-800">
-      <span class="font-semibold text-zinc-200 flex items-center gap-1.5"><i data-lucide="activity" class="w-3.5 h-3.5 text-emerald-400"></i> Lili's activity</span>
+      <span class="font-semibold text-zinc-200 flex items-center gap-1.5"><i data-lucide="activity" class="w-3.5 h-3.5 text-emerald-400"></i> Activity log</span>
+      <span class="ml-auto mr-2 text-[10px] text-zinc-500 whitespace-nowrap"><span class="px-1 rounded bg-violet-500/15 text-violet-300">Lili</span> agent · <span class="px-1 rounded bg-zinc-800 text-zinc-400">Rules</span> pre-screen</span>
       <button onclick="toggleLiliFeed(false)" class="text-zinc-500 hover:text-zinc-300" aria-label="Close activity log"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
     </div>
     <ul id="lili-feed-list" class="px-3 py-1 max-h-64 overflow-y-auto divide-y divide-zinc-800/60" aria-live="polite"></ul>
   </section>
 
   <!-- FLOATING BATCH ACTION BAR -->
-  <div id="batch-bar" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-zinc-900 border border-zinc-700/80 shadow-2xl rounded-full px-5 py-2.5 flex items-center gap-4 z-40 transition-all duration-300 translate-y-24 opacity-0">
+  <div id="batch-bar" class="fixed bottom-6 left-1/2 -translate-x-1/2 w-max max-w-[calc(100vw-2rem)] bg-zinc-900 border border-zinc-700/80 shadow-2xl rounded-2xl sm:rounded-full px-4 sm:px-5 py-2.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 z-40 transition-all duration-300 translate-y-24 opacity-0 pointer-events-none">
     <span class="text-xs font-medium text-zinc-300 flex items-center gap-1.5">
       <span id="selected-count" class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[10px]">0</span>
       selected
     </span>
-    <div class="h-4 w-px bg-zinc-800"></div>
+    <div class="hidden sm:block h-4 w-px bg-zinc-800"></div>
     <button onclick="openCompareModal()" class="px-3.5 py-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 text-xs font-semibold flex items-center gap-1.5 transition">
       <i data-lucide="columns-3" class="w-3.5 h-3.5"></i>
       Compare
@@ -290,18 +351,18 @@
 
   <!-- REAL CV UPLOAD & EVALUATION MODAL (WITH PDF / DOCX DRAG & DROP) -->
   <div id="upload-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="upload-modal-title">
       <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
         <div class="flex items-center gap-2.5">
           <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
             <i data-lucide="file-up" class="w-4 h-4"></i>
           </div>
           <div>
-            <h3 class="font-bold text-sm text-zinc-100">Upload & Parse Candidate CV</h3>
+            <h3 class="font-bold text-sm text-zinc-100" id="upload-modal-title">Upload & Parse Candidate CV</h3>
             <p class="text-[11px] text-zinc-400" id="upload-role-context">Evaluating against active job requirements</p>
           </div>
         </div>
-        <button onclick="closeUploadModal()" class="text-zinc-500 hover:text-zinc-300">
+        <button onclick="closeUploadModal()" aria-label="Close" class="text-zinc-500 hover:text-zinc-300">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
@@ -368,21 +429,21 @@
 
   <!-- BULK CV UPLOAD & SCREENING MODAL -->
   <div id="bulk-upload-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-3xl w-full p-6 space-y-4 shadow-2xl max-h-[90vh] flex flex-col">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-3xl w-full p-6 space-y-4 shadow-2xl max-h-[90vh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="bulk-modal-title">
       <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
         <div class="flex items-center gap-2.5">
           <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
             <i data-lucide="files" class="w-4 h-4"></i>
           </div>
           <div>
-            <h3 class="font-bold text-sm text-zinc-100 flex items-center gap-2">
+            <h3 class="font-bold text-sm text-zinc-100 flex items-center gap-2" id="bulk-modal-title">
               Bulk CV Import & Automated Screening
               <span id="bulk-role-badge" class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-medium">Active Role</span>
             </h3>
             <p class="text-[11px] text-zinc-400">Drop 5, 10, 20+ CVs to parse, score, and rank each candidate simultaneously.</p>
           </div>
         </div>
-        <button onclick="closeBulkUploadModal()" class="text-zinc-500 hover:text-zinc-300">
+        <button onclick="closeBulkUploadModal()" aria-label="Close" class="text-zinc-500 hover:text-zinc-300">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
@@ -433,14 +494,14 @@
 
   <!-- DIRECT SUPABASE CONNECTION & CLOUD SYNC MODAL -->
   <div id="supabase-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="supabase-modal-title">
       <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
         <div class="flex items-center gap-2.5">
           <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
             <i data-lucide="shield-check" class="w-4 h-4"></i>
           </div>
           <div>
-            <h3 class="font-bold text-sm text-zinc-100">Recruiter sign-in</h3>
+            <h3 class="font-bold text-sm text-zinc-100" id="supabase-modal-title">Recruiter sign-in</h3>
             <p class="text-[11px] text-zinc-400">Private cloud pipeline · only you can see your candidates</p>
           </div>
         </div>
@@ -495,18 +556,18 @@
 
   <!-- HR ADMIN: RECRUITER INBOX & EMAIL DISPATCH CONFIGURATION MODAL -->
   <div id="inbox-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="inbox-modal-title">
       <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
         <div class="flex items-center gap-2.5">
           <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
             <i data-lucide="mail" class="w-4 h-4"></i>
           </div>
           <div>
-            <h3 class="font-bold text-sm text-zinc-100">Recruiter Inbox & Email Dispatch Settings</h3>
+            <h3 class="font-bold text-sm text-zinc-100" id="inbox-modal-title">Recruiter Inbox & Email Dispatch Settings</h3>
             <p class="text-[11px] text-zinc-400">Configure how Lili delivers interview invites and rejection feedback</p>
           </div>
         </div>
-        <button onclick="closeInboxSettingsModal()" class="text-zinc-500 hover:text-zinc-300">
+        <button onclick="closeInboxSettingsModal()" aria-label="Close" class="text-zinc-500 hover:text-zinc-300">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
@@ -605,7 +666,7 @@
 
   <!-- HR ADMIN: POST NEW JOB ROLE MODAL -->
   <div id="job-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="job-modal-title">
       <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
         <div class="flex items-center gap-2.5">
           <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
@@ -616,7 +677,7 @@
             <p class="text-[11px] text-zinc-400">Configure role requirements, must-haves, and calibrated scoring weights</p>
           </div>
         </div>
-        <button onclick="closeJobModal()" class="text-zinc-500 hover:text-zinc-300">
+        <button onclick="closeJobModal()" aria-label="Close" class="text-zinc-500 hover:text-zinc-300">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
@@ -652,7 +713,10 @@
 
         <!-- RUBRIC WEIGHTS -->
         <div class="border-t border-zinc-800 pt-3 space-y-2">
-          <label class="block font-semibold text-zinc-300">⚖️ Calibrate Scoring Rubric Weights</label>
+          <div class="flex items-center justify-between gap-2">
+            <label class="block font-semibold text-zinc-300">⚖️ Calibrate Scoring Rubric Weights</label>
+            <span id="rubric-total" class="font-mono text-[11px] px-2 py-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-300">Total: 100%</span>
+          </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <div class="flex justify-between text-zinc-400 text-[11px] mb-1">
@@ -699,10 +763,10 @@
 
   <!-- VIEW JOB DETAILS MODAL -->
   <div id="view-jd-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="vjd-title">
       <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
         <h3 class="font-bold text-sm text-zinc-100" id="vjd-title">Job Details</h3>
-        <button onclick="closeViewJdModal()" class="text-zinc-500 hover:text-zinc-300"><i data-lucide="x" class="w-4 h-4"></i></button>
+        <button onclick="closeViewJdModal()" aria-label="Close" class="text-zinc-500 hover:text-zinc-300"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
       <div class="space-y-3 text-xs text-zinc-300">
         <div>
@@ -739,14 +803,14 @@
   </div>
 
   <!-- CANDIDATE DETAIL SLIDE-OVER DRAWER -->
-  <div id="drawer" class="fixed inset-y-0 right-0 w-full max-w-lg bg-zinc-900 border-l border-zinc-800 shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col">
+  <div id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-name" class="fixed inset-y-0 right-0 w-full max-w-lg bg-zinc-900 border-l border-zinc-800 shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col">
     <div class="p-5 border-b border-zinc-800 flex items-center justify-between">
       <div>
         <h2 id="drawer-name" class="font-bold text-base text-zinc-100">Candidate Details</h2>
         <p id="drawer-role" class="text-xs text-zinc-400 mt-0.5">Role Evaluation</p>
       </div>
-      <button onclick="closeDrawer()" class="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition">
-        <i data-lucide="x" class="w-5 h-5"></i>
+      <button onclick="closeDrawer()" aria-label="Close" class="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
       </button>
     </div>
 
@@ -796,6 +860,9 @@
       </div>
 
       <div id="panel-email" class="space-y-3 hidden text-xs">
+        <div id="drawer-approval"></div>
+        <button id="drawer-composer-reveal" type="button" onclick="revealDrawerComposer()" class="hidden w-full text-center text-[11px] text-zinc-500 hover:text-zinc-300 underline">Or write and send your own email instead</button>
+        <div id="drawer-composer" class="space-y-3">
         <!-- Connected Recruiter Inbox Banner -->
         <div class="flex items-center justify-between rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-2.5">
           <div class="flex items-center gap-2">
@@ -839,7 +906,7 @@
         <div>
           <div class="flex items-center justify-between mb-1">
             <label class="block text-[10px] font-semibold text-zinc-400 uppercase">Email Body (Fully Editable)</label>
-            <span class="text-[10px] text-zinc-500" id="drawer-email-badge">Auto-drafted by Lili</span>
+            <span class="text-[10px] text-zinc-500" id="drawer-email-badge">Template draft</span>
           </div>
           <textarea id="drawer-email-body-edit" rows="8" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-xs text-zinc-300 leading-relaxed outline-none focus:border-emerald-500 font-mono resize-none"></textarea>
         </div>
@@ -856,19 +923,20 @@
         <button onclick="copyDrawerEmail()" class="w-full py-1 text-center text-zinc-400 hover:text-zinc-200 text-xs transition flex items-center justify-center gap-1.5 pt-0.5">
           <i data-lucide="copy" class="w-3 h-3"></i> Copy Draft to Clipboard
         </button>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- AUTONOMOUS EMAIL DISPATCH MODAL -->
   <div id="dispatch-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="dispatch-modal-title">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
           <i data-lucide="send" class="w-5 h-5"></i>
         </div>
         <div>
-          <h3 class="font-bold text-base text-zinc-100">⚡ Autonomous Email Dispatch Engine</h3>
+          <h3 class="font-bold text-base text-zinc-100" id="dispatch-modal-title">Batch email dispatch</h3>
           <p class="text-xs text-zinc-400" id="modal-subtitle">Processing selected candidate communications</p>
           <div class="mt-1 flex items-center gap-1.5 text-[11px] text-zinc-400">
             <span>Dispatching from:</span>
@@ -944,9 +1012,6 @@
       }
     ];
 
-    // Single source of truth for tier thresholds (keep in sync with agent-instructions/)
-    const SCORING = { tier1Min: 85, tier2Min: 70, minExpCap: 69, missingMustHaveCap: 74 };
-
     // SAFE STORAGE HELPERS (corrupt JSON or blocked storage must not kill the app)
     function loadJSON(key, fallback) {
       try {
@@ -967,6 +1032,21 @@
         showToast('Browser storage is full or blocked. Changes are kept for this session only.', 'error');
         return false;
       }
+    }
+
+    function lsGet(key, fallback = '') {
+      try {
+        const v = localStorage.getItem(key);
+        return v === null ? fallback : v;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function lsSet(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch (e) {}
     }
 
     function escapeHtml(value) {
@@ -1009,21 +1089,55 @@
       if (changed.length > 0) upsertCandidatesToSupabase(changed);
     }
 
+    // <scoring-core> Pure, DOM-free pre-screen functions. tests/scoring.test.mjs evaluates exactly this block.
+    // Single source of truth for tier thresholds (keep in sync with agent-instructions/)
+    const SCORING = { tier1Min: 85, tier2Min: 70, minExpCap: 69, missingMustHaveCap: 74 };
+
     // RULE-BASED PRE-SCREEN SCORER (uses the role's rubric weights)
     const COMMON_TECH = [
       'React', 'Next.js', 'TypeScript', 'JavaScript', 'Python', 'FastAPI', 'Django', 'Flask',
       'PostgreSQL', 'MySQL', 'Node.js', 'MongoDB', 'Redis', 'Docker', 'Kubernetes', 'AWS',
       'GCP', 'Azure', 'Storybook', 'Tailwind', 'GraphQL', 'LangChain', 'LlamaIndex',
-      'Pinecone', 'Qdrant', 'Weaviate', 'pgvector', 'Redux', 'Terraform', 'CI/CD', 'Git',
-      'C#', 'ASP.NET', '.NET', 'Java', 'Spring', 'PyTorch', 'TensorFlow', 'Microservices',
+      'Pinecone', 'Qdrant', 'Weaviate', 'pgvector', 'Vector DB', 'Redux', 'Terraform', 'CI/CD', 'Git',
+      'C#', 'ASP.NET', '.NET', 'Java', 'Spring', 'Go', 'PyTorch', 'TensorFlow', 'Microservices',
       'RAG', 'LLM', 'Vue', 'Angular', 'Kafka', 'REST'
     ];
+
+    // How canonical skills are written in real CVs. Patterns avoid plain-English false positives
+    // ("react quickly", "the rest of", "Spring 2020", "go to market").
+    const TB = '(?<![A-Za-z0-9+#])';   // term start boundary
+    const TE = '(?![A-Za-z0-9+#])';    // term end boundary
+    const rx = (body, flags = 'i') => new RegExp(TB + body + TE, flags);
+    const SKILL_PATTERNS = {
+      'React': [new RegExp(TB + 'react(?:\\.?js)?' + TE + '(?!\\s+(?:quickly|to)\\b)', 'i')],
+      'Next.js': [rx('next(?:\\.?js|\\s+js)')],
+      'TypeScript': [rx('typescript'), rx('TS', '')],
+      'JavaScript': [rx('javascript'), rx('JS', '')],
+      'Node.js': [rx('node\\.?js'), rx('Node', '')],
+      'PostgreSQL': [rx('(?:postgres(?:ql)?|psql)')],
+      'Kubernetes': [rx('(?:kubernetes|k8s)')],
+      'Vector DB': [rx('vector[\\s-]*(?:dbs?|databases?|stores?|search)'), rx('(?:chroma(?:db)?|pinecone|qdrant|weaviate|milvus|faiss|pgvector)')],
+      'Go': [rx('golang'), /(?:^|[,:;(\/|•]\s*)Go(?=\s*(?:[,;)(\/|]|$))/m],
+      'REST': [rx('REST(?:ful)?', ''), rx('restful')],
+      'Spring': [new RegExp(TB + 'Spring(?:\\s+Boot)?' + TE + '(?!\\s+(?:19|20)\\d{2})(?!\\s+(?:semester|term|break|quarter))')],
+      'AWS': [rx('(?:aws|amazon web services)')],
+      'GCP': [rx('(?:gcp|google cloud(?: platform)?)')],
+      'Microservices': [rx('micro-?services?')],
+      'LLM': [rx('(?:llms?|large language models?)')],
+      'Tailwind': [rx('tailwind(?:\\s*css)?')],
+      'Vue': [rx('vue(?:\\.?js)?')],
+      'CI/CD': [rx('(?:ci\\s*/\\s*cd|cicd)')],
+      'RAG': [rx('RAG', ''), rx('retrieval[- ]augmented')],
+      'MongoDB': [rx('mongo(?:db)?')],
+      'Django': [rx('django')]
+    };
 
     // A mandatory requirement is also satisfied by any of these concrete tools
     const SKILL_ALIASES = {
       'vector db': ['pinecone', 'qdrant', 'weaviate', 'pgvector', 'chroma', 'milvus', 'faiss'],
       'state management': ['redux', 'zustand', 'mobx', 'recoil'],
       'restful apis': ['rest', 'fastapi', 'express'],
+      'rest apis': ['rest', 'fastapi', 'express'],
       'llm fine-tuning': ['lora', 'qlora', 'peft']
     };
 
@@ -1036,35 +1150,161 @@
       return new RegExp(`(^|[^a-z0-9+#])${escapeRegex(term.toLowerCase())}($|[^a-z0-9+#])`).test(haystack.toLowerCase());
     }
 
+    function termInText(text, term) {
+      const pats = SKILL_PATTERNS[term];
+      return pats ? pats.some(re => re.test(text)) : containsTerm(text, term);
+    }
+
     function detectSkills(text, job) {
-      const terms = [...new Set([...COMMON_TECH, ...(job ? job.mandatory : [])])];
-      return terms.filter(t => containsTerm(text, t));
+      const terms = [...new Set([...COMMON_TECH, ...(job ? job.mandatory || [] : [])])];
+      return terms.filter(t => termInText(String(text || ''), t));
+    }
+
+    // Canonical skills a free-text name refers to ("Postgres" -> PostgreSQL, "k8s" -> Kubernetes)
+    const canonicalCache = new Map();
+    function canonicalSkills(name) {
+      const key = String(name || '');
+      if (!canonicalCache.has(key)) {
+        canonicalCache.set(key, Object.keys(SKILL_PATTERNS).filter(k => k.toLowerCase() === key.toLowerCase() || SKILL_PATTERNS[k].some(re => re.test(key))));
+      }
+      return canonicalCache.get(key);
     }
 
     function skillSatisfies(skill, requirement) {
-      const s = skill.toLowerCase().trim();
-      const r = requirement.toLowerCase().trim();
+      const s = String(skill || '').toLowerCase().trim();
+      const r = String(requirement || '').toLowerCase().trim();
       if (!s || !r) return false;
       if (s === r || containsTerm(r, s) || containsTerm(s, r)) return true;
-      return (SKILL_ALIASES[r] || []).includes(s);
+      if ((SKILL_ALIASES[r] || []).includes(s)) return true;
+      const rc = canonicalSkills(requirement);
+      return rc.length > 0 && canonicalSkills(skill).some(k => rc.includes(k));
     }
 
+    // CV LINE CLASSIFICATION: skills lists vs. experience/project evidence vs. education
+    const HEADING_RE = /^(?:professional |work |relevant )?(?:experience|employment(?: history)?|work history|education|academic.*|skills|technical skills|core skills|key skills|technologies|tech stack|tools|competencies|core competencies|expertise|projects|open source.*|certifications?|courses|summary|profile|about me|publications|awards|languages|interests)\s*:?$/i;
+    const SKILL_LABEL_RE = /^\s*[•\-*]?\s*([A-Za-z][A-Za-z /&+().-]{1,30}):\s*\S/;
+    const SKILL_LABEL_WORDS = /(language|framework|lib|tool|tech|skill|database|\bdbs?\b|infra|cloud|testing|stack|platform|backend|frontend|devops|\bml\b|\bai\b|method|devops|data)/i;
+    const EDUCATION_LINE_RE = /(?:\bB\.S\.?|\bB\.Sc\.?|\bBSc\b|\bB\.A\.?|\bM\.S\.?|\bM\.Sc\.?|\bMSc\b|\bMBA\b|\bPh\.?D\b|\bUniversity\b|\bCollege\b|\bDegree\b|\bBachelor|\bMaster'?s\b|\bMaster of\b|\bGraduated\b|\bEducation\b|\bDiploma\b|\bHigh School\b)/i;
+
+    function classifyCvLines(text) {
+      let section = 'body';
+      return String(text || '').split('\n').map(raw => {
+        const line = raw.trim();
+        const isHeading = line.length >= 3 && line.length <= 40 && /[A-Za-z]/.test(line) &&
+          (HEADING_RE.test(line) || (line === line.toUpperCase() && !/[,@|]/.test(line) && line.split(/\s+/).length <= 4));
+        if (isHeading) {
+          if (/skill|technolog|stack|competenc|tools|expertise/i.test(line)) section = 'skills';
+          else if (/education|academic|certif|course/i.test(line)) section = 'education';
+          else section = 'body';
+          return { text: line, kind: 'heading' };
+        }
+        const label = line.match(SKILL_LABEL_RE);
+        const listLine = label && SKILL_LABEL_WORDS.test(label[1]) && /,/.test(line);
+        const kind = section === 'skills' || listLine ? 'skills' : (section === 'education' || EDUCATION_LINE_RE.test(line)) ? 'education' : 'body';
+        return { text: line, kind };
+      });
+    }
+
+    // EXPERIENCE: prefer dated employment spans; a claimed "N years" phrase is only a fallback
+    const MONTH_INDEX = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+    const MON = '(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\.?';
+    const RANGE_RE = new RegExp(`(?:${MON}\\s+|(\\d{1,2})\\/)?((?:19|20)\\d{2})\\s*(?:–|—|-|to|until)\\s*(?:(?:${MON}\\s+|(\\d{1,2})\\/)?((?:19|20)\\d{2})|(present|current|now|today|date))`, 'i');
+    const DURATION_RE = /\(\s*(?:(\d{1,2})\s*(?:years?|yrs?))?\s*,?\s*(?:(\d{1,2})\s*(?:months?|mos?))?\s*\)/i;
+    const CLAIMED_RE = /(\d{1,2}(?:\.\d)?)\+?\s*years?\s*(?:of)?\s*(?:professional\s+|industry\s+|hands-on\s+|relevant\s+)?(?:experience|exp)\b/gi;
+
+    function analyzeExperience(text, now = new Date()) {
+      const nowIdx = now.getFullYear() * 12 + now.getMonth();
+      const spans = [];
+      for (const { text: line, kind } of classifyCvLines(text)) {
+        if (kind === 'education' || kind === 'heading') continue;
+        const m = line.match(RANGE_RE);
+        if (!m) continue;
+        const mon = (name, num) => name ? MONTH_INDEX[name.toLowerCase().slice(0, 3)] : num ? Math.min(Math.max(parseInt(num, 10) - 1, 0), 11) : 0;
+        const start = parseInt(m[3], 10) * 12 + mon(m[1], m[2]);
+        let end = m[7] ? nowIdx : parseInt(m[6], 10) * 12 + mon(m[4], m[5]);
+        const d = line.match(DURATION_RE);
+        const stated = d ? parseInt(d[1] || '0', 10) * 12 + parseInt(d[2] || '0', 10) : 0;
+        if (stated > 0) end = start + stated; // the CV's own duration beats "Present" (the CV may be old)
+        if (end > start && end - start <= 45 * 12) spans.push([start, end]);
+      }
+      // Union overlapping roles so parallel jobs aren't double-counted
+      spans.sort((a, b) => a[0] - b[0]);
+      let months = 0, curS = null, curE = null;
+      for (const [s, e] of spans) {
+        if (curE === null || s > curE) { if (curE !== null) months += curE - curS; curS = s; curE = e; }
+        else curE = Math.max(curE, e);
+      }
+      if (curE !== null) months += curE - curS;
+      const dated = months > 0 ? Math.round((months / 12) * 10) / 10 : null;
+
+      const claimedAll = [...String(text || '').matchAll(CLAIMED_RE)].map(m => parseFloat(m[1])).filter(n => n > 0 && n <= 45);
+      const claimed = claimedAll.length ? Math.max(...claimedAll) : null;
+
+      let years = null, source = null, mismatch = null;
+      if (dated !== null) {
+        years = dated; source = 'dated';
+        if (claimed !== null && claimed - dated > 2) mismatch = `Claimed ${claimed} yrs but dated roles show ${dated} yrs — verify.`;
+      } else if (claimed !== null) {
+        years = claimed; source = 'claimed';
+      }
+      return { years, dated, claimed, source, mismatch };
+    }
+
+    function extractYears(text) {
+      return analyzeExperience(text).years;
+    }
+
+    const PROMPT_INJECTION_RE = /ignore (?:all |any )?(?:the )?(?:previous|prior|above) instructions|disregard (?:all |any )?(?:previous|prior|above) instructions|score (?:this|me) 100|score (?:this (?:candidate|cv|resume|applicant)|me|them) (?:a |as )?100|you are (?:now )?an? (?:ai|assistant)|system prompt/i;
+    function detectPromptInjection(text) {
+      const m = String(text || '').match(PROMPT_INJECTION_RE);
+      return m ? m[0] : null;
+    }
+
+    // "SARAH LIN" -> "Sarah Lin"; mixed-case names ("O'Brien-Müller", "McDonald") are left alone
+    function titleCaseName(name) {
+      const n = String(name || '').trim();
+      if (!/\p{L}/u.test(n) || n !== n.toUpperCase()) return n;
+      return n.toLowerCase().replace(/(^|[\s'’-])(\p{L})/gu, (_, sep, ch) => sep + ch.toUpperCase());
+    }
+
+    function extractName(text, filename) {
+      const lines = String(text || '').split('\n').map(l => l.trim())
+        .filter(l => l.length > 2 && !/resume|curriculum|cv\b/i.test(l));
+      const first = lines.length > 0 ? lines[0].replace(/[^\p{L}\s'’.-]/gu, '').trim() : '';
+      if (first && first.length <= 35 && first.split(/\s+/).length <= 4) return titleCaseName(first);
+      return titleCaseName(String(filename || 'Candidate').replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '));
+    }
+
+    // exp === null means "unknown": scored neutrally, never capped, flagged for manual check
     function scoreCandidate(job, skills, exp, text = '') {
       const mandatory = job.mandatory || [];
       const matched = mandatory.filter(m => skills.some(s => skillSatisfies(s, m)));
       const missing = mandatory.filter(m => !matched.includes(m));
+      const expUnknown = exp === null || exp === undefined || Number.isNaN(Number(exp));
+      const years = expUnknown ? 0 : Number(exp);
 
-      const minExp = job.minExp || 1;
-      const techScore = mandatory.length ? (matched.length / mandatory.length) * 100 : 50;
-      // Meeting the bar = 75, twice the bar = 100, below the bar scales down from 60
-      const expScore = exp >= minExp
-        ? 75 + 25 * Math.min((exp - minExp) / minExp, 1)
-        : 60 * (exp / minExp);
+      // Must-haves that appear ONLY in a skills list (no project/experience mention) get half credit
+      let listedOnly = [];
+      if (String(text || '').trim().length > 50 && matched.length) {
+        const lines = classifyCvLines(text);
+        const listSkills = detectSkills(lines.filter(l => l.kind === 'skills').map(l => l.text).join('\n'), job);
+        const bodySkills = detectSkills(lines.filter(l => l.kind !== 'skills').map(l => l.text).join('\n'), job);
+        listedOnly = matched.filter(m => listSkills.some(s => skillSatisfies(s, m)) && !bodySkills.some(s => skillSatisfies(s, m)));
+      }
+
+      const minExp = Number(job.minExp) || 0;
+      const expDiv = minExp || 1;
+      const techScore = mandatory.length ? ((matched.length - 0.5 * listedOnly.length) / mandatory.length) * 100 : 50;
+      // Meeting the bar = 75, twice the bar = 100, below the bar scales down from 60; unknown = neutral 50
+      const expScore = expUnknown ? 50
+        : years >= minExp
+          ? 75 + 25 * Math.min((years - minExp) / expDiv, 1)
+          : 60 * (years / expDiv);
 
       // Impact/leadership need resume text; without it stay neutral instead of guessing
       let impactScore = 50;
       let leadScore = 50;
-      if (text.trim().length > 50) {
+      if (String(text || '').trim().length > 50) {
         const metrics = text.match(/\b\d+(\.\d+)?\s*(%|x\b|ms\b|k\b|m\b|million|users|customers|requests|txns|transactions)/gi) || [];
         impactScore = 30 + 70 * Math.min(metrics.length / 4, 1);
         const leadership = text.match(/\b(led|lead|mentored|managed|architected|owned|spearheaded|principal|staff engineer|tech lead|cross-functional)\b/gi) || [];
@@ -1081,7 +1321,7 @@
       ];
 
       let score = Math.round(breakdown.reduce((sum, d) => sum + d.score * d.weight, 0) / totalWeight);
-      const belowExpBar = exp < job.minExp;
+      const belowExpBar = !expUnknown && years < minExp;
       if (belowExpBar) score = Math.min(score, SCORING.minExpCap);
       if (missing.length > 0) score = Math.min(score, SCORING.missingMustHaveCap);
 
@@ -1089,36 +1329,194 @@
       const status = tier === 'tier1' ? 'Fast-Track' : tier === 'tier2' ? 'Bench / Review' : 'Does Not Meet Bar';
 
       const gaps = [];
-      if (belowExpBar) gaps.push(`Under mandatory ${job.minExp}-year bar for this role (${exp} yrs found). Score capped at ${SCORING.minExpCap}.`);
+      if (expUnknown) gaps.push('Years of experience could not be determined from the CV (exp unknown — verify manually). No experience cap applied.');
+      if (belowExpBar) gaps.push(`Under mandatory ${job.minExp}-year bar for this role (${years} yrs found). Score capped at ${SCORING.minExpCap}.`);
       if (missing.length > 0) gaps.push(`Missing must-have${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}. Score capped at ${SCORING.missingMustHaveCap} (cannot be Fast-Track).`);
+      if (listedOnly.length > 0) gaps.push(`Listed only in skills section — no project evidence: ${listedOnly.join(', ')} (half credit).`);
       if (gaps.length === 0) gaps.push('No hard-requirement gaps detected. Verify depth in technical screen.');
 
-      return { score, tier, status, breakdown, matched, missing, gaps, belowExpBar };
+      return { score, tier, status, breakdown, matched, missing, gaps, belowExpBar, expUnknown, listedOnly };
     }
 
+    // Full pre-screen straight from CV text: the one path used by bulk import, samples, rediscovery and rescoring
+    function prescreenFromText(job, text, now = new Date()) {
+      const expInfo = analyzeExperience(text, now);
+      const skills = detectSkills(text, job);
+      const result = scoreCandidate(job, skills, expInfo.years, text);
+      const injection = detectPromptInjection(text);
+      const flags = [];
+      if (expInfo.mismatch) {
+        result.gaps.unshift(expInfo.mismatch);
+        flags.push('claim_mismatch');
+      }
+      if (injection) {
+        result.gaps.unshift(`⚠ Hidden instructions detected in the CV text ("${injection.slice(0, 60)}"). Possible prompt injection; the score ignores it, but review this CV manually.`);
+        flags.push('prompt_injection');
+      }
+      return { ...result, skills, exp: expInfo.years ?? 0, expInfo, injection, flags };
+    }
+    // </scoring-core>
+
+    // Candidate fields from a scoreCandidate/prescreenFromText result
+    function candidateFields(result, skills, exp, job) {
+      const expUnknown = !!result.expUnknown;
+      const yrs = expUnknown ? 'exp unknown' : `${Number(exp).toFixed(1)} yrs`;
+      return {
+        score: result.score,
+        tier: result.tier,
+        status: result.status,
+        skills,
+        exp: expUnknown ? 0 : Number(exp),
+        expUnknown,
+        breakdown: result.breakdown,
+        missing: result.missing,
+        takeaway: `${skills.slice(0, 3).join(', ') || 'General'} experience (${yrs}). Matched ${result.matched.length}/${(job.mandatory || []).length} mandatory skills${result.belowExpBar ? `; below ${job.minExp}+ yr bar` : ''}.`,
+        strengths: [
+          result.matched.length ? `Demonstrated mandatory skills: ${result.matched.join(', ')}.` : `Detected skills: ${skills.join(', ') || 'none detected'}.`,
+          expUnknown ? 'Years of experience not stated or dated in the CV.' : `${Number(exp).toFixed(1)} years total professional experience.`
+        ],
+        gaps: result.gaps,
+        cvFlags: result.flags || []
+      };
+    }
+
+    // Manual entry (Single CV form): skills/years typed by the recruiter
     function buildCandidate({ name, email, exp, skills, text, job }) {
       const result = scoreCandidate(job, skills, exp, text);
+      const injection = detectPromptInjection(text);
+      if (injection) {
+        result.gaps.unshift(`⚠ Hidden instructions detected in the CV text ("${injection.slice(0, 60)}"). Possible prompt injection; the score ignores it, but review this CV manually.`);
+        result.flags = ['prompt_injection'];
+      }
       return {
         id: newCandidateId(),
         name,
         email: isValidEmail(email) ? email.trim() : '',
         roleId: job.id,
-        score: result.score,
-        tier: result.tier,
-        status: result.status,
-        skills,
-        exp,
-        breakdown: result.breakdown,
-        missing: result.missing,
-        takeaway: `${skills.slice(0, 3).join(', ') || 'General'} experience (${exp.toFixed(1)} yrs). Matched ${result.matched.length}/${job.mandatory.length} mandatory skills${result.belowExpBar ? `; below ${job.minExp}+ yr bar` : ''}.`,
-        strengths: [
-          result.matched.length ? `Demonstrated mandatory skills: ${result.matched.join(', ')}.` : `Detected skills: ${skills.join(', ') || 'none detected'}.`,
-          `${exp.toFixed(1)} years total professional experience.`
-        ],
-        gaps: result.gaps,
+        ...candidateFields(result, skills, exp, job),
         emailDraft: '',
         cvText: (text || '').slice(0, 60000)
       };
+    }
+
+    // From CV text (bulk import, samples, rediscovery): same scorer everywhere
+    function buildCandidateFromText({ name, email, text, job, source }) {
+      const r = prescreenFromText(job, text);
+      const cand = {
+        id: newCandidateId(),
+        name,
+        email: isValidEmail(email) ? email.trim() : '',
+        roleId: job.id,
+        ...candidateFields(r, r.skills, r.expInfo.years, job),
+        emailDraft: '',
+        cvText: (text || '').slice(0, 60000)
+      };
+      if (source) cand.source = source;
+      return cand;
+    }
+
+    // Re-run the pre-screen for an existing candidate (role rubric edited). Keeps manual statuses.
+    function rescoreCandidate(c, job) {
+      const tierStatuses = ['Fast-Track', 'Bench / Review', 'Does Not Meet Bar'];
+      let fields;
+      if (c.cvText && c.cvText.replace(/\s+/g, '').length >= MIN_CV_TEXT_CHARS) {
+        const r = prescreenFromText(job, c.cvText);
+        fields = candidateFields(r, r.skills, r.expInfo.years, job);
+      } else {
+        const r = scoreCandidate(job, c.skills || [], c.expUnknown ? null : (Number(c.exp) || 0), c.cvText || '');
+        fields = candidateFields(r, c.skills || [], c.exp, job);
+      }
+      const keepStatus = c.status && !tierStatuses.includes(c.status);
+      Object.assign(c, fields, keepStatus ? { status: c.status } : {});
+      if (!keepStatus && !c.liliOutreach) c.localEdited = true;
+      return c;
+    }
+
+    // EFFECTIVE VERDICT: Lili's deep evaluation drives ranking when present, the pre-screen otherwise
+    function liliTierKey(c) {
+      const t = Number(c && c.liliTier);
+      return t === 1 || t === 2 || t === 3 ? 'tier' + t : null;
+    }
+    function hasLiliScore(c) {
+      return !!c && c.liliScore !== null && c.liliScore !== undefined && c.liliScore !== '' && Number.isFinite(Number(c.liliScore));
+    }
+    function effScore(c) {
+      return hasLiliScore(c) ? Number(c.liliScore) : (Number(c.score) || 0);
+    }
+    function effTier(c) {
+      return (hasLiliScore(c) && liliTierKey(c)) || c.tier || 'tier3';
+    }
+    function tierLabel(t) {
+      return t === 'tier1' ? 'Tier 1 Fast-Track' : t === 'tier2' ? 'Tier 2 Bench' : 'Tier 3 Below Bar';
+    }
+    function isAwaitingApproval(c) {
+      const o = c && c.liliOutreach;
+      if (o && o.sent_at) return false;
+      return !!(o && o.awaiting_approval) || (c && c.status === 'Awaiting your approval (Lili)');
+    }
+    function needsReview(c) {
+      return (c.liliFlags || []).some(f => f && (f.type === 'disagreement' || f.type === 'needs_review'));
+    }
+    function hasInjectionFlag(c) {
+      return (c.cvFlags || []).includes('prompt_injection') ||
+        (c.liliFlags || []).some(f => f && f.type === 'prompt_injection') ||
+        (c.gaps || []).some(g => String(g).includes('Hidden instructions detected'));
+    }
+    function isQueuedForLili(c) {
+      return isCloud() && c.cvText && String(c.cvText).replace(/\s+/g, '').length >= MIN_CV_TEXT_CHARS && !hasLiliScore(c);
+    }
+
+    // BIAS-FREE MODE: one place decides what a name/email looks like in the UI (sending is unaffected)
+    function isAnonMode() {
+      const el = document.getElementById('anonymize-toggle');
+      return !!(el && el.checked);
+    }
+    function displayName(c) {
+      if (!c) return '';
+      return isAnonMode() ? c.id : (c.name || c.id);
+    }
+    function displayEmail(c) {
+      return isAnonMode() ? 'candidate@hidden' : ((c && c.email) || '');
+    }
+    // Replace a candidate's name/email inside free text (drafts, Lili summaries) when Bias-Free Mode is on
+    function anonymizeText(text, c) {
+      let t = String(text ?? '');
+      if (!c) return t;
+      if (c.name && c.name.length >= 2) {
+        t = t.split(c.name).join(c.id);
+        const first = c.name.split(/\s+/)[0];
+        if (first && first.length >= 2) t = t.replace(new RegExp(`(^|[^\\p{L}])${escapeRegex(first)}(?![\\p{L}])`, 'gu'), `$1${c.id}`);
+      }
+      if (c.email) t = t.split(c.email).join('candidate@hidden');
+      return t;
+    }
+    function deanonymizeText(text, c) {
+      let t = String(text ?? '');
+      if (!c) return t;
+      t = t.split(c.id).join(c.name || c.id);
+      if (c.email) t = t.split('candidate@hidden').join(c.email);
+      return t;
+    }
+    function anonText(text, c) {
+      return isAnonMode() ? anonymizeText(text, c) : String(text ?? '');
+    }
+    // For log lines/toasts that may contain any candidate's name
+    function redactNames(text) {
+      let t = String(text ?? '');
+      if (!isAnonMode()) return t;
+      for (const c of candidates) if (c.name && c.name.length >= 3) t = t.split(c.name).join(c.id);
+      return t;
+    }
+
+    function relTime(value) {
+      const d = new Date(value);
+      if (!value || isNaN(d)) return '';
+      const s = Math.round((Date.now() - d.getTime()) / 1000);
+      if (s < 45) return 'just now';
+      if (s < 3600) return `${Math.max(1, Math.round(s / 60))}m ago`;
+      if (s < 86400) return `${Math.round(s / 3600)}h ago`;
+      if (s < 86400 * 30) return `${Math.round(s / 86400)}d ago`;
+      return d.toLocaleDateString();
     }
 
     function populateRoleDropdown() {
@@ -1136,6 +1534,7 @@
 
     function handleRoleChange() {
       currentJobId = document.getElementById('role-select').value;
+      if (!['all', 'tier1', 'tier2', 'tier3'].includes(currentFilter)) setFilter('all', false);
       updateRoleHeader();
       renderTable();
     }
@@ -1157,97 +1556,131 @@
 
       const ids = candidates.map(c => c.id);
       candidates = [];
+      selectedIds.clear();
       saveCandidates();
       if (cloud) await deleteCandidatesFromSupabase(ids);
       showToast('Pipeline cleared.');
+    }
+
+    // Selection survives re-renders (search, realtime pushes, filters)
+    const selectedIds = new Set();
+
+    const FILTER_LABELS = { awaiting: 'Awaiting your approval', review: 'Needs human review' };
+
+    function matchesFilter(c) {
+      if (currentFilter === 'all') return true;
+      if (currentFilter === 'awaiting') return isAwaitingApproval(c);
+      if (currentFilter === 'review') return needsReview(c);
+      return effTier(c) === currentFilter;
     }
 
     function renderTable() {
       const tbody = document.getElementById('candidate-rows');
       tbody.innerHTML = '';
 
-      const isAnon = document.getElementById('anonymize-toggle').checked;
-      const search = (document.getElementById('search-input').value || '').toLowerCase();
+      const isAnon = isAnonMode();
+      const search = (document.getElementById('search-input').value || '').toLowerCase().trim();
 
       const roleCandidates = candidates.filter(c => !c.roleId || c.roleId === currentJobId);
 
+      // Drop selections that were deleted or belong to another role
+      const roleIds = new Set(roleCandidates.map(c => c.id));
+      for (const id of [...selectedIds]) if (!roleIds.has(id)) selectedIds.delete(id);
+
       const filtered = roleCandidates.filter(c => {
-        const matchesFilter = currentFilter === 'all' || c.tier === currentFilter;
-        const matchesSearch = (c.name || '').toLowerCase().includes(search) ||
-                              (c.skills || []).some(s => s.toLowerCase().includes(search)) ||
-                              (c.takeaway || '').toLowerCase().includes(search);
-        return matchesFilter && matchesSearch;
+        // In Bias-Free Mode search must never match a real name or email
+        const matchesSearch = !search ||
+          displayName(c).toLowerCase().includes(search) ||
+          (!isAnon && (c.email || '').toLowerCase().includes(search)) ||
+          (c.skills || []).some(s => s.toLowerCase().includes(search)) ||
+          (c.takeaway || '').toLowerCase().includes(search);
+        return matchesFilter(c) && matchesSearch;
       });
 
-      // Update Counts & KPIs
+      // Update Counts & KPIs (Lili's verdict where available)
+      const countTier = t => roleCandidates.filter(c => effTier(c) === t).length;
       document.getElementById('count-all').textContent = roleCandidates.length;
-      document.getElementById('count-tier1').textContent = roleCandidates.filter(c => c.tier === 'tier1').length;
-      document.getElementById('count-tier2').textContent = roleCandidates.filter(c => c.tier === 'tier2').length;
-      document.getElementById('count-tier3').textContent = roleCandidates.filter(c => c.tier === 'tier3').length;
+      document.getElementById('count-tier1').textContent = countTier('tier1');
+      document.getElementById('count-tier2').textContent = countTier('tier2');
+      document.getElementById('count-tier3').textContent = countTier('tier3');
 
       document.getElementById('kpi-total').innerHTML = `${roleCandidates.length} <span class="text-xs font-normal text-zinc-500">candidates</span>`;
-      const tier1Count = roleCandidates.filter(c => c.tier === 'tier1').length;
-      document.getElementById('kpi-tier1').innerHTML = `${tier1Count} <span class="text-xs font-normal text-emerald-500/80">ready</span>`;
+      document.getElementById('kpi-tier1').innerHTML = `${countTier('tier1')} <span class="text-xs font-normal text-emerald-500/80">ready</span>`;
 
-      const avgScore = roleCandidates.length > 0 ? (roleCandidates.reduce((a, b) => a + b.score, 0) / roleCandidates.length).toFixed(1) : '0.0';
+      const avgScore = roleCandidates.length > 0 ? (roleCandidates.reduce((a, c) => a + effScore(c), 0) / roleCandidates.length).toFixed(1) : '0.0';
       document.getElementById('kpi-avg').innerHTML = `${avgScore} <span class="text-xs font-normal text-zinc-500">/ 100</span>`;
-      const hoursSaved = (roleCandidates.length * 0.3).toFixed(1);
+      const minutesPerCv = getImpactAssumptions().minutes;
+      const hoursSaved = (roleCandidates.length * minutesPerCv / 60).toFixed(1);
       document.getElementById('kpi-time').innerHTML = `${hoursSaved}h <span class="text-xs font-normal text-zinc-500">saved</span>`;
+      const timeCaption = document.getElementById('kpi-time-caption');
+      if (timeCaption) timeCaption.textContent = `estimate · ${minutesPerCv} min manual screening per CV`;
 
-      if (filtered.length === 0) {
-        document.getElementById('empty-state').classList.remove('hidden');
-      } else {
-        document.getElementById('empty-state').classList.add('hidden');
-      }
+      document.getElementById('empty-state').classList.toggle('hidden', filtered.length > 0);
+      const emptyTitle = document.querySelector('#empty-state p.font-medium');
+      if (emptyTitle) emptyTitle.textContent = roleCandidates.length === 0 ? 'No candidates under this role' : 'No candidates match this filter or search';
 
-      filtered.sort((a, b) => b.score - a.score);
+      filtered.sort((a, b) => effScore(b) - effScore(a) || (Number(b.score) || 0) - (Number(a.score) || 0));
 
       filtered.forEach((c, idx) => {
         const tr = document.createElement('tr');
         tr.className = "hover:bg-zinc-800/30 transition group";
+        const tier = effTier(c);
+        const awaiting = isAwaitingApproval(c);
 
-        const badgeColor = c.tier === 'tier1' 
-          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-          : c.tier === 'tier2' 
-          ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' 
+        const badgeColor = awaiting
+          ? 'bg-amber-500/15 text-amber-300 border-amber-500/40'
+          : tier === 'tier1'
+          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+          : tier === 'tier2'
+          ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
           : 'bg-rose-500/10 text-rose-400 border-rose-500/20';
 
-        const circleColor = c.score >= 85 
-          ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' 
-          : c.score >= 70 
-          ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' 
+        const circleColor = c.score >= 85
+          ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+          : c.score >= 70
+          ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
           : 'border-rose-500/30 bg-rose-500/10 text-rose-400';
+
+        const lili = hasLiliScore(c);
+        const delta = lili ? Number(c.liliScore) - (Number(c.score) || 0) : 0;
+        const deltaChip = lili && Math.abs(delta) >= 10
+          ? `<span class="ml-0.5 text-[10px] font-mono ${delta > 0 ? 'text-emerald-300' : 'text-rose-300'}" title="Lili scored ${Math.abs(delta)} points ${delta > 0 ? 'higher' : 'lower'} than the instant pre-screen. Ranking uses Lili's verdict.">Δ${delta > 0 ? '+' : ''}${delta}</span>`
+          : '';
+        const capped = (c.liliCaps || []).length > 0 ? ' · capped' : '';
 
         tr.innerHTML = `
           <td class="p-3 pl-4">
-            <input type="checkbox" class="candidate-check rounded bg-zinc-800 border-zinc-700 text-emerald-500 focus:ring-0 cursor-pointer" data-id="${escapeHtml(c.id)}" onchange="updateBatchBar()">
+            <input type="checkbox" class="candidate-check rounded bg-zinc-800 border-zinc-700 text-emerald-500 focus:ring-0 cursor-pointer" aria-label="Select ${escapeHtml(displayName(c))}" data-id="${escapeHtml(c.id)}" ${selectedIds.has(c.id) ? 'checked' : ''} onchange="onRowCheck(this)">
           </td>
           <td class="p-3">
-            <div class="font-medium text-zinc-100 flex items-center gap-2">
+            <div class="font-medium text-zinc-100 flex flex-wrap items-center gap-x-2 gap-y-1">
               <span class="text-zinc-500 font-mono text-[11px]">#${idx + 1}</span>
-              <span>${escapeHtml(isAnon ? c.id : c.name)}</span>
-              ${c.source === 'email' ? '<span class="px-1.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/20 text-[10px]" title="Lili picked this application up from your inbox">via email</span>' : ''}
-              ${isCloud() && c.cvText && (c.liliScore === null || c.liliScore === undefined) ? '<span class="lili-busy inline-flex items-center gap-1 px-1.5 rounded bg-violet-500/10 text-violet-300 border border-violet-500/20 text-[10px]" title="Lili evaluates new candidates automatically"><span class="lili-dot w-1.5 h-1.5 rounded-full bg-violet-400"></span>Queued for Lili</span>' : ''}
+              <span>${escapeHtml(displayName(c))}</span>
+              ${c.source === 'email' ? '<span class="px-1.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/20 text-[10px] whitespace-nowrap" title="Lili picked this application up from your inbox">via email</span>' : ''}
+              ${c.source === 'rediscovered' ? '<span class="px-1.5 rounded bg-violet-500/10 text-violet-300 border border-violet-500/20 text-[10px] whitespace-nowrap" title="Past applicant from another role, rediscovered for this one">rediscovered</span>' : ''}
+              ${isQueuedForLili(c) ? '<span class="lili-busy inline-flex items-center gap-1 px-1.5 rounded bg-violet-500/10 text-violet-300 border border-violet-500/20 text-[10px] whitespace-nowrap" title="Lili evaluates new candidates automatically"><span class="lili-dot w-1.5 h-1.5 rounded-full bg-violet-400"></span>Queued for Lili</span>' : ''}
+              ${hasInjectionFlag(c) ? '<span class="px-1.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/40 text-[10px] font-semibold whitespace-nowrap" title="The CV contains text that tries to instruct an AI screener. The score ignores it; review manually.">⚠ Hidden instructions detected</span>' : ''}
+              ${needsReview(c) ? '<span class="px-1.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[10px] whitespace-nowrap" title="Lili flagged this candidate for human review">Needs review</span>' : ''}
             </div>
             <div class="text-[11px] text-zinc-500">${isAnon ? 'Confidential Applicant' : (escapeHtml(c.email) || '<span class="text-amber-400">No email found</span>')}</div>
           </td>
           <td class="p-3 text-center">
-            <div class="inline-flex items-center justify-center w-8 h-8 rounded-full border ${circleColor} font-bold font-mono">
+            <div class="inline-flex items-center justify-center w-8 h-8 rounded-full border ${circleColor} font-bold font-mono" title="Instant rule-based pre-screen">
               ${Number(c.score) || 0}
             </div>
-            ${c.liliScore !== null && c.liliScore !== undefined ? `<div class="mt-1 inline-flex items-center gap-0.5 px-1.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/30 text-[10px] font-semibold" title="Lili's deep evaluation on Wesam"><i data-lucide="sparkles" class="w-2.5 h-2.5"></i>Lili ${Number(c.liliScore)}</div>` : ''}
+            ${lili ? `<div class="mt-1 flex items-center justify-center whitespace-nowrap"><span class="inline-flex items-center gap-0.5 px-1.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/30 text-[10px] font-semibold" title="Lili's deep evaluation on Wesam${capped}"><i data-lucide="sparkles" class="w-2.5 h-2.5"></i>Lili ${Number(c.liliScore)}</span>${deltaChip}</div>` : ''}
           </td>
           <td class="p-3">
-            <span class="status-badge px-2 py-0.5 rounded text-[11px] font-medium border ${badgeColor}">
-              ${escapeHtml(c.status)}
-            </span>
+            ${awaiting
+              ? `<button data-id="${escapeHtml(c.id)}" onclick="openDrawer(this.dataset.id, 'email')" class="status-badge whitespace-nowrap inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border ${badgeColor} hover:bg-amber-500/25" title="Lili drafted this email and is waiting for you to approve it"><i data-lucide="hourglass" class="w-3 h-3"></i>Awaiting your approval</button>`
+              : `<span class="status-badge whitespace-nowrap px-2 py-0.5 rounded text-[11px] font-medium border ${badgeColor}">${escapeHtml(c.status)}</span>`}
           </td>
           <td class="p-3">
             <div class="flex flex-wrap gap-1 max-w-xs">
               ${(c.skills || []).map(s => `<span class="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 text-[10px]">${escapeHtml(s)}</span>`).join('')}
             </div>
           </td>
-          <td class="p-3 font-mono text-zinc-300">${Number(c.exp) || 0} yrs</td>
+          <td class="p-3 font-mono text-zinc-300 whitespace-nowrap">${c.expUnknown ? '<span class="text-amber-400" title="No dated roles or stated years found in the CV. Verify manually.">unknown</span>' : `${Number(c.exp) || 0} yrs`}</td>
           <td class="p-3 text-zinc-400 max-w-sm">${escapeHtml(c.takeaway)}</td>
           <td class="p-3 text-right pr-4 space-x-1">
             <button data-id="${escapeHtml(c.id)}" onclick="openDrawer(this.dataset.id)" class="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition font-medium">
@@ -1258,42 +1691,77 @@
         tbody.appendChild(tr);
       });
 
-      lucide.createIcons();
+      updateBatchBar();
+      renderFilterChip();
+      renderLiliStrip(roleCandidates);
+      renderWelcomeBanner(roleCandidates);
+      renderRediscovery();
+      renderImpactPanel();
+      scheduleLiliRender();
+      window.lucide?.createIcons();
     }
 
-    // Filter by Tier
-    function setFilter(tier) {
+    // Filter by Tier (or the strip's "awaiting approval" / "needs review" views)
+    function setFilter(tier, rerender = true) {
       currentFilter = tier;
       ['all', 'tier1', 'tier2', 'tier3'].forEach(t => {
         const btn = document.getElementById('tab-' + t);
+        if (!btn) return;
         if (t === tier) {
           btn.className = "whitespace-nowrap px-3 py-1.5 rounded-md font-medium bg-zinc-800 text-zinc-100 shadow-sm transition flex items-center gap-1.5";
         } else {
           btn.className = "whitespace-nowrap px-3 py-1.5 rounded-md font-medium text-zinc-400 hover:text-zinc-200 transition flex items-center gap-1.5";
         }
       });
-      renderTable();
+      if (rerender) renderTable();
     }
 
-    // Batch Bar Logic
+    function renderFilterChip() {
+      const el = document.getElementById('filter-chip');
+      if (!el) return;
+      const label = FILTER_LABELS[currentFilter];
+      el.classList.toggle('hidden', !label);
+      el.innerHTML = label ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] border border-amber-500/30 bg-amber-500/10 text-amber-300">Showing: ${escapeHtml(label)}
+        <button onclick="setFilter('all')" aria-label="Clear filter" class="hover:text-amber-100"><i data-lucide="x" class="w-3 h-3"></i></button></span>` : '';
+    }
+
+    // Batch Bar Logic (reads the selection Set, not the DOM)
+    function onRowCheck(cb) {
+      if (cb.checked) selectedIds.add(cb.dataset.id);
+      else selectedIds.delete(cb.dataset.id);
+      updateBatchBar();
+    }
+
+    function getSelectedCandidates() {
+      return [...selectedIds].map(id => candidates.find(c => c.id === id)).filter(Boolean);
+    }
+
     function updateBatchBar() {
-      const checked = document.querySelectorAll('.candidate-check:checked');
-      document.getElementById('selected-count').textContent = checked.length;
+      const existing = new Set(candidates.map(c => c.id));
+      for (const id of [...selectedIds]) if (!existing.has(id)) selectedIds.delete(id);
+      const count = selectedIds.size;
+      document.getElementById('selected-count').textContent = count;
       const batchBar = document.getElementById('batch-bar');
-      if (checked.length > 0) {
-        batchBar.classList.remove('translate-y-24', 'opacity-0');
-      } else {
-        batchBar.classList.add('translate-y-24', 'opacity-0');
-      }
+      batchBar.classList.toggle('translate-y-24', count === 0);
+      batchBar.classList.toggle('opacity-0', count === 0);
+      batchBar.classList.toggle('pointer-events-none', count === 0);
+      const visible = [...document.querySelectorAll('.candidate-check')];
+      const all = document.getElementById('select-all');
+      if (all) all.checked = visible.length > 0 && visible.every(cb => selectedIds.has(cb.dataset.id));
     }
 
     function toggleSelectAll() {
       const isChecked = document.getElementById('select-all').checked;
-      document.querySelectorAll('.candidate-check').forEach(cb => cb.checked = isChecked);
+      document.querySelectorAll('.candidate-check').forEach(cb => {
+        cb.checked = isChecked;
+        if (isChecked) selectedIds.add(cb.dataset.id);
+        else selectedIds.delete(cb.dataset.id);
+      });
       updateBatchBar();
     }
 
     function deselectAll() {
+      selectedIds.clear();
       document.querySelectorAll('.candidate-check').forEach(cb => cb.checked = false);
       document.getElementById('select-all').checked = false;
       updateBatchBar();
@@ -1318,7 +1786,7 @@
         updateRubricWeights();
       }
       document.getElementById('job-modal').classList.remove('hidden');
-      lucide.createIcons();
+      window.lucide?.createIcons();
     }
 
     function closeJobModal() {
@@ -1330,16 +1798,17 @@
       const job = jobs.find(j => j.id === currentJobId) || jobs[0];
       if (!job) return;
       editingJobId = job.id;
+      const w = job.weights || { tech: 40, exp: 25, impact: 20, lead: 15 };
 
       document.getElementById('job-title').value = job.title;
       document.getElementById('job-company').value = job.company;
       document.getElementById('job-minexp').value = job.minExp;
       document.getElementById('job-mandatory').value = job.mandatory.join(', ');
       document.getElementById('job-fulltext').value = job.fullText;
-      document.getElementById('w-tech').value = job.weights.tech;
-      document.getElementById('w-exp').value = job.weights.exp;
-      document.getElementById('w-impact').value = job.weights.impact;
-      document.getElementById('w-lead').value = job.weights.lead;
+      document.getElementById('w-tech').value = w.tech;
+      document.getElementById('w-exp').value = w.exp;
+      document.getElementById('w-impact').value = w.impact;
+      document.getElementById('w-lead').value = w.lead;
       updateRubricWeights();
 
       document.getElementById('job-modal-title').textContent = "HR Admin: Edit Job Opening & Rubric";
@@ -1347,12 +1816,12 @@
 
       closeViewJdModal();
       document.getElementById('job-modal').classList.remove('hidden');
-      lucide.createIcons();
+      window.lucide?.createIcons();
     }
 
     function deleteCurrentRole() {
       if (jobs.length <= 1) {
-        alert("Cannot delete the only remaining role. Create another role first.");
+        showToast('Cannot delete the only remaining role. Create another role first.', 'error');
         return;
       }
       const job = jobs.find(j => j.id === currentJobId) || jobs[0];
@@ -1364,34 +1833,66 @@
       saveJobs({ remove: removedId });
       liliLog('trash-2', `Role "${job.title}" removed`, 'warn');
       closeViewJdModal();
-      alert(`✅ Role "${job.title}" deleted.`);
+      renderTable();
+      showToast(`Role "${job.title}" deleted.`);
+    }
+
+    // Weights always total 100 once saved; the live indicator shows what will be stored
+    function readRubricWeights() {
+      const raw = {
+        tech: parseInt(document.getElementById('w-tech').value, 10) || 0,
+        exp: parseInt(document.getElementById('w-exp').value, 10) || 0,
+        impact: parseInt(document.getElementById('w-impact').value, 10) || 0,
+        lead: parseInt(document.getElementById('w-lead').value, 10) || 0
+      };
+      const total = raw.tech + raw.exp + raw.impact + raw.lead;
+      return { raw, total, normalized: normalizeWeights(raw) };
+    }
+
+    function normalizeWeights(w) {
+      const keys = ['tech', 'exp', 'impact', 'lead'];
+      const total = keys.reduce((a, k) => a + (Number(w[k]) || 0), 0);
+      if (!total) return { tech: 40, exp: 25, impact: 20, lead: 15 };
+      const out = {};
+      keys.forEach(k => out[k] = Math.round((Number(w[k]) || 0) / total * 100));
+      const drift = 100 - keys.reduce((a, k) => a + out[k], 0);
+      if (drift) {
+        const biggest = keys.reduce((a, k) => out[k] > out[a] ? k : a, 'tech');
+        out[biggest] += drift;
+      }
+      return out;
     }
 
     function updateRubricWeights() {
-      const tech = parseInt(document.getElementById('w-tech').value);
-      const exp = parseInt(document.getElementById('w-exp').value);
-      const impact = parseInt(document.getElementById('w-impact').value);
-      const lead = parseInt(document.getElementById('w-lead').value);
-
-      document.getElementById('lbl-w-tech').textContent = tech + '%';
-      document.getElementById('lbl-w-exp').textContent = exp + '%';
-      document.getElementById('lbl-w-impact').textContent = impact + '%';
-      document.getElementById('lbl-w-lead').textContent = lead + '%';
+      const { raw, total, normalized } = readRubricWeights();
+      document.getElementById('lbl-w-tech').textContent = raw.tech + '%';
+      document.getElementById('lbl-w-exp').textContent = raw.exp + '%';
+      document.getElementById('lbl-w-impact').textContent = raw.impact + '%';
+      document.getElementById('lbl-w-lead').textContent = raw.lead + '%';
+      const el = document.getElementById('rubric-total');
+      if (!el) return;
+      const ok = total === 100;
+      el.textContent = ok ? 'Total: 100%' : `Total: ${total}% → saved as ${normalized.tech}/${normalized.exp}/${normalized.impact}/${normalized.lead}`;
+      el.className = `font-mono text-[11px] px-2 py-0.5 rounded border ${ok ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-amber-500/30 bg-amber-500/10 text-amber-300'}`;
+      el.title = ok ? 'Weights add up to 100%' : 'Weights will be normalized to 100% when you save';
     }
 
     function handleSaveJobRole() {
       const title = document.getElementById('job-title').value.trim();
       const company = document.getElementById('job-company').value.trim() || 'Internal Team';
-      const minExp = parseFloat(document.getElementById('job-minexp').value) || 3.0;
+      const minExpRaw = parseFloat(document.getElementById('job-minexp').value);
+      // 0 is a valid bar (entry-level roles); only a blank/invalid field falls back to 3
+      const minExp = Number.isFinite(minExpRaw) && minExpRaw >= 0 ? minExpRaw : 3.0;
       const mandatoryStr = document.getElementById('job-mandatory').value.trim();
       const fullText = document.getElementById('job-fulltext').value.trim() || `Job Opening: ${title}\nMin Experience: ${minExp}+ years`;
 
       if (!title || !mandatoryStr) {
-        alert('Please fill in both the Job Title and Mandatory Must-Haves.');
+        showToast('Please fill in both the Job Title and Mandatory Must-Haves.', 'error');
         return;
       }
 
       const mandatory = mandatoryStr.split(',').map(s => s.trim()).filter(Boolean);
+      const wasEditing = !!editingJobId;
       const id = editingJobId || ('role_' + Date.now());
 
       const savedJob = {
@@ -1401,23 +1902,18 @@
         minExp: minExp,
         mandatory: mandatory,
         fullText: fullText,
-        weights: {
-          tech: parseInt(document.getElementById('w-tech').value),
-          exp: parseInt(document.getElementById('w-exp').value),
-          impact: parseInt(document.getElementById('w-impact').value),
-          lead: parseInt(document.getElementById('w-lead').value)
-        }
+        weights: readRubricWeights().normalized
       };
 
-      if (editingJobId) {
-        jobs = jobs.map(j => j.id === editingJobId ? savedJob : j);
+      if (wasEditing) {
+        jobs = jobs.map(j => j.id === id ? savedJob : j);
       } else {
         jobs.unshift(savedJob);
       }
 
       currentJobId = id;
       saveJobs({ upsert: savedJob });
-      liliLog('briefcase', `${editingJobId ? 'Updated' : 'Published'} role "${title}" with rubric ${savedJob.weights.tech}/${savedJob.weights.exp}/${savedJob.weights.impact}/${savedJob.weights.lead}`);
+      liliLog('briefcase', `${wasEditing ? 'Updated' : 'Published'} role "${title}" with rubric ${savedJob.weights.tech}/${savedJob.weights.exp}/${savedJob.weights.impact}/${savedJob.weights.lead}`);
       closeJobModal();
 
       document.getElementById('job-title').value = '';
@@ -1425,8 +1921,19 @@
       document.getElementById('job-mandatory').value = '';
       document.getElementById('job-fulltext').value = '';
 
-      alert(editingJobId ? `✅ Role "${title}" updated!` : `✅ New Job Role "${title}" published!`);
+      // Editing the rubric re-scores everyone already in this role
+      let rescored = [];
+      if (wasEditing) {
+        rescored = candidates.filter(c => c.roleId === id).map(c => rescoreCandidate(c, savedJob));
+        if (rescored.length) liliLog('refresh-cw', `Re-scored ${rescored.length} candidate${rescored.length > 1 ? 's' : ''} against the updated rubric`, 'info', 'rules');
+      }
+      if (!['all', 'tier1', 'tier2', 'tier3'].includes(currentFilter)) setFilter('all', false);
+      saveCandidates(rescored);
       editingJobId = null;
+
+      showToast(wasEditing
+        ? `Role "${title}" updated${rescored.length ? ` · ${rescored.length} candidate${rescored.length > 1 ? 's' : ''} re-scored` : ''}.`
+        : `New role "${title}" published. Rubric ${savedJob.weights.tech}/${savedJob.weights.exp}/${savedJob.weights.impact}/${savedJob.weights.lead}.`, 'success');
     }
 
     function openViewJdModal() {
@@ -1459,7 +1966,7 @@
       if (!container) {
         container = document.createElement('div');
         container.id = 'toast-container';
-        container.className = 'fixed bottom-5 right-5 z-[9999] flex flex-col gap-2 pointer-events-none max-w-sm';
+        container.className = 'fixed top-16 left-4 right-4 sm:top-auto sm:left-auto sm:bottom-5 sm:right-5 z-[9999] flex flex-col gap-2 pointer-events-none sm:max-w-sm';
         document.body.appendChild(container);
       }
 
@@ -1499,17 +2006,18 @@
     let liliFeedOpen = false;
     let liliRenderQueued = false;
 
-    function liliLog(icon, text, level = 'info') {
-      liliFeed.push({ icon, text, level, time: new Date() });
+    // src: 'lili' = the agent on Wesam (arrives via realtime), 'rules' = in-browser rule engine, 'app' = everything else
+    function liliLog(icon, text, level = 'info', src = 'app') {
+      liliFeed.push({ icon, text, level, src, time: new Date() });
       if (liliFeed.length > 100) liliFeed.shift();
       if (!liliFeedOpen) liliUnread++;
       scheduleLiliRender();
     }
 
     // Marks Lili busy (pulsing dot) until the returned done() is called
-    function liliTask(text, icon = 'loader') {
+    function liliTask(text, icon = 'loader', src = 'app') {
       liliBusy++;
-      if (text) liliLog(icon, text);
+      if (text) liliLog(icon, text, 'info', src);
       let finished = false;
       return () => {
         if (finished) return;
@@ -1543,7 +2051,12 @@
           unread.classList.toggle('hidden', liliUnread === 0 || liliFeedOpen);
         }
         const label = document.getElementById('lili-badge-text');
-        if (label) label.textContent = liliBusy > 0 ? 'Lili is working…' : 'Lili Agent Live';
+        const dot = document.getElementById('lili-badge-dot');
+        const st = liliBadgeState();
+        if (label) label.textContent = st.text;
+        if (dot) dot.className = `lili-dot w-1.5 h-1.5 rounded-full ${st.dot}`;
+        badge.className = `relative min-w-0 shrink inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap border transition ${st.cls}`;
+        badge.title = st.title;
       }
       if (!panel) return;
       panel.classList.toggle('lili-feed-open', liliFeedOpen);
@@ -1552,14 +2065,41 @@
 
       const list = document.getElementById('lili-feed-list');
       const tone = { info: 'text-emerald-400', success: 'text-emerald-300', warn: 'text-amber-400', error: 'text-rose-400' };
+      const tag = {
+        lili: '<span class="px-1 rounded bg-violet-500/15 text-violet-300 text-[9px] font-semibold uppercase tracking-wide">Lili</span> ',
+        rules: '<span class="px-1 rounded bg-zinc-800 text-zinc-400 text-[9px] font-semibold uppercase tracking-wide">Rules</span> '
+      };
       list.innerHTML = liliFeed.slice(-40).reverse().map((e, i) => `
         <li class="flex items-start gap-2 py-1.5 ${i === 0 ? 'lili-fade' : ''}">
           <span class="font-mono text-[10px] text-zinc-500 shrink-0 pt-0.5">${e.time.toTimeString().slice(0, 8)}</span>
           <i data-lucide="${escapeHtml(e.icon)}" class="w-3.5 h-3.5 shrink-0 mt-0.5 ${tone[e.level] || tone.info}"></i>
-          <span class="text-zinc-300 leading-snug">${escapeHtml(e.text)}</span>
-        </li>`).join('') || '<li class="py-2 text-zinc-500">No activity yet. Import CVs to watch Lili work.</li>';
-      if (window.lucide) lucide.createIcons({ nameAttr: 'data-lucide', root: list });
+          <span class="text-zinc-300 leading-snug">${tag[e.src] || ''}${escapeHtml(redactNames(e.text))}</span>
+        </li>`).join('') || '<li class="py-2 text-zinc-500">No activity yet. Import CVs to watch the pre-screen, then sign in so Lili can deep-evaluate them.</li>';
+      window.lucide?.createIcons({ nameAttr: 'data-lucide', root: list });
     }
+
+    // Header badge reflects what Lili has actually done, never a hard-coded "live"
+    function liliLastRun() {
+      let last = 0;
+      for (const c of candidates) {
+        const t1 = c.liliEvaluatedAt ? Date.parse(c.liliEvaluatedAt) : 0;
+        const t2 = c.liliOutreach && c.liliOutreach.sent_at ? Date.parse(c.liliOutreach.sent_at) : 0;
+        last = Math.max(last, t1 || 0, t2 || 0);
+      }
+      return last || null;
+    }
+
+    function liliBadgeState() {
+      if (!isCloud()) {
+        return { text: 'Lili · sign in to connect', dot: 'bg-zinc-500', cls: 'bg-zinc-800/60 text-zinc-400 border-zinc-700 hover:bg-zinc-800', title: 'Lili (the agent on Wesam) works on your cloud pipeline. Sign in to connect. Click for the activity log.' };
+      }
+      const last = liliLastRun();
+      if (!last) {
+        return { text: 'Lili · waiting for first run', dot: 'bg-violet-400', cls: 'bg-violet-500/10 text-violet-300 border-violet-500/20 hover:bg-violet-500/20', title: 'Connected. Lili has not evaluated any candidate in this account yet. Click for the activity log.' };
+      }
+      return { text: `Lili · last run ${relTime(last)}`, dot: 'bg-emerald-400', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20', title: `Lili last evaluated or emailed a candidate ${new Date(last).toLocaleString()}. Click for the activity log.` };
+    }
+    setInterval(scheduleLiliRender, 60000);
 
     // SUPABASE CLOUD: recruiter login, private rows (RLS), live sync over realtime
     const SUPABASE_URL_DEFAULT = 'https://ppjxzlepqstqvcrkqscz.supabase.co';
@@ -1647,7 +2187,7 @@
       document.getElementById('auth-signed-in').classList.toggle('hidden', !isCloud());
       if (isCloud()) document.getElementById('auth-user-email').textContent = session.user.email;
       document.getElementById('supabase-modal').classList.remove('hidden');
-      if (window.lucide) lucide.createIcons();
+      window.lucide?.createIcons();
     }
 
     function closeSupabaseModal() {
@@ -1711,10 +2251,12 @@
       if (sb) await sb.auth.signOut();
     }
 
-    // Field mapping between the app and Postgres. Rows always carry the same keys
-    // (bulk upserts require it) and never include lili_* so the client can't overwrite Lili's verdict.
-    function candidateToRow(cand) {
-      return {
+    // Field mapping between the app and Postgres. Rows never include lili_* so the client can't overwrite
+    // Lili's verdict. status/email are only sent when the server doesn't own them: once Lili has recorded
+    // outreach, the browser sends them only after the recruiter changed them here (cand.localEdited).
+    // Bulk upserts need identical keys per row, so upsertCandidatesToSupabase batches the two shapes separately.
+    function candidateToRow(cand, { full = false } = {}) {
+      const row = {
         id: cand.id,
         owner_id: session.user.id,
         role_id: cand.roleId || currentJobId,
@@ -1730,10 +2272,13 @@
         strengths: cand.strengths || [],
         gaps: cand.gaps || [],
         takeaway: cand.takeaway || '',
-        status: cand.status || 'pending',
-        email: cand.emailDraft || '',
         cv_text: cand.cvText || null
       };
+      if (full || !cand.liliOutreach || cand.localEdited) {
+        row.status = cand.status || 'pending';
+        row.email = cand.emailDraft || '';
+      }
+      return row;
     }
 
     // Lili may record outreach as {type, drafted_at} (via lili_record_outreach) or {type, subject, body, recorded_at}
@@ -1745,12 +2290,16 @@ ${o.body}`;
     }
 
     function liliOutreachStatus(o, current) {
-      if (!o || (current || '').includes('Sent')) return null;
+      if (!o) return null;
+      if (o.sent_at) return o.type === 'reject' ? 'Feedback Sent ✉️' : o.type === 'invite' ? 'Invite Sent ✉️' : 'Update Sent ✉️';
+      if ((current || '').includes('Sent')) return null;
+      if (o.awaiting_approval) return 'Awaiting your approval (Lili)';
       return o.type === 'invite' ? 'Invite drafted by Lili' : o.type === 'reject' ? 'Feedback drafted by Lili' : o.type === 'hold' ? 'On bench (Lili)' : null;
     }
 
     function rowToCandidate(r) {
-      const outreach = r.lili_outreach || null;
+      const outreach = r.lili_outreach && typeof r.lili_outreach === 'object' ? r.lili_outreach : null;
+      const gaps = Array.isArray(r.gaps) ? r.gaps : [];
       return {
         id: r.id,
         name: r.name,
@@ -1765,9 +2314,10 @@ ${o.body}`;
         exp: parseFloat(r.years) || 0,
         takeaway: r.takeaway || '',
         strengths: Array.isArray(r.strengths) ? r.strengths : [],
-        gaps: Array.isArray(r.gaps) ? r.gaps : [],
+        gaps,
+        expUnknown: gaps.some(g => /could not be determined/i.test(String(g))),
         emailDraft: r.email || liliOutreachDraft(outreach),
-        emailSent: (r.status || '').includes('Sent'),
+        emailSent: (r.status || '').includes('Sent') || !!(outreach && outreach.sent_at),
         cvText: r.cv_text || '',
         liliScore: r.lili_score ?? null,
         liliTier: r.lili_tier ?? null,
@@ -1776,8 +2326,17 @@ ${o.body}`;
         liliGaps: Array.isArray(r.lili_gaps) ? r.lili_gaps : [],
         liliEvidence: Array.isArray(r.lili_evidence) ? r.lili_evidence : [],
         liliEvaluatedAt: r.lili_evaluated_at || null,
+        liliRawScore: r.lili_raw_score ?? null,
+        liliBreakdown: r.lili_breakdown && typeof r.lili_breakdown === 'object' && !Array.isArray(r.lili_breakdown) ? r.lili_breakdown : null,
+        liliCaps: Array.isArray(r.lili_caps) ? r.lili_caps : [],
+        liliFlags: Array.isArray(r.lili_flags) ? r.lili_flags : [],
+        liliYears: r.lili_years ?? null,
+        liliMissing: Array.isArray(r.lili_missing) ? r.lili_missing : [],
+        liliVerification: r.lili_verification && typeof r.lili_verification === 'object' ? r.lili_verification : null,
         liliOutreach: outreach ? { ...outreach, drafted_at: outreach.drafted_at || outreach.recorded_at } : null,
-        source: r.source || 'dashboard'
+        // 'rediscovered' is not a DB value; it is recovered from the strengths line written when the entry was created
+        source: r.source && r.source !== 'dashboard' ? r.source
+          : (Array.isArray(r.strengths) && r.strengths.some(x => /^Rediscovered from the /.test(String(x))) ? 'rediscovered' : (r.source || 'dashboard'))
       };
     }
 
@@ -1819,11 +2378,17 @@ ${o.body}`;
 
     async function upsertCandidatesToSupabase(list) {
       if (!isCloud() || list.length === 0) return false;
-      const { error } = await sb.from('candidates').upsert(list.map(candidateToRow), { onConflict: 'id' });
-      if (error) {
-        reportSyncError(error.message);
-        return false;
+      const rows = list.map(c => candidateToRow(c));
+      const batches = [rows.filter(r => 'status' in r), rows.filter(r => !('status' in r))];
+      for (const batch of batches) {
+        if (batch.length === 0) continue;
+        const { error } = await sb.from('candidates').upsert(batch, { onConflict: 'id' });
+        if (error) {
+          reportSyncError(error.message);
+          return false;
+        }
       }
+      list.forEach(c => { delete c.localEdited; });
       liliLog('cloud-upload', `Saved ${list.length} candidate${list.length > 1 ? 's' : ''} to your private cloud`, 'success');
       return true;
     }
@@ -1882,7 +2447,7 @@ ${o.body}`;
             // Fresh IDs: these rows may already exist in the cloud from before login (unowned),
             // and updating a row you don't own is rejected by row-level security
             const uploads = localOnly.map(c => ({ ...c, id: newCandidateId() }));
-            const { error } = await sb.from('candidates').insert(uploads.map(candidateToRow));
+            const { error } = await sb.from('candidates').insert(uploads.map(c => candidateToRow(c, { full: true })));
             if (error) throw error;
             cloudCandidates = [...uploads, ...cloudCandidates];
             liliLog('cloud-upload', `Uploaded ${uploads.length} local candidate${uploads.length > 1 ? 's' : ''} to your account`, 'success');
@@ -1961,7 +2526,8 @@ ${o.body}`;
     }
 
     function sameCandidate(a, b) {
-      const pick = c => JSON.stringify([c.name, c.email, c.status, c.score, c.tier, c.roleId, c.liliScore, c.liliEvaluatedAt, c.emailDraft, c.liliOutreach && c.liliOutreach.drafted_at, c.liliOutreach && c.liliOutreach.sent_at]);
+      const o = c => c.liliOutreach || {};
+      const pick = c => JSON.stringify([c.name, c.email, c.status, c.score, c.tier, c.roleId, c.liliScore, c.liliEvaluatedAt, c.emailDraft, o(c).drafted_at, o(c).sent_at, o(c).awaiting_approval, c.liliRawScore, (c.liliFlags || []).length, (c.liliCaps || []).length, c.liliVerification && JSON.stringify(c.liliVerification).length]);
       return pick(a) === pick(b);
     }
 
@@ -1971,6 +2537,7 @@ ${o.body}`;
         if (!id || !candidates.some(c => c.id === id)) return;
         candidates = candidates.filter(c => c.id !== id);
         liliLog('trash-2', `Candidate ${id} removed on another device`, 'warn');
+        selectedIds.delete(id);
         scheduleRealtimeRender();
         return;
       }
@@ -1981,19 +2548,24 @@ ${o.body}`;
 
       const newVerdict = incoming.liliScore !== null && (!existing || existing.liliEvaluatedAt !== incoming.liliEvaluatedAt);
       const newOutreach = incoming.liliOutreach && (!existing || !existing.liliOutreach || existing.liliOutreach.drafted_at !== incoming.liliOutreach.drafted_at);
+      const who = displayName(incoming);
       if (!existing && incoming.source === 'email') {
-        liliLog('mail-plus', `Lili picked up ${incoming.name}'s emailed application and added it to the pipeline`, 'success');
-        showToast(`New applicant from email: ${incoming.name}`, 'success');
+        liliLog('mail-plus', `Lili picked up ${incoming.name}'s emailed application and added it to the pipeline`, 'success', 'lili');
+        showToast(`New applicant from email: ${who}`, 'success');
       } else if (newVerdict) {
-        liliLog('sparkles', `Lili evaluated ${incoming.name}: ${incoming.liliScore}/100, Tier ${incoming.liliTier}`, 'success');
-        showToast(`Lili evaluated ${incoming.name}: ${incoming.liliScore}/100 (Tier ${incoming.liliTier})`, 'success');
+        const capNote = (incoming.liliCaps || []).length ? ` (capped from ${incoming.liliRawScore ?? '?'})` : '';
+        liliLog('sparkles', `Lili evaluated ${incoming.name}: ${incoming.liliScore}/100, Tier ${incoming.liliTier}${capNote}`, 'success', 'lili');
+        showToast(`Lili evaluated ${who}: ${incoming.liliScore}/100 (Tier ${incoming.liliTier})`, 'success');
       } else if (incoming.liliOutreach && incoming.liliOutreach.sent_at && !(existing && existing.liliOutreach && existing.liliOutreach.sent_at)) {
         const demo = incoming.liliOutreach.mode === 'demo';
-        liliLog('send', `Lili emailed ${incoming.name} via Brevo${demo ? ' (demo mode: delivered to your inbox)' : ''}`, 'success');
-        showToast(`Lili sent ${incoming.name}'s email${demo ? ' (demo: check your inbox)' : ''}`, 'success');
+        liliLog('send', `Lili emailed ${incoming.name} via Brevo${demo ? ' (demo mode: delivered to your inbox)' : ''}`, 'success', 'lili');
+        showToast(`Lili sent ${who}'s email${demo ? ' (demo: check your inbox)' : ''}`, 'success');
+      } else if (incoming.liliOutreach && incoming.liliOutreach.awaiting_approval && !(existing && existing.liliOutreach && existing.liliOutreach.awaiting_approval)) {
+        liliLog('hourglass', `Lili drafted a ${incoming.liliOutreach.type === 'reject' ? 'rejection' : 'message'} for ${incoming.name} and is waiting for your approval`, 'warn', 'lili');
+        showToast(`Lili is waiting for your approval to email ${who}`, 'warning');
       } else if (newOutreach) {
         const kind = incoming.liliOutreach.type === 'invite' ? 'an interview invite' : incoming.liliOutreach.type === 'reject' ? 'feedback' : 'a bench note';
-        liliLog('mail', `Lili drafted ${kind} for ${incoming.name} in Gmail, waiting for your approval`, 'success');
+        liliLog('mail', `Lili drafted ${kind} for ${incoming.name}`, 'success', 'lili');
       } else {
         liliLog('refresh-cw', existing ? `${incoming.name} updated on another device` : `${incoming.name} added on another device`);
       }
@@ -2001,7 +2573,11 @@ ${o.body}`;
       if (index >= 0) candidates[index] = { ...existing, ...incoming };
       else candidates.unshift(incoming);
       backfillPrescreen([candidates.find(c => c.id === incoming.id)]);
-      if (currentDrawerCandidateId === incoming.id) renderDrawerLiliVerdict(candidates.find(c => c.id === incoming.id));
+      if (currentDrawerCandidateId === incoming.id) {
+        const fresh = candidates.find(c => c.id === incoming.id);
+        renderDrawerLiliVerdict(fresh);
+        renderDrawerApproval(fresh);
+      }
       scheduleRealtimeRender();
     }
 
@@ -2111,40 +2687,6 @@ ${o.body}`;
       return text;
     }
 
-    function extractName(text, filename) {
-      const lines = text.split('\n').map(l => l.trim())
-        .filter(l => l.length > 2 && !/resume|curriculum|cv\b/i.test(l));
-      const first = lines.length > 0 ? lines[0].replace(/[^\p{L}\s'.-]/gu, '').trim() : '';
-      if (first && first.length <= 35 && first.split(/\s+/).length <= 4) return first;
-      return filename.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
-    }
-
-    function extractYears(text) {
-      const statedAll = [...text.matchAll(/(\d{1,2}(?:\.\d)?)\+?\s*years?\s*(?:of)?\s*(?:professional\s+|industry\s+|hands-on\s+)?(?:experience|exp)/gi)]
-        .map(m => parseFloat(m[1])).filter(n => n > 0 && n <= 45);
-      if (statedAll.length > 0) return Math.max(...statedAll);
-
-      // Sum explicit role durations, e.g. "Feb 2023 – Present (1 year 8 months)". Only lines with a date
-      // range count, so skill annotations like "Python (7 yrs)" are not mistaken for jobs.
-      let months = 0;
-      for (const line of text.split('\n')) {
-        if (!/\b(19|20)\d{2}\b.*[–—-].*(\b(19|20)\d{2}\b|present|current|now)/i.test(line)) continue;
-        const m = line.match(/\(\s*(?:(\d{1,2})\s*(?:years?|yrs?))?\s*,?\s*(?:(\d{1,2})\s*(?:months?|mos?))?\s*\)/i);
-        if (m) months += (parseInt(m[1] || '0', 10) * 12) + parseInt(m[2] || '0', 10);
-      }
-      if (months > 0) return Math.round((months / 12) * 10) / 10;
-
-      const years = (text.match(/\b(19[89]\d|20[0-3]\d)\b/g) || []).map(Number);
-      const thisYear = new Date().getFullYear();
-      if (/\b(present|current|now)\b/i.test(text)) years.push(thisYear);
-      const valid = years.filter(y => y <= thisYear);
-      if (valid.length >= 2) {
-        const span = Math.max(...valid) - Math.min(...valid);
-        if (span >= 1 && span <= 45) return span;
-      }
-      return null;
-    }
-
     const BULK_CONCURRENCY = 3;
     const BULK_STAGES = ['Read', 'Extract', 'Match', 'Score', 'Tier'];
 
@@ -2183,7 +2725,7 @@ ${o.body}`;
       bulkQueue.unshift(...items);
       renderBulkQueue();
 
-      const done = liliTask(`Screening ${items.length} CV${items.length > 1 ? 's' : ''} against "${activeJob.title}" (${Math.min(BULK_CONCURRENCY, items.length)} at a time)`, 'files');
+      const done = liliTask(`Pre-screening ${items.length} CV${items.length > 1 ? 's' : ''} against "${activeJob.title}" (${Math.min(BULK_CONCURRENCY, items.length)} at a time)`, 'files', 'rules');
       let processed = 0;
       let next = 0;
 
@@ -2206,15 +2748,15 @@ ${o.body}`;
             const emailMatch = text.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/);
             if (emailMatch) item.email = emailMatch[0];
             item.name = extractName(text, item.file.name);
-            // No skill fallback: an unreadable CV must never be credited with the role's must-haves
-            item.skills = detectSkills(text, activeJob);
-            const years = extractYears(text);
-            item.exp = years ?? 0;
-            item.expUnknown = years === null;
             item.text = text;
             advance(item, 1);
 
-            const result = scoreCandidate(activeJob, item.skills, item.exp, text);
+            // No skill fallback: an unreadable CV must never be credited with the role's must-haves
+            const result = prescreenFromText(activeJob, text);
+            item.skills = result.skills;
+            item.exp = result.exp;
+            item.expUnknown = result.expUnknown;
+            item.injection = !!result.injection;
             advance(item, 2);
             advance(item, 3);
 
@@ -2224,13 +2766,13 @@ ${o.body}`;
             advance(item, 4);
 
             const caps = [result.belowExpBar && `max ${SCORING.minExpCap} (under ${activeJob.minExp} yrs)`, result.missing.length && `max ${SCORING.missingMustHaveCap} (missing ${result.missing.join(', ')})`].filter(Boolean);
-            liliLog(result.tier === 'tier1' ? 'zap' : 'file-check', `Scored ${item.name}: ${item.score}/100, Tier ${item.tier.slice(-1)}${caps.length ? ' · ' + caps.join('; ') : ''}`, result.tier === 'tier1' ? 'success' : 'info');
+            liliLog(result.tier === 'tier1' ? 'zap' : 'file-check', `Pre-screened ${item.name}: ${item.score}/100, Tier ${item.tier.slice(-1)}${caps.length ? ' · ' + caps.join('; ') : ''}${result.injection ? ' · ⚠ hidden instructions in CV' : ''}`, result.tier === 'tier1' ? 'success' : 'info', 'rules');
           } catch (err) {
             console.error('Bulk parse error:', err);
             item.status = 'error';
             item.error = err.message || 'Parse error';
             patchBulkRow(item);
-            liliLog('file-x', `${item.file.name}: ${item.error}`, 'error');
+            liliLog('file-x', `${item.file.name}: ${item.error}`, 'error', 'rules');
           }
 
           processed++;
@@ -2248,16 +2790,18 @@ ${o.body}`;
       if (readyCount > 0) {
         btnIngest.disabled = false;
         btnIngest.innerHTML = `<i data-lucide="zap" class="w-3.5 h-3.5"></i> Ingest ${readyCount} Candidates to Pipeline`;
-        lucide.createIcons({ root: btnIngest });
+        window.lucide?.createIcons({ root: btnIngest });
       }
       showToast(`Batch screening complete! ${readyCount} candidates ready.`);
+      return readyCount;
     }
 
     function bulkRowInfoHtml(item) {
       return `
         <div class="flex items-center gap-2">
           <span class="font-semibold text-zinc-100 truncate">${escapeHtml(item.name)}</span>
-          ${item.status === 'ready' ? `<span class="text-zinc-500 font-mono">(${item.expUnknown ? 'exp unknown' : item.exp.toFixed(1) + ' yrs exp'})</span>` : ''}
+          ${item.status === 'ready' ? `<span class="text-zinc-500 font-mono whitespace-nowrap">(${item.expUnknown ? 'exp unknown — verify manually' : item.exp.toFixed(1) + ' yrs exp'})</span>` : ''}
+          ${item.injection ? '<span class="px-1.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/40 text-[10px] font-semibold whitespace-nowrap">⚠ Hidden instructions</span>' : ''}
         </div>
         <p class="text-[11px] text-zinc-400 truncate mt-0.5">
           <span class="font-mono text-[10px] text-zinc-500">${escapeHtml(item.file.name)}</span>
@@ -2334,14 +2878,13 @@ ${o.body}`;
       const activeJob = jobs.find(j => j.id === currentJobId) || jobs[0];
 
       const added = readyItems.map(item => {
-        const newCand = buildCandidate({ name: item.name, email: item.email, exp: item.exp, skills: item.skills, text: item.text, job: activeJob });
-        if (item.expUnknown) newCand.gaps.unshift('Years of experience could not be determined from the CV. Verify manually.');
+        const newCand = buildCandidateFromText({ name: item.name, email: item.email, text: item.text, job: activeJob });
         candidates.unshift(newCand);
         return newCand;
       });
 
       saveCandidates(added);
-      liliLog('users', `Added ${added.length} candidate${added.length > 1 ? 's' : ''} to "${activeJob.title}"`, 'success');
+      liliLog('users', `Added ${added.length} candidate${added.length > 1 ? 's' : ''} to "${activeJob.title}"${isCloud() ? '. Queued for Lili' : ''}`, 'success');
       const noEmail = added.filter(c => !c.email).length;
       showToast(`🎉 Ingested ${added.length} candidates into pipeline${noEmail ? ` (${noEmail} without an email address)` : ''}.`);
       bulkQueue = [];
@@ -2400,7 +2943,7 @@ ${o.body}`;
 
         statusEl.innerHTML = `<span class="text-emerald-400 font-semibold flex items-center gap-1"><i data-lucide="check-circle" class="w-4 h-4"></i> <span></span></span>`;
         statusEl.querySelector('span span').textContent = `${file.name} successfully parsed!`;
-        lucide.createIcons();
+        window.lucide?.createIcons();
       } catch (err) {
         console.error('File parsing error:', err);
         statusEl.innerHTML = `<span class="text-rose-400"></span>`;
@@ -2468,7 +3011,7 @@ ${o.body}`;
 
       candidates.unshift(newCand);
       saveCandidates([newCand]);
-      liliLog('file-check', `Scored ${newCand.name}: ${newCand.score}/100, Tier ${newCand.tier.slice(-1)}`, newCand.tier === 'tier1' ? 'success' : 'info');
+      liliLog('file-check', `Pre-screened ${newCand.name}: ${newCand.score}/100, Tier ${newCand.tier.slice(-1)}`, newCand.tier === 'tier1' ? 'success' : 'info', 'rules');
       closeUploadModal();
 
       document.getElementById('in-name').value = '';
@@ -2478,64 +3021,296 @@ ${o.body}`;
       document.getElementById('in-resume').value = '';
       document.getElementById('parsing-status').classList.add('hidden');
 
-      alert(`✅ Candidate ${name} evaluated against ${activeJob.title}! (Fit Score: ${calculatedScore}/100 - ${status})`);
+      showToast(`${displayName(newCand)} pre-screened against ${activeJob.title}: ${calculatedScore}/100 (${status})`, 'success');
     }
 
-    // Import Sample Pipeline CSV
-    function importSampleCsv() {
-      const alex = {
-        id: 'C-04',
-        name: 'Alex Chen',
-        email: 'alex.chen@email.com',
-        roleId: 'backend',
-        score: 96,
-        tier: 'tier1',
-        status: 'Fast-Track',
-        skills: ['Python', 'FastAPI', 'PostgreSQL', 'AWS ECS', 'Redis'],
-        exp: 6.8,
-        takeaway: 'PayStream backend lead: 500k txns/day, p99 optimized from 800ms to 120ms.',
-        strengths: ['Handled 500k txns/day payment API.', 'PostgreSQL p99 latency reduced by 85%.'],
-        gaps: ['Kubernetes experience listed as basic.'],
-        emailDraft: `Subject: Next Steps: Senior Backend Engineer at TechFlow\n\nHi Alex,\nWe were very impressed by your work optimizing PostgreSQL at PayStream. We'd love to schedule a 30-min screen: [Insert Booking Link]`
-      };
-      const marcus = {
-        id: 'C-05',
-        name: 'Marcus Vance',
-        email: 'marcus.vance@email.com',
-        roleId: 'ai',
-        score: 91,
-        tier: 'tier1',
-        status: 'Fast-Track',
-        skills: ['Python', 'LangChain', 'Qdrant', 'Ragas', 'FastAPI'],
-        exp: 4.3,
-        takeaway: 'Production RAG builder: 35% token cost reduction, semantic caching, open-source author.',
-        strengths: ['Built internal RAG engine with Qdrant and FastAPI.', 'Semantic caching reducing token costs by 35%.'],
-        gaps: ['Verify streaming throughput at high concurrency.'],
-        emailDraft: `Subject: Next Steps: AI Applications Engineer at NeuroFlow\n\nHi Marcus,\nYour RAG router and token optimization experience caught our eye. Let's schedule an interview: [Insert Booking Link]`
-      };
+    // SAMPLE CVs: real resumes through the real pipeline (no hard-coded scores)
+    const SAMPLE_CV_FILES = ['resume_frontend_strong.txt', 'resume_frontend_junior_gap.txt', 'resume_ai_candidate.txt', 'sample_resume.txt'];
+    let sampleRunActive = false;
 
-      // Fresh IDs: candidate IDs are global in the cloud, so fixed sample IDs would collide across recruiters
-      const fresh = [alex, marcus]
-        .filter(s => !candidates.some(c => c.name === s.name && c.roleId === s.roleId))
-        .map(s => ({ ...s, id: newCandidateId() }));
-      if (fresh.length === 0) {
-        showToast('Sample candidates are already in the pipeline.');
+    async function runSampleCvs(btn) {
+      if (sampleRunActive || isBulkProcessing) {
+        showToast('A batch is already being screened. One moment.');
         return;
       }
-      candidates.unshift(...fresh);
-      saveCandidates(fresh);
-      showToast(`Imported ${fresh.length} sample candidate profiles (Backend & AI roles).`);
+      const fe = jobs.find(j => j.id === 'frontend') || jobs.find(j => /front/i.test(j.title)) || jobs.find(j => j.id === currentJobId) || jobs[0];
+      if (fe.id !== currentJobId) {
+        currentJobId = fe.id;
+        populateRoleDropdown();
+        renderTable();
+      }
+      if (candidates.some(c => c.roleId === fe.id && /^sarah\.lin@email\.com$/i.test(c.email || ''))) {
+        showToast(`The sample CVs are already in "${fe.title}". Open a scorecard to explore them.`);
+        return;
+      }
+      sampleRunActive = true;
+      const buttons = document.querySelectorAll('.sample-cv-btn');
+      buttons.forEach(b => { b.disabled = true; b.classList.add('opacity-60', 'cursor-wait'); });
+      try {
+        let files;
+        try {
+          files = await Promise.all(SAMPLE_CV_FILES.map(async name => {
+            const res = await fetch(`/sample-data/${name}`, { cache: 'no-store' });
+            if (!res.ok) throw new Error(`${name}: HTTP ${res.status}`);
+            return new File([await res.text()], name, { type: 'text/plain' });
+          }));
+        } catch (err) {
+          showToast(`Couldn't load the sample CVs (${err.message}). Try Bulk Import with your own files.`, 'error');
+          return;
+        }
+        openBulkUploadModal();
+        liliLog('play', `Sample run: screening 4 sample CVs against "${fe.title}"`, 'info', 'rules');
+        const ready = await processBulkFiles(files);
+        // Let the finished Read→Extract→Match→Score→Tier chips register, then add them to the pipeline
+        if (ready > 0) {
+          await new Promise(r => setTimeout(r, 1100));
+          if (!document.getElementById('bulk-upload-modal').classList.contains('hidden')) ingestBulkCandidates();
+          dismissWelcomeBanner();
+        }
+      } finally {
+        sampleRunActive = false;
+        buttons.forEach(b => { b.disabled = false; b.classList.remove('opacity-60', 'cursor-wait'); });
+      }
+    }
+
+    // Kept for old links/bookmarks: the hard-coded sample pipeline is replaced by real sample CVs
+    function importSampleCsv() {
+      return runSampleCvs();
+    }
+
+    function renderWelcomeBanner(roleCandidates) {
+      const el = document.getElementById('welcome-banner');
+      if (!el) return;
+      const show = roleCandidates.length === 0 && lsGet('ts_welcome_dismissed') !== '1';
+      el.classList.toggle('hidden', !show);
+    }
+
+    function dismissWelcomeBanner() {
+      lsSet('ts_welcome_dismissed', '1');
+      document.getElementById('welcome-banner').classList.add('hidden');
+    }
+
+    // TALENT REDISCOVERY: past applicants (other roles) re-scored against this role, in the browser
+    const rediscoveryHidden = new Set();
+    let rediscoveryCache = { key: null, list: [] };
+
+    function personKey(c) {
+      return ((c.email || '').trim().toLowerCase()) || ((c.name || '').trim().toLowerCase());
+    }
+
+    function computeRediscovery(job) {
+      const key = JSON.stringify([job.id, job.mandatory, job.minExp, job.weights]) + '|' + candidates.map(c => c.id + ':' + c.roleId).join(',');
+      if (rediscoveryCache.key === key) return rediscoveryCache.list;
+      const present = new Set(candidates.filter(c => c.roleId === job.id).map(personKey));
+      const best = new Map();
+      for (const c of candidates) {
+        if (!c.roleId || c.roleId === job.id || !c.cvText || c.cvText.replace(/\s+/g, '').length < MIN_CV_TEXT_CHARS) continue;
+        const k = personKey(c);
+        if (!k || present.has(k)) continue;
+        const r = prescreenFromText(job, c.cvText);
+        if (r.score < SCORING.tier2Min) continue;
+        if (!best.has(k) || best.get(k).score < r.score) {
+          best.set(k, { source: c, score: r.score, tier: r.tier, fromRole: (jobs.find(j => j.id === c.roleId) || {}).title || 'another role' });
+        }
+      }
+      const list = [...best.values()].sort((a, b) => b.score - a.score);
+      rediscoveryCache = { key, list };
+      return list;
+    }
+
+    function renderRediscovery() {
+      const el = document.getElementById('rediscovery-card');
+      if (!el) return;
+      const job = jobs.find(j => j.id === currentJobId);
+      const list = job && !rediscoveryHidden.has(job.id) ? computeRediscovery(job) : [];
+      if (list.length === 0) {
+        el.classList.add('hidden');
+        el.innerHTML = '';
+        return;
+      }
+      const tierTone = t => t === 'tier1' ? 'text-emerald-300' : 'text-amber-300';
+      el.className = 'rounded-xl border border-violet-500/30 bg-violet-500/5 p-4 space-y-2.5';
+      el.innerHTML = `
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="font-semibold text-sm text-violet-100 flex items-center gap-1.5"><i data-lucide="recycle" class="w-4 h-4 text-violet-300"></i> Talent rediscovery: ${list.length} past applicant${list.length > 1 ? 's' : ''} already in your pipeline fit${list.length > 1 ? '' : 's'} this role</p>
+            <p class="text-[11px] text-zinc-400 mt-0.5">Their CVs were re-scored against this role's rubric in your browser. No sourcing spend.</p>
+          </div>
+          <button onclick="hideRediscovery()" aria-label="Hide rediscovery suggestions" class="p-1 rounded text-zinc-500 hover:text-zinc-300"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+        <ul class="divide-y divide-violet-500/10 text-xs">
+          ${list.slice(0, 3).map(r => `
+            <li class="py-2 flex flex-wrap items-center justify-between gap-2">
+              <span class="min-w-0"><span class="font-medium text-zinc-100">${escapeHtml(displayName(r.source))}</span>
+                <span class="text-zinc-500"> · applied to ${escapeHtml(r.fromRole)}</span></span>
+              <span class="flex items-center gap-2 shrink-0">
+                <span class="font-mono font-bold ${tierTone(r.tier)}">${Number(r.score)}/100</span>
+                <span class="text-[10px] text-zinc-400">${escapeHtml(tierLabel(r.tier))}</span>
+                <button data-id="${escapeHtml(r.source.id)}" onclick="addRediscovered(this.dataset.id)" class="px-2.5 py-1 rounded-lg bg-violet-500/20 hover:bg-violet-500/30 text-violet-100 border border-violet-500/30 font-semibold flex items-center gap-1"><i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Add to this role</button>
+              </span>
+            </li>`).join('')}
+        </ul>`;
+    }
+
+    function hideRediscovery() {
+      rediscoveryHidden.add(currentJobId);
+      renderRediscovery();
+    }
+
+    function addRediscovered(sourceId) {
+      const src = candidates.find(c => c.id === sourceId);
+      const job = jobs.find(j => j.id === currentJobId);
+      if (!src || !job) return;
+      if (candidates.some(c => c.roleId === job.id && personKey(c) === personKey(src))) {
+        showToast(`${displayName(src)} is already in this role.`);
+        return;
+      }
+      const fromRole = (jobs.find(j => j.id === src.roleId) || {}).title || 'another role';
+      // A new entry for this role; the original application is left untouched
+      const cand = buildCandidateFromText({ name: src.name, email: src.email, text: src.cvText, job, source: 'rediscovered' });
+      cand.strengths.unshift(`Rediscovered from the "${fromRole}" pipeline (past applicant, no sourcing spend).`);
+      candidates.unshift(cand);
+      saveCandidates([cand]);
+      liliLog('recycle', `Rediscovered ${src.name} from "${fromRole}" for "${job.title}": ${cand.score}/100${isCloud() ? '. Queued for Lili' : ''}`, 'success', 'rules');
+      showToast(`${displayName(cand)} added to ${job.title} (${cand.score}/100)${isCloud() ? ' · Queued for Lili' : ''}`, 'success');
+    }
+
+    // LILI STATUS STRIP (cloud only)
+    function renderLiliStrip(roleCandidates) {
+      const el = document.getElementById('lili-strip');
+      if (!el) return;
+      if (!isCloud()) {
+        el.classList.add('hidden');
+        return;
+      }
+      const screened = roleCandidates.filter(hasLiliScore).length;
+      const queued = roleCandidates.filter(isQueuedForLili).length;
+      const sent = roleCandidates.filter(c => c.liliOutreach && c.liliOutreach.sent_at).length;
+      const awaiting = roleCandidates.filter(isAwaitingApproval).length;
+      const review = roleCandidates.filter(needsReview).length;
+      const minutes = getImpactAssumptions().minutes;
+      const hours = (screened * minutes / 60).toFixed(1);
+      const item = (icon, label, value, extra = '') => `<span class="inline-flex items-center gap-1 whitespace-nowrap ${extra}"><i data-lucide="${icon}" class="w-3.5 h-3.5"></i>${label} <span class="font-semibold text-zinc-100">${value}</span></span>`;
+      el.classList.remove('hidden');
+      el.innerHTML = [
+        `<span class="font-semibold text-violet-200 flex items-center gap-1 whitespace-nowrap"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Lili on this role</span>`,
+        item('check-circle-2', 'Screened by Lili', screened, 'text-violet-300'),
+        item('loader', 'Queued', queued),
+        item('send', 'Emails sent', sent),
+        awaiting > 0
+          ? `<button onclick="setFilter('awaiting')" class="inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 font-medium" title="Show only candidates waiting for your approval"><i data-lucide="hourglass" class="w-3.5 h-3.5"></i>Awaiting your approval <span class="font-bold">${awaiting}</span></button>`
+          : item('hourglass', 'Awaiting your approval', 0),
+        review > 0
+          ? `<button onclick="setFilter('review')" class="inline-flex items-center gap-1 whitespace-nowrap text-amber-300 hover:text-amber-200 underline decoration-dotted" title="Lili and the pre-screen disagree, or Lili asked for a human"><i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>Needs review <span class="font-bold">${review}</span></button>`
+          : item('alert-triangle', 'Needs review', 0),
+        item('clock', '~', `${hours} recruiter-h saved`, 'text-emerald-300" title="Estimate: ' + minutes + ' min of manual screening per CV Lili screened')
+      ].join('');
+    }
+
+    // BUSINESS IMPACT: measured counts × the SME's own assumptions (always labelled as estimates)
+    const IMPACT_DEFAULTS = { minutes: 20, rate: 25, subscription: 0, placement: 3000, days: 5 };
+    const IMPACT_FIELDS = { minutes: 'bi-minutes', rate: 'bi-rate', subscription: 'bi-subscription', placement: 'bi-placement', days: 'bi-days' };
+
+    function getImpactAssumptions() {
+      const saved = loadJSON('ts_impact_assumptions', {});
+      const out = { ...IMPACT_DEFAULTS };
+      if (saved && typeof saved === 'object') {
+        for (const k of Object.keys(IMPACT_DEFAULTS)) {
+          const v = Number(saved[k]);
+          if (Number.isFinite(v) && v >= 0) out[k] = v;
+        }
+      }
+      return out;
+    }
+
+    function initImpactPanel() {
+      const a = getImpactAssumptions();
+      for (const [k, id] of Object.entries(IMPACT_FIELDS)) {
+        const el = document.getElementById(id);
+        if (el) el.value = a[k];
+      }
+      const panel = document.getElementById('impact-panel');
+      if (panel) panel.open = lsGet('ts_impact_open', '1') === '1';
+    }
+
+    function onImpactToggle(el) {
+      lsSet('ts_impact_open', el.open ? '1' : '0');
+    }
+
+    let impactInputTimer = null;
+    function onImpactInput() {
+      const out = {};
+      for (const [k, id] of Object.entries(IMPACT_FIELDS)) {
+        const v = parseFloat(document.getElementById(id).value);
+        out[k] = Number.isFinite(v) && v >= 0 ? v : IMPACT_DEFAULTS[k];
+      }
+      lsSet('ts_impact_assumptions', JSON.stringify(out));
+      clearTimeout(impactInputTimer);
+      impactInputTimer = setTimeout(renderTable, 150);
+    }
+
+    function money(n) {
+      return '$' + Math.round(n).toLocaleString('en-US');
+    }
+
+    function renderImpactPanel() {
+      const tiles = document.getElementById('impact-tiles');
+      if (!tiles) return;
+      const a = getImpactAssumptions();
+      const cloud = isCloud();
+      const now = new Date();
+      const thisMonth = d => { const t = new Date(d); return !isNaN(t) && t.getFullYear() === now.getFullYear() && t.getMonth() === now.getMonth(); };
+      const screenedList = cloud ? candidates.filter(hasLiliScore) : candidates;
+      const monthList = cloud ? screenedList.filter(c => thisMonth(c.liliEvaluatedAt)) : screenedList;
+      const screenedLabel = cloud ? 'screened by Lili' : 'pre-screened';
+      const hours = monthList.length * a.minutes / 60;
+      const per100 = 100 * a.minutes / 60;
+      const cost = hours * a.rate + a.subscription;
+
+      const rediscovered = candidates.filter(c => c.source === 'rediscovered' && ['tier1', 'tier2'].includes(effTier(c)));
+      const fastInvited = candidates.filter(c => effTier(c) === 'tier1' && String(c.status || '').includes('Invite Sent'));
+      const recovered = rediscovered.length * a.placement;
+      const fastValue = fastInvited.length * a.placement;
+
+      const tile = (icon, tone, title, big, lines, how) => `
+        <div class="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3 space-y-1">
+          <div class="flex items-center justify-between text-[11px] text-zinc-400"><span class="font-semibold uppercase tracking-wider">${title}</span><i data-lucide="${icon}" class="w-4 h-4 ${tone}"></i></div>
+          <div class="text-xl font-bold ${tone}">${big}</div>
+          ${lines.map(l => `<p class="text-[11px] text-zinc-400 leading-snug">${l}</p>`).join('')}
+          <p class="text-[10px] text-zinc-600 leading-snug pt-1 border-t border-zinc-800/80"><span class="font-semibold">How we calculate this:</span> ${how}</p>
+        </div>`;
+
+      const revenueBody = (recovered === 0 && fastValue === 0)
+        ? tile('trending-up', 'text-violet-300', 'Revenue / pipeline value', '$0',
+            ['Add a role and import CVs to see this. Rediscovered fits and invited Tier-1 candidates appear here.', `Shortlists reach you ~${a.days} days sooner (estimate).`],
+            `(rediscovered Tier 1–2 candidates + Tier-1 candidates invited) × value of a filled role (${money(a.placement)}). Estimate, not revenue earned.`)
+        : tile('trending-up', 'text-violet-300', 'Revenue / pipeline value', money(recovered + fastValue),
+            [`${money(recovered)} pipeline value recovered without sourcing spend (${rediscovered.length} rediscovered fit${rediscovered.length === 1 ? '' : 's'}, measured count).`,
+             `${money(fastValue)} pipeline value of fast-tracked candidates (${fastInvited.length} Tier-1 invited, measured count), shortlisted ~${a.days} days sooner.`],
+            `count (measured) × value of a filled role (${money(a.placement)}, your estimate). Pipeline value, not revenue earned.`);
+
+      tiles.innerHTML =
+        tile('clock', 'text-emerald-400', 'Time saved', `${hours.toFixed(1)} h`,
+          [`returned ${cloud ? 'this month' : 'so far'}: ${monthList.length} CV${monthList.length === 1 ? '' : 's'} ${screenedLabel} (measured)`, `per 100 CVs: ${per100.toFixed(1)} h (estimate)`],
+          `CVs ${screenedLabel}${cloud ? ' this month' : ''} × ${a.minutes} min manual screening ÷ 60. Minutes per CV is your estimate.`) +
+        tile('piggy-bank', 'text-emerald-400', 'Cost saved', money(cost),
+          [`${money(hours * a.rate)} recruiter time + ${money(a.subscription)}/mo tools avoided (estimate)`, 'Stack cost: $0/mo (Vercel, Supabase, Brevo free tiers)'],
+          `hours saved × ${money(a.rate)}/h + ATS/tool subscription avoided (${money(a.subscription)}/mo). Estimate from your numbers.`) +
+        revenueBody;
+
+      const summary = document.getElementById('impact-summary');
+      if (summary) summary.textContent = `≈ ${hours.toFixed(1)} h · ${money(cost)} saved · ${money(recovered + fastValue)} pipeline value (estimates)`;
     }
 
     // INBOX CONFIGURATION SYSTEM
     function getInboxConfig() {
       return {
-        recruiterName: localStorage.getItem('recruiter_name') || 'Laila Mohamed',
-        recruiterEmail: localStorage.getItem('recruiter_email') || 'laila.mohamed.fikry@gmail.com',
-        bookingLink: localStorage.getItem('recruiter_booking_link') || 'https://cal.com/laila-recruiter/30min',
-        wesamUrl: localStorage.getItem('wesam_agent_url') || 'https://prod.wesam.ai/w/ws_40136b5b2d864165/dm/recruitment-pre-scre-2d7b/c/ch_693d29f638dd4aad',
-        deliveryMode: localStorage.getItem('email_delivery_mode') || 'gmail',
-        resendKey: localStorage.getItem('resend_api_key') || ''
+        recruiterName: lsGet('recruiter_name') || 'Laila Mohamed',
+        recruiterEmail: lsGet('recruiter_email') || 'laila.mohamed.fikry@gmail.com',
+        bookingLink: lsGet('recruiter_booking_link') || 'https://cal.com/laila-recruiter/30min',
+        wesamUrl: lsGet('wesam_agent_url') || 'https://prod.wesam.ai/w/ws_40136b5b2d864165/dm/recruitment-pre-scre-2d7b/c/ch_693d29f638dd4aad',
+        deliveryMode: lsGet('email_delivery_mode') || 'gmail',
+        resendKey: lsGet('resend_api_key') || ''
       };
     }
 
@@ -2567,7 +3342,7 @@ ${o.body}`;
       if (resEl) resEl.classList.add('hidden');
 
       document.getElementById('inbox-modal').classList.remove('hidden');
-      if (window.lucide) lucide.createIcons();
+      window.lucide?.createIcons();
     }
 
     function closeInboxSettingsModal() {
@@ -2581,13 +3356,13 @@ ${o.body}`;
       const mode = document.querySelector('input[name="email_delivery_mode"]:checked')?.value || 'gmail';
       const resendKey = document.getElementById('inbox-resend-key').value.trim();
 
-      localStorage.setItem('recruiter_name', name);
-      localStorage.setItem('recruiter_email', email);
-      localStorage.setItem('recruiter_booking_link', booking);
+      lsSet('recruiter_name', name);
+      lsSet('recruiter_email', email);
+      lsSet('recruiter_booking_link', booking);
       const wesamUrl = document.getElementById('inbox-wesam-url').value.trim();
-      localStorage.setItem('wesam_agent_url', /^https:\/\//.test(wesamUrl) ? wesamUrl : '');
-      localStorage.setItem('email_delivery_mode', mode);
-      localStorage.setItem('resend_api_key', resendKey);
+      lsSet('wesam_agent_url', /^https:\/\//.test(wesamUrl) ? wesamUrl : '');
+      lsSet('email_delivery_mode', mode);
+      lsSet('resend_api_key', resendKey);
 
       initInboxSettings();
       showToast('✅ Inbox & Dispatch settings saved successfully!', 'success');
@@ -2601,7 +3376,7 @@ ${o.body}`;
       resEl.classList.remove('hidden', 'bg-rose-500/10', 'text-rose-400', 'bg-emerald-500/10', 'text-emerald-400');
       resEl.classList.add('bg-zinc-800', 'text-zinc-300');
       resEl.innerHTML = '<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin inline mr-1"></i> Testing email dispatch...';
-      if (window.lucide) lucide.createIcons();
+      window.lucide?.createIcons();
 
       const subject = `Test Notification: Lili TalentScout HR Recruiter Setup`;
       const body = `Hi ${cfg.recruiterName},\n\nThis confirms your Lili TalentScout Recruiter Inbox (${cfg.recruiterEmail}) is properly configured and active.\n\nDelivery Mode: ${cfg.deliveryMode === 'resend' ? emailProviderName(cfg.resendKey) + ' API' : '1-Click Gmail Web Dispatch'}\nCalendar Link: ${cfg.bookingLink}\n\nBest regards,\nLili AI Technical Recruiter`;
@@ -2638,7 +3413,7 @@ ${o.body}`;
         resEl.className = 'p-2.5 rounded-lg text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
         resEl.innerHTML = `✅ Opened test draft in Gmail composer! Click Send in Gmail to test deliverability.`;
       }
-      if (window.lucide) lucide.createIcons();
+      window.lucide?.createIcons();
     }
 
     // CANDIDATE EMAIL DRAFT GENERATION (INVITE VS EVIDENCE-BASED REJECTION)
@@ -2706,6 +3481,15 @@ ${inbox.recruiterEmail}`;
     }
 
     let currentDrawerEmailTemplate = 'invite';
+    function highlightTemplateButtons(type) {
+      const btnInvite = document.getElementById('btn-tpl-invite');
+      const btnReject = document.getElementById('btn-tpl-reject');
+      const on = type === 'reject'
+        ? ['bg-rose-500/20 text-rose-300 border border-rose-500/30', btnReject, btnInvite]
+        : ['bg-emerald-500/20 text-emerald-300 border border-emerald-500/30', btnInvite, btnReject];
+      if (on[1]) on[1].className = `flex-1 py-1.5 px-2 rounded text-[11px] font-semibold transition ${on[0]}`;
+      if (on[2]) on[2].className = 'flex-1 py-1.5 px-2 rounded text-[11px] font-medium transition text-zinc-400 hover:text-zinc-200';
+    }
     function setDrawerEmailTemplate(type) {
       const c = candidates.find(cand => cand.id === currentDrawerCandidateId);
       if (!c) return;
@@ -2716,21 +3500,94 @@ ${inbox.recruiterEmail}`;
       const btnReject = document.getElementById('btn-tpl-reject');
       const badge = document.getElementById('drawer-email-badge');
 
+      highlightTemplateButtons(type);
       if (type === 'reject') {
         if (btnReject) btnReject.className = 'flex-1 py-1.5 px-2 rounded text-[11px] font-semibold transition bg-rose-500/20 text-rose-300 border border-rose-500/30';
         if (btnInvite) btnInvite.className = 'flex-1 py-1.5 px-2 rounded text-[11px] font-medium transition text-zinc-400 hover:text-zinc-200';
-        if (badge) badge.textContent = 'Evidence-based constructive rejection feedback';
+        if (badge) badge.textContent = 'Template draft · constructive rejection feedback';
       } else {
         if (btnInvite) btnInvite.className = 'flex-1 py-1.5 px-2 rounded text-[11px] font-semibold transition bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
         if (btnReject) btnReject.className = 'flex-1 py-1.5 px-2 rounded text-[11px] font-medium transition text-zinc-400 hover:text-zinc-200';
-        if (badge) badge.textContent = 'Personalized interview invitation with booking link';
+        if (badge) badge.textContent = 'Template draft · interview invitation with booking link';
       }
 
-      const emailData = generateCandidateEmailDraft(c, activeJob, type);
-      document.getElementById('drawer-email-subject').value = emailData.subject;
-      document.getElementById('drawer-email-body-edit').value = emailData.body;
+      if (badge) badge.className = 'text-[10px] text-zinc-500';
+      const emailData = generateCandidateEmailDraft(c, jobs.find(j => j.id === c.roleId) || activeJob, type);
       // Never guess an address: a guessed gmail.com address can belong to a real stranger
-      document.getElementById('drawer-email-to').value = c.email || '';
+      setDrawerEmailFields(c, c.email || '', emailData.subject, emailData.body);
+    }
+
+    // Outreach fields always hold the REAL draft in memory; Bias-Free Mode only changes what is displayed.
+    let drawerRealTo = '';
+    let drawerAnonApplied = false;
+
+    function setDrawerEmailFields(c, to, subject, body) {
+      drawerAnonApplied = false;
+      const toEl = document.getElementById('drawer-email-to');
+      toEl.readOnly = false;
+      toEl.value = to;
+      document.getElementById('drawer-email-subject').value = subject;
+      document.getElementById('drawer-email-body-edit').value = body;
+      applyDrawerAnonymity(c);
+    }
+
+    function applyDrawerAnonymity(c) {
+      const toEl = document.getElementById('drawer-email-to');
+      const subEl = document.getElementById('drawer-email-subject');
+      const bodyEl = document.getElementById('drawer-email-body-edit');
+      const anon = isAnonMode();
+      if (anon && !drawerAnonApplied) {
+        drawerRealTo = toEl.value;
+        toEl.value = 'candidate@hidden';
+        toEl.readOnly = true;
+        toEl.title = 'Hidden in Bias-Free Mode. The email still goes to the candidate\'s real address.';
+        subEl.value = anonymizeText(subEl.value, c);
+        bodyEl.value = anonymizeText(bodyEl.value, c);
+        drawerAnonApplied = true;
+      } else if (!anon && drawerAnonApplied) {
+        toEl.value = drawerRealTo;
+        toEl.readOnly = false;
+        toEl.title = '';
+        subEl.value = deanonymizeText(subEl.value, c);
+        bodyEl.value = deanonymizeText(bodyEl.value, c);
+        drawerAnonApplied = false;
+      }
+    }
+
+    // What actually gets sent (real name/address even in Bias-Free Mode)
+    function getDrawerOutgoing(c) {
+      const to = drawerAnonApplied ? drawerRealTo : document.getElementById('drawer-email-to').value;
+      const subject = document.getElementById('drawer-email-subject').value;
+      const body = document.getElementById('drawer-email-body-edit').value;
+      return {
+        to: to.trim(),
+        subject: (drawerAnonApplied ? deanonymizeText(subject, c) : subject).trim(),
+        body: (drawerAnonApplied ? deanonymizeText(body, c) : body).trim()
+      };
+    }
+
+    function drawerIsOpen() {
+      return !document.getElementById('drawer').classList.contains('translate-x-full');
+    }
+
+    function onAnonToggle() {
+      renderTable();
+      scheduleLiliRender();
+      const c = drawerIsOpen() && candidates.find(cand => cand.id === currentDrawerCandidateId);
+      if (c) {
+        document.getElementById('drawer-name').textContent = displayName(c);
+        const prevAnon = !isAnonMode();
+        const s = document.getElementById('approval-subject');
+        const b = document.getElementById('approval-body');
+        const approvalDraft = s && b ? {
+          subject: prevAnon ? deanonymizeText(s.value, c) : s.value,
+          body: prevAnon ? deanonymizeText(b.value, c) : b.value
+        } : null;
+        renderDrawerLiliVerdict(c);
+        renderDrawerApproval(c, approvalDraft);
+        applyDrawerAnonymity(c);
+      }
+      if (document.getElementById('compare-modal')) openCompareModal();
     }
 
     function renderDrawerBreakdown(c) {
@@ -2783,22 +3640,115 @@ ${inbox.recruiterEmail}`;
     }
 
     // LILI DEEP EVALUATION (written by the Wesam agent through Supabase; read-only here)
+    const FLAG_STYLES = {
+      disagreement: ['bg-amber-500/10 text-amber-300 border-amber-500/30', 'Lili and pre-screen disagree — human review'],
+      needs_review: ['bg-amber-500/10 text-amber-300 border-amber-500/30', 'Needs human review'],
+      prompt_injection: ['bg-rose-500/15 text-rose-300 border-rose-500/40', 'Prompt injection attempt in CV'],
+      claim_mismatch: ['bg-rose-500/15 text-rose-300 border-rose-500/40', 'Claim does not match evidence']
+    };
+
+    function capLabel(cap) {
+      const rule = cap && cap.rule === 'min_experience' ? 'Below experience bar' : cap && cap.rule === 'missing_must_have' ? 'Missing must-have' : 'Cap';
+      const reason = String((cap && cap.reason) || '').trim();
+      const text = reason ? (reason.toLowerCase().startsWith(rule.toLowerCase()) ? reason : `${rule}: ${reason}`) : rule;
+      const src = cap && cap.source === 'prescreen' ? 'enforced server-side' : 'flagged by Lili · verified server-side';
+      return `${text} (cap ${Number(cap && cap.cap) || '?'}) · ${src}`;
+    }
+
+    function safeGithubUrl(u) {
+      return typeof u === 'string' && /^https:\/\/github\.com\/[^\s"'<>]*$/.test(u) ? u : null;
+    }
+
+    function renderGithubVerification(c) {
+      const gh = c.liliVerification && c.liliVerification.github;
+      if (!gh || typeof gh !== 'object') return '';
+      const profile = safeGithubUrl(gh.profile_url);
+      const user = gh.username ? escapeHtml(gh.username) : 'GitHub profile';
+      const stat = (label, v) => v === undefined || v === null || v === '' ? '' : `<span class="whitespace-nowrap"><span class="text-zinc-500">${label}</span> <span class="font-mono text-zinc-200">${escapeHtml(v)}</span></span>`;
+      const langs = Array.isArray(gh.top_languages) ? gh.top_languages.slice(0, 5) : [];
+      const repos = Array.isArray(gh.top_repos) ? gh.top_repos.slice(0, 3) : [];
+      const claims = Array.isArray(gh.claims) ? gh.claims : [];
+      const claimIcon = st => st === 'verified' ? '<span class="text-emerald-400 font-bold" title="Verified">✓</span>'
+        : st === 'mismatch' ? '<span class="text-rose-400 font-bold" title="Mismatch">✗</span>'
+        : '<span class="text-zinc-500 font-bold" title="Unverifiable">?</span>';
+      return `
+        <div class="rounded-lg border border-zinc-700/80 bg-zinc-950/50 p-2.5 space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-semibold text-zinc-200 flex items-center gap-1.5"><i data-lucide="git-branch" class="w-3.5 h-3.5"></i> GitHub verification</span>
+            ${profile ? `<a href="${escapeHtml(profile)}" target="_blank" rel="noopener noreferrer" class="text-violet-300 hover:text-violet-200 underline font-mono text-[11px] truncate">${user}</a>` : `<span class="font-mono text-[11px] text-zinc-400">${user}</span>`}
+          </div>
+          <div class="flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+            ${stat('repos', gh.public_repos)}${stat('followers', gh.followers)}${stat('★ stars', gh.total_stars)}
+            ${gh.last_push ? `<span class="whitespace-nowrap"><span class="text-zinc-500">last push</span> <span class="text-zinc-200">${escapeHtml(relTime(gh.last_push))}</span></span>` : ''}
+            ${gh.account_created ? `<span class="whitespace-nowrap"><span class="text-zinc-500">since</span> <span class="text-zinc-200">${escapeHtml(String(gh.account_created).slice(0, 4))}</span></span>` : ''}
+          </div>
+          ${langs.length ? `<div class="flex flex-wrap gap-1">${langs.map(l => `<span class="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 text-[10px]">${escapeHtml(l)}</span>`).join('')}</div>` : ''}
+          ${repos.length ? `<ul class="space-y-0.5 text-[11px]">${repos.map(r => {
+            const url = safeGithubUrl(r && r.url);
+            const name = escapeHtml((r && r.name) || 'repo');
+            return `<li class="flex items-center justify-between gap-2"><span class="truncate">${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="text-zinc-200 hover:text-violet-200 underline decoration-dotted">${name}</a>` : `<span class="text-zinc-200">${name}</span>`}${r && r.language ? ` <span class="text-zinc-500">· ${escapeHtml(r.language)}</span>` : ''}</span><span class="font-mono text-zinc-400 shrink-0">★ ${escapeHtml(Number(r && r.stars) || 0)}${r && r.pushed_at ? ` · ${escapeHtml(relTime(r.pushed_at))}` : ''}</span></li>`;
+          }).join('')}</ul>` : ''}
+          ${claims.length ? `<ul class="space-y-1 text-[11px] pt-1 border-t border-zinc-800">${claims.map(cl => `
+            <li class="flex items-start gap-1.5">${claimIcon(cl && cl.status)}<span><span class="text-zinc-200">${escapeHtml(anonText(cl && cl.claim, c))}</span>${cl && cl.finding ? `<span class="text-zinc-500"> — ${escapeHtml(anonText(cl.finding, c))}</span>` : ''}</span></li>`).join('')}</ul>` : ''}
+          ${gh.checked_at ? `<p class="text-[10px] text-zinc-600">Checked ${escapeHtml(relTime(gh.checked_at))} via the public GitHub API</p>` : ''}
+        </div>`;
+    }
+
     function renderDrawerLiliVerdict(c) {
       const el = document.getElementById('drawer-lili');
       if (!el || !c) return;
-      if (c.liliScore !== null && c.liliScore !== undefined) {
-        const tone = c.liliTier === 1 ? 'text-emerald-300' : c.liliTier === 2 ? 'text-amber-300' : 'text-rose-300';
-        const list = (items, cls) => (items || []).slice(0, 4).map(t => `<li class="${cls}">${escapeHtml(typeof t === 'string' ? t : JSON.stringify(t))}</li>`).join('');
+      if (hasLiliScore(c)) {
+        const score = Number(c.liliScore);
+        const tone = Number(c.liliTier) === 1 ? 'text-emerald-300' : Number(c.liliTier) === 2 ? 'text-amber-300' : 'text-rose-300';
+        const txt = t => escapeHtml(anonText(typeof t === 'string' ? t : (t && (t.text || t.claim)) || JSON.stringify(t), c));
+        const list = items => (items || []).slice(0, 4).map(t => `<li>${txt(t)}</li>`).join('');
+        const raw = Number(c.liliRawScore);
+        const capped = c.liliRawScore !== null && c.liliRawScore !== undefined && Number.isFinite(raw) && raw > score;
+        const caps = (c.liliCaps || []).filter(Boolean);
+        const job = jobs.find(j => j.id === c.roleId) || jobs.find(j => j.id === currentJobId) || {};
+        const w = job.weights || { tech: 40, exp: 25, impact: 20, lead: 15 };
+        const dims = [['tech', 'Technical Stack Match'], ['exp', 'Experience Depth'], ['impact', 'Production Impact'], ['lead', 'Leadership & Communication']];
+        const bd = c.liliBreakdown;
+        const bars = bd ? dims.filter(([k]) => Number.isFinite(Number(bd[k]))).map(([k, label]) => {
+          const v = Math.max(0, Math.min(100, Number(bd[k])));
+          const color = v >= 85 ? 'bg-violet-400' : v >= 70 ? 'bg-amber-500' : 'bg-rose-500';
+          return `<div>
+              <div class="flex justify-between text-[11px] text-zinc-400 mb-0.5"><span>${label} <span class="text-zinc-600">· ${Number(w[k]) || 0}%</span></span><span class="font-mono text-zinc-300">${Math.round(v)}</span></div>
+              <div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden"><div class="${color} h-full" style="width:${v}%"></div></div>
+            </div>`;
+        }).join('') : '';
+        const evidence = (c.liliEvidence || []).filter(Boolean).slice(0, 6).map(e => {
+          if (typeof e === 'string') return `<li class="text-zinc-300">${escapeHtml(anonText(e, c))}</li>`;
+          return `<li>
+              ${e.claim ? `<div class="font-semibold text-zinc-200">${escapeHtml(anonText(e.claim, c))}</div>` : ''}
+              ${e.quote ? `<blockquote class="mt-0.5 border-l-2 border-violet-400/60 pl-2 italic text-zinc-400 leading-snug">“${escapeHtml(anonText(e.quote, c))}”</blockquote>` : ''}
+              ${!e.quote && e.source ? `<div class="mt-0.5 border-l-2 border-zinc-700 pl-2 text-[11px] text-zinc-500">Source: ${escapeHtml(anonText(e.source, c))}</div>` : ''}
+            </li>`;
+        }).join('');
+        const flags = (c.liliFlags || []).filter(Boolean).map(f => {
+          const [cls, label] = FLAG_STYLES[f.type] || ['bg-zinc-800 text-zinc-300 border-zinc-700', String(f.type || 'flag').replace(/_/g, ' ')];
+          return `<span class="inline-block px-1.5 py-0.5 rounded border text-[10px] leading-snug ${cls}" title="${escapeHtml(anonText(f.detail || '', c))}"><span class="font-semibold">${escapeHtml(label)}</span>${f.detail ? ` <span class="opacity-80">· ${escapeHtml(anonText(String(f.detail).slice(0, 120), c))}</span>` : ''}</span>`;
+        }).join('');
+        const awaiting = isAwaitingApproval(c);
         el.innerHTML = `
-          <div class="rounded-lg border border-violet-500/30 bg-violet-500/10 p-3 space-y-2 lili-fade">
-            <div class="flex items-center justify-between">
+          <div class="rounded-lg border border-violet-500/30 bg-violet-500/10 p-3 space-y-2.5 lili-fade">
+            <div class="flex items-center justify-between gap-2">
               <span class="font-semibold text-violet-200 flex items-center gap-1.5"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Lili deep evaluation</span>
-              <span class="font-mono font-bold ${tone}">${Number(c.liliScore)}/100 · Tier ${Number(c.liliTier)}</span>
+              <span class="font-mono font-bold ${tone}">${score}/100 · Tier ${Number(c.liliTier) || '?'}</span>
             </div>
-            ${c.liliSummary ? `<p class="text-zinc-300 leading-relaxed">${escapeHtml(c.liliSummary)}</p>` : ''}
-            ${(c.liliStrengths || []).length ? `<ul class="list-disc list-inside space-y-0.5 text-zinc-400">${list(c.liliStrengths, '')}</ul>` : ''}
-            ${(c.liliGaps || []).length ? `<ul class="list-disc list-inside space-y-0.5 text-amber-300/90">${list(c.liliGaps, '')}</ul>` : ''}
-            <p class="text-[10px] text-zinc-500">Evidence-cited by Lili on Wesam · ${c.liliEvaluatedAt ? escapeHtml(new Date(c.liliEvaluatedAt).toLocaleString()) : ''}</p>
+            ${capped || caps.length ? `<div class="space-y-1">
+              ${capped ? `<p class="text-[11px] font-mono text-amber-300">raw ${raw} → capped ${score}</p>` : ''}
+              ${caps.map(cap => `<p class="text-[11px] text-amber-200/90 flex items-start gap-1"><i data-lucide="shield-alert" class="w-3 h-3 mt-0.5 shrink-0"></i><span>${escapeHtml(anonText(capLabel(cap), c))}</span></p>`).join('')}
+            </div>` : ''}
+            ${flags ? `<div class="flex flex-wrap gap-1">${flags}</div>` : ''}
+            ${c.liliSummary ? `<p class="text-zinc-300 leading-relaxed">${escapeHtml(anonText(c.liliSummary, c))}</p>` : ''}
+            ${bars ? `<div class="space-y-1.5 pt-1"><h5 class="text-[11px] font-semibold text-zinc-300">Lili's rubric scores (role weights)</h5>${bars}</div>` : ''}
+            ${evidence ? `<div class="pt-1"><h5 class="text-[11px] font-semibold text-zinc-300 mb-1 flex items-center gap-1"><i data-lucide="quote" class="w-3 h-3"></i> Evidence cited from the CV</h5><ul class="space-y-2">${evidence}</ul></div>` : ''}
+            ${(c.liliStrengths || []).length ? `<ul class="list-disc list-inside space-y-0.5 text-zinc-400">${list(c.liliStrengths)}</ul>` : ''}
+            ${(c.liliGaps || []).length ? `<ul class="list-disc list-inside space-y-0.5 text-amber-300/90">${list(c.liliGaps)}</ul>` : ''}
+            ${renderGithubVerification(c)}
+            ${awaiting ? `<button onclick="setDrawerTab('email')" class="w-full py-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20 font-semibold flex items-center justify-center gap-1.5"><i data-lucide="hourglass" class="w-3.5 h-3.5"></i> Lili's draft is waiting for your approval →</button>` : ''}
+            <p class="text-[10px] text-zinc-500">Evidence-cited by Lili on Wesam${c.liliYears !== null && c.liliYears !== undefined ? ` · counted ${escapeHtml(c.liliYears)} yrs` : ''}${(c.liliMissing || []).length ? ` · missing ${escapeHtml(c.liliMissing.join(', '))}` : ''} · ${c.liliEvaluatedAt ? escapeHtml(new Date(c.liliEvaluatedAt).toLocaleString()) : ''}</p>
           </div>`;
       } else {
         el.innerHTML = `
@@ -2807,15 +3757,114 @@ ${inbox.recruiterEmail}`;
             <button onclick="requestLiliEvaluation()" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-violet-500/20 hover:bg-violet-500/30 text-violet-200 border border-violet-500/30 font-semibold flex items-center gap-1"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> Watch Lili</button>
           </div>`;
       }
-      if (window.lucide) lucide.createIcons({ root: el });
+      window.lucide?.createIcons({ root: el });
     }
 
-    const LILI_SCHEDULE_TEXT = 'every 30 minutes';
+    // APPROVAL GATE: Lili's rejections wait for the recruiter before they are sent
+    function renderDrawerApproval(c, current = null) {
+      const el = document.getElementById('drawer-approval');
+      if (!el) return;
+      const awaiting = !!c && isAwaitingApproval(c);
+      const composer = document.getElementById('drawer-composer');
+      const reveal = document.getElementById('drawer-composer-reveal');
+      if (composer) composer.classList.toggle('hidden', awaiting);
+      if (reveal) reveal.classList.toggle('hidden', !awaiting);
+      if (!awaiting) {
+        el.innerHTML = '';
+        return;
+      }
+      const o = c.liliOutreach || {};
+      const subject = current ? current.subject : (o.subject || 'Update on your application');
+      const body = current ? current.body : (o.body || '');
+      const kind = o.type === 'reject' ? 'rejection' : o.type === 'invite' ? 'invitation' : 'message';
+      el.innerHTML = `
+        <div class="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 space-y-2">
+          <p class="text-amber-200 font-semibold flex items-start gap-1.5"><i data-lucide="hourglass" class="w-3.5 h-3.5 mt-0.5 shrink-0"></i> Lili drafted this ${kind} and is waiting for your approval before sending.</p>
+          <p class="text-[11px] text-zinc-400">Edit anything you like. Nothing is sent until you approve.${o.drafted_at ? ` Drafted ${escapeHtml(relTime(o.drafted_at))}.` : ''}</p>
+          <label class="block text-[10px] font-semibold text-zinc-400 uppercase">Subject
+            <input type="text" id="approval-subject" class="mt-1 w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-200 outline-none focus:border-amber-500 font-medium normal-case" value="${escapeHtml(anonText(subject, c))}">
+          </label>
+          <label class="block text-[10px] font-semibold text-zinc-400 uppercase">Body
+            <textarea id="approval-body" rows="7" class="mt-1 w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-xs text-zinc-300 leading-relaxed outline-none focus:border-amber-500 font-mono normal-case">${escapeHtml(anonText(body, c))}</textarea>
+          </label>
+          ${isCloud()
+            ? `<button id="btn-approve-outreach" onclick="approveLiliOutreach()" class="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-semibold rounded-lg text-xs transition flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-wait"><i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Approve &amp; send</button>`
+            : '<p class="text-[11px] text-amber-300">Sign in to approve and send Lili\'s draft.</p>'}
+        </div>`;
+      window.lucide?.createIcons({ root: el });
+    }
+
+    function revealDrawerComposer() {
+      document.getElementById('drawer-composer').classList.remove('hidden');
+      document.getElementById('drawer-composer-reveal').classList.add('hidden');
+    }
+
+    function readApprovalDraft(c) {
+      const s = document.getElementById('approval-subject');
+      const b = document.getElementById('approval-body');
+      if (!s || !b) return null;
+      const anon = isAnonMode();
+      return { subject: anon ? deanonymizeText(s.value, c) : s.value, body: anon ? deanonymizeText(b.value, c) : b.value };
+    }
+
+    async function approveLiliOutreach() {
+      const c = candidates.find(cand => cand.id === currentDrawerCandidateId);
+      if (!c) return;
+      if (!isCloud()) {
+        showToast('Sign in to approve Lili\'s drafts.', 'error');
+        return;
+      }
+      const draft = readApprovalDraft(c) || {};
+      const subject = (draft.subject || '').trim();
+      const body = (draft.body || '').trim();
+      if (!body) {
+        showToast('The email body is empty.', 'error');
+        return;
+      }
+      const btn = document.getElementById('btn-approve-outreach');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i> Sending…';
+        window.lucide?.createIcons({ root: btn });
+      }
+      try {
+        let token = session && session.access_token;
+        try {
+          const { data } = await sb.auth.getSession();
+          if (data && data.session && data.session.access_token) token = data.session.access_token;
+        } catch (e) {}
+        const res = await fetch('/api/approve-outreach', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ id: c.id, subject, body })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        const info = data.data || {};
+        const o = c.liliOutreach || {};
+        c.liliOutreach = { ...o, subject, body, awaiting_approval: false, approved_at: new Date().toISOString(), sent_at: o.sent_at || new Date().toISOString(), sent_to: info.to || o.sent_to, mode: info.mode || o.mode };
+        c.status = info.status || liliOutreachStatus(c.liliOutreach, '') || 'Feedback Sent ✉️';
+        c.emailSent = true;
+        c.emailDraft = `Subject: ${subject}\n\n${body}`;
+        // The server already wrote status/outreach; only persist locally (realtime will echo the row)
+        saveCandidates([]);
+        liliLog('send', `You approved Lili's ${o.type === 'reject' ? 'rejection' : 'email'} to ${c.name}${info.mode === 'demo' ? ' (demo mode: delivered to your inbox)' : ''}`, 'success', 'lili');
+        showToast(`Approved. Email to ${displayName(c)} sent${info.mode === 'demo' ? ' (demo mode: check your inbox)' : ''}.`, 'success');
+        if (currentDrawerCandidateId === c.id) openDrawer(c.id, 'email');
+      } catch (err) {
+        showToast(`Could not send: ${err.message}`, 'error');
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Approve &amp; send';
+          window.lucide?.createIcons({ root: btn });
+        }
+      }
+    }
 
     function liliQueueMessage(c) {
       if (!isCloud()) return 'Sign in so Lili can pick this candidate up. She screens your cloud pipeline automatically.';
       if (!c.cvText) return 'No CV text stored for this candidate. Re-import their CV and Lili will evaluate it automatically.';
-      return `Queued. Lili evaluates new candidates on her own (${LILI_SCHEDULE_TEXT}), drafts the outreach email, and her evidence-cited verdict appears here live. The score above is the instant pre-screen.`;
+      return 'Queued for Lili. On her next run (one instruction on Wesam.ai) she finds this candidate herself, checks GitHub, scores the CV from evidence, writes the email, and her verdict appears here live. The score above is the instant pre-screen.';
     }
 
     // Opens Lili's workspace so the recruiter can watch her work. No copy-paste: she finds queued candidates herself.
@@ -2838,15 +3887,14 @@ ${inbox.recruiterEmail}`;
         if (!c || !c.cvText || (c.breakdown || []).length > 0) continue;
         const job = jobs.find(j => j.id === c.roleId);
         if (!job) continue;
-        const years = extractYears(c.cvText);
-        const skills = detectSkills(c.cvText, job);
-        const fresh = buildCandidate({ name: c.name, email: c.email, exp: years ?? 0, skills, text: c.cvText, job });
+        const fresh = buildCandidateFromText({ name: c.name, email: c.email, text: c.cvText, job });
+        const statusChanged = c.status === 'Received by email' && !c.liliOutreach;
         Object.assign(c, {
-          score: fresh.score, tier: fresh.tier, skills, exp: fresh.exp, breakdown: fresh.breakdown,
-          missing: fresh.missing, takeaway: fresh.takeaway, strengths: fresh.strengths, gaps: fresh.gaps,
-          status: c.status === 'Received by email' ? fresh.status : c.status
+          score: fresh.score, tier: fresh.tier, skills: fresh.skills, exp: fresh.exp, expUnknown: fresh.expUnknown, breakdown: fresh.breakdown,
+          missing: fresh.missing, takeaway: fresh.takeaway, strengths: fresh.strengths, gaps: fresh.gaps, cvFlags: fresh.cvFlags,
+          status: statusChanged ? fresh.status : c.status
         });
-        if (years === null) c.gaps.unshift('Years of experience could not be determined from the CV. Verify manually.');
+        if (statusChanged) c.localEdited = true;
         updated.push(c);
       }
       if (updated.length) {
@@ -2858,46 +3906,53 @@ ${inbox.recruiterEmail}`;
     // Drawer Open
     let currentDrawerCandidateId = null;
 
-    function openDrawer(id) {
+    function openDrawer(id, tab = null) {
       const c = candidates.find(cand => cand.id === id);
       if (!c) return;
       currentDrawerCandidateId = id;
 
-      const isAnon = document.getElementById('anonymize-toggle').checked;
-      document.getElementById('drawer-name').textContent = isAnon ? c.id : c.name;
-      document.getElementById('drawer-role').textContent = `${c.exp} yrs · ${(c.skills || []).join(', ')}`;
+      document.getElementById('drawer-name').textContent = displayName(c);
+      document.getElementById('drawer-role').textContent = `${c.expUnknown ? 'exp unknown' : `${c.exp} yrs`} · ${(c.skills || []).join(', ')}`;
       document.getElementById('ds-score').textContent = `${c.score}/100`;
       document.getElementById('dbar-score').style.width = `${Math.max(0, Math.min(100, Number(c.score) || 0))}%`;
 
-      document.getElementById('drawer-strengths').innerHTML = (c.strengths || []).map(s => `<li>${escapeHtml(s)}</li>`).join('');
-      document.getElementById('drawer-gaps').innerHTML = (c.gaps || []).map(g => `<li>${escapeHtml(g)}</li>`).join('');
+      document.getElementById('drawer-strengths').innerHTML = (c.strengths || []).map(s => `<li>${escapeHtml(anonText(s, c))}</li>`).join('');
+      document.getElementById('drawer-gaps').innerHTML = (c.gaps || []).map(g => `<li>${escapeHtml(anonText(g, c))}</li>`).join('');
       renderDrawerBreakdown(c);
       renderDrawerQuestions(c);
       renderDrawerLiliVerdict(c);
+      renderDrawerApproval(c);
 
       initInboxSettings();
 
-      // Check if candidate is rejected/below bar or invite
-      const isReject = (c.tier === 'tier3' || c.score < SCORING.tier2Min || (c.status && c.status.toLowerCase().includes('reject')) || (c.status && c.status.toLowerCase().includes('feedback')));
+      // Reject vs invite follows the effective verdict (Lili's when present)
+      const tier = effTier(c);
+      const isReject = (tier === 'tier3' || effScore(c) < SCORING.tier2Min || (c.status && c.status.toLowerCase().includes('reject')) || (c.status && c.status.toLowerCase().includes('feedback')));
 
+      const badge = document.getElementById('drawer-email-badge');
       if (c.emailDraft && !c.emailDraft.includes('Subject: Update regarding') && !c.emailDraft.includes('Subject: Next Steps')) {
         const subjectMatch = c.emailDraft.match(/^Subject:\s*([^\n]+)\n+([\s\S]*)$/i);
-        document.getElementById('drawer-email-to').value = c.email || '';
-        document.getElementById('drawer-email-subject').value = subjectMatch ? subjectMatch[1].trim() : `Application Update`;
-        document.getElementById('drawer-email-body-edit').value = subjectMatch ? subjectMatch[2].trim() : c.emailDraft;
+        setDrawerEmailFields(c, c.email || '', subjectMatch ? subjectMatch[1].trim() : `Application Update`, subjectMatch ? subjectMatch[2].trim() : c.emailDraft);
+        const fromLili = !!(c.liliOutreach && c.liliOutreach.body && c.emailDraft === liliOutreachDraft(c.liliOutreach));
+        currentDrawerEmailTemplate = c.liliOutreach && c.liliOutreach.type === 'reject' ? 'reject' : c.liliOutreach && c.liliOutreach.type === 'invite' ? 'invite' : (isReject ? 'reject' : 'invite');
+        highlightTemplateButtons(currentDrawerEmailTemplate);
+        if (badge) {
+          badge.textContent = fromLili ? 'Drafted by Lili' : 'Saved draft';
+          badge.className = fromLili ? 'text-[10px] px-1.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/30' : 'text-[10px] text-zinc-500';
+        }
       } else {
         setDrawerEmailTemplate(isReject ? 'reject' : 'invite');
       }
 
       const sentBadge = document.getElementById('drawer-email-sent-badge');
-      if (c.emailSent || (c.status && c.status.includes('Sent'))) {
-        sentBadge.classList.remove('hidden');
-      } else {
-        sentBadge.classList.add('hidden');
-      }
+      const sent = c.emailSent || (c.liliOutreach && c.liliOutreach.sent_at) || (c.status && c.status.includes('Sent'));
+      sentBadge.classList.toggle('hidden', !sent);
 
+      const scroller = document.querySelector('#drawer .overflow-y-auto');
+      if (scroller) scroller.scrollTop = 0;
       document.getElementById('drawer').classList.remove('translate-x-full');
-      lucide.createIcons();
+      if (tab) setDrawerTab(tab);
+      window.lucide?.createIcons();
     }
 
     function closeDrawer() {
@@ -2914,7 +3969,7 @@ ${inbox.recruiterEmail}`;
           btn.className = "py-2.5 border-b-2 border-transparent text-zinc-400 hover:text-zinc-200 mr-4";
         }
       });
-      lucide.createIcons();
+      window.lucide?.createIcons();
     }
 
     function gmailComposeUrl(to, subject, body) {
@@ -2958,20 +4013,24 @@ ${inbox.recruiterEmail}`;
       }
     }
 
-    function markEmailed(c, to, subject, body, isReject) {
+    // mode 'gmail' only opens a compose window: we can't know it was sent, so never mark it Sent
+    function markEmailed(c, to, subject, body, isReject, mode = 'api') {
       c.email = to;
+      c.emailDraft = `Subject: ${subject}\n\n${body}`;
+      c.localEdited = true;
+      if (mode === 'gmail') {
+        c.status = 'Draft opened in Gmail';
+        return;
+      }
       c.emailSent = true;
       c.status = isReject ? 'Feedback Sent ✉️' : 'Invite Sent ✉️';
-      c.emailDraft = `Subject: ${subject}\n\n${body}`;
     }
 
     async function sendDrawerEmail() {
       const c = candidates.find(cand => cand.id === currentDrawerCandidateId);
       if (!c) return;
 
-      const to = document.getElementById('drawer-email-to').value.trim();
-      const subject = document.getElementById('drawer-email-subject').value.trim();
-      const body = document.getElementById('drawer-email-body-edit').value.trim();
+      const { to, subject, body } = getDrawerOutgoing(c);
 
       if (!isValidEmail(to)) {
         showToast('Please enter a valid candidate email address.', 'error');
@@ -2983,14 +4042,14 @@ ${inbox.recruiterEmail}`;
       const btn = document.getElementById('btn-send-drawer-email');
       const resetButton = () => {
         btn.disabled = false;
-        btn.innerHTML = `<i data-lucide="send" class="w-3.5 h-3.5"></i> ⚡ Send via Inbox`;
-        if (window.lucide) lucide.createIcons();
+        btn.innerHTML = `<i data-lucide="send" class="w-3.5 h-3.5"></i> Send via Inbox`;
+        window.lucide?.createIcons();
       };
 
       if (inbox.deliveryMode === 'resend' && inbox.resendKey) {
         btn.disabled = true;
         btn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin inline mr-1"></i> Dispatching...`;
-        if (window.lucide) lucide.createIcons();
+        window.lucide?.createIcons();
 
         const result = await sendViaResend(inbox, to, subject, body);
         resetButton();
@@ -2998,7 +4057,7 @@ ${inbox.recruiterEmail}`;
           markEmailed(c, to, subject, body, isReject);
           saveCandidates([c]);
           document.getElementById('drawer-email-sent-badge').classList.remove('hidden');
-          showToast(`✅ Email delivered to ${to} via ${emailProviderName(inbox.resendKey)}.`, 'success');
+          showToast(`✅ Email delivered to ${isAnonMode() ? displayName(c) : to} via ${emailProviderName(inbox.resendKey)}.`, 'success');
           liliLog('send', `${isReject ? 'Feedback' : 'Interview invite'} delivered to ${c.name} via ${emailProviderName(inbox.resendKey)}`, 'success');
           return;
         }
@@ -3010,21 +4069,21 @@ ${inbox.recruiterEmail}`;
 
       // Gmail mode: open synchronously inside the click so popup blockers allow it
       if (!openGmailCompose(to, subject, body)) return;
-      markEmailed(c, to, subject, body, isReject);
+      markEmailed(c, to, subject, body, isReject, 'gmail');
       saveCandidates([c]);
-      document.getElementById('drawer-email-sent-badge').classList.remove('hidden');
-      showToast(`✉️ Opened Gmail with pre-filled draft for ${c.name}. Click Send in Gmail to deliver.`, 'success');
+      showToast(`✉️ Opened Gmail with pre-filled draft for ${displayName(c)}. Click Send in Gmail to deliver.`, 'success');
       liliLog('mail', `Opened Gmail draft for ${c.name}`);
     }
 
     function openDrawerInGmail() {
-      const to = document.getElementById('drawer-email-to').value.trim();
-      const subject = document.getElementById('drawer-email-subject').value.trim();
-      const body = document.getElementById('drawer-email-body-edit').value.trim();
+      const c = candidates.find(cand => cand.id === currentDrawerCandidateId);
+      const { to, subject, body } = getDrawerOutgoing(c);
       openGmailCompose(to, subject, body);
     }
 
     async function copyDrawerEmail() {
+      const c = candidates.find(cand => cand.id === currentDrawerCandidateId);
+      // Copy what is displayed (keeps Bias-Free Mode private on screen-shares)
       const to = document.getElementById('drawer-email-to').value.trim();
       const subject = document.getElementById('drawer-email-subject').value.trim();
       const body = document.getElementById('drawer-email-body-edit').value.trim();
@@ -3040,7 +4099,11 @@ ${inbox.recruiterEmail}`;
     let currentDispatchType = 'accept';
     function triggerDispatch(type) {
       currentDispatchType = type;
-      const checked = document.querySelectorAll('.candidate-check:checked');
+      const checked = getSelectedCandidates();
+      if (checked.length === 0) {
+        showToast('Select at least one candidate first.', 'error');
+        return;
+      }
       const inbox = getInboxConfig();
       const resend = inbox.deliveryMode === 'resend' && inbox.resendKey;
       document.getElementById('modal-subtitle').textContent = resend
@@ -3070,7 +4133,7 @@ ${inbox.recruiterEmail}`;
       icon.className = look[2];
       if (old) old.replaceWith(icon);
       else el.prepend(icon);
-      if (window.lucide) lucide.createIcons({ root: el });
+      window.lucide?.createIcons({ root: el });
     }
 
     function closeDispatchModal() {
@@ -3079,12 +4142,11 @@ ${inbox.recruiterEmail}`;
 
     async function startSimulatedDispatch() {
       const btn = document.getElementById('modal-confirm');
-      const checked = Array.from(document.querySelectorAll('.candidate-check:checked'));
       const activeJob = jobs.find(j => j.id === currentJobId) || jobs[0];
       const inbox = getInboxConfig();
       const isReject = currentDispatchType === 'reject';
       const resendMode = inbox.deliveryMode === 'resend' && inbox.resendKey;
-      const selected = checked.map(cb => candidates.find(c => c.id === cb.dataset.id)).filter(Boolean);
+      const selected = getSelectedCandidates();
 
       // Reserve the Gmail tab now, while we still have the click's user activation
       let gmailWindow = null;
@@ -3105,6 +4167,7 @@ ${inbox.recruiterEmail}`;
       const drafts = selected.map(cand => {
         const emailData = generateCandidateEmailDraft(cand, activeJob, isReject ? 'reject' : 'invite');
         cand.emailDraft = `Subject: ${emailData.subject}\n\n${emailData.body}`;
+        cand.localEdited = true;
         return { cand, emailData };
       });
       setDispatchStep(2, 'done');
@@ -3117,7 +4180,7 @@ ${inbox.recruiterEmail}`;
 
       for (const { cand, emailData } of drafts) {
         if (!isValidEmail(cand.email)) {
-          noEmail.push(cand.name);
+          noEmail.push(displayName(cand));
           liliLog('mail-question', `${cand.name}: no email address on file`, 'warn');
           continue;
         }
@@ -3129,13 +4192,13 @@ ${inbox.recruiterEmail}`;
             delivered++;
             liliLog('send', `${isReject ? 'Feedback' : 'Interview invite'} delivered to ${cand.name} via ${emailProviderName(inbox.resendKey)}`, 'success');
           } else {
-            failed.push(`${cand.name}: ${result.error}`);
+            failed.push(`${displayName(cand)}: ${result.error}`);
             liliLog('mail-x', `Couldn't email ${cand.name}: ${result.error}`, 'error');
           }
           document.getElementById('step-3-label').textContent = `Sending ${delivered + failed.length}/${drafts.length - noEmail.length}`;
         } else if (gmailWindow) {
           openGmailCompose(cand.email, emailData.subject, emailData.body, gmailWindow);
-          markEmailed(cand, cand.email, emailData.subject, emailData.body, isReject);
+          markEmailed(cand, cand.email, emailData.subject, emailData.body, isReject, 'gmail');
           delivered++;
           liliLog('mail', `Opened Gmail draft for ${cand.name}`);
         } else {
@@ -3154,7 +4217,7 @@ ${inbox.recruiterEmail}`;
       if (resendMode) {
         showToast(`Delivered ${delivered}/${selected.length} email(s) via ${emailProviderName(inbox.resendKey)}.${failed.length ? ` Failed: ${failed.join('; ')}` : ''}`, failed.length ? 'error' : 'success');
       } else if (gmailWindow && delivered > 0) {
-        showToast(`✉️ Opened pre-filled Gmail draft for ${selected[0].name}. Hit Send to deliver.`, 'success');
+        showToast(`✉️ Opened pre-filled Gmail draft for ${displayName(selected[0])}. Hit Send to deliver.`, 'success');
       } else if (selected.length > 1) {
         showToast(`Prepared ${selected.length - noEmail.length} personalized drafts. Open each candidate's Outreach tab to send.`, 'success');
       }
@@ -3176,32 +4239,37 @@ ${inbox.recruiterEmail}`;
 
     function exportPipelineCsv() {
       const job = jobs.find(j => j.id === currentJobId) || jobs[0];
-      const isAnon = document.getElementById('anonymize-toggle').checked;
+      const isAnon = isAnonMode();
       const rows = candidates
-        .filter(c => (!c.roleId || c.roleId === currentJobId) && (currentFilter === 'all' || c.tier === currentFilter))
-        .sort((a, b) => b.score - a.score);
+        .filter(c => (!c.roleId || c.roleId === currentJobId) && matchesFilter(c))
+        .sort((a, b) => effScore(b) - effScore(a));
       if (rows.length === 0) {
         showToast('No candidates to export for this role/filter.', 'error');
         return;
       }
 
       const dims = ['tech', 'exp', 'impact', 'lead'];
-      const header = ['Rank', 'Candidate', 'Email', 'Score', 'Tier', 'Status', 'Years', 'Tech', 'Experience', 'Impact', 'Leadership', 'Matched Skills', 'Missing Must-Haves', 'Takeaway', 'Gaps'];
+      const header = ['Rank', 'Candidate', 'Email', 'Score (Lili where available)', 'Tier (Lili where available)', 'Pre-screen Score', 'Pre-screen Tier', 'Lili Score', 'Lili Tier', 'Lili Caps Applied', 'Status', 'Years', 'Tech', 'Experience', 'Impact', 'Leadership', 'Matched Skills', 'Missing Must-Haves', 'Takeaway', 'Gaps'];
       const lines = rows.map((c, i) => {
         const dimScore = key => ((c.breakdown || []).find(d => d.key === key) || {}).score ?? '';
         return [
           i + 1,
-          isAnon ? c.id : c.name,
+          displayName(c),
           isAnon ? '' : c.email,
+          effScore(c),
+          tierLabel(effTier(c)),
           c.score,
-          c.tier === 'tier1' ? 'Tier 1 Fast-Track' : c.tier === 'tier2' ? 'Tier 2 Bench' : 'Tier 3 Below Bar',
+          tierLabel(c.tier),
+          hasLiliScore(c) ? Number(c.liliScore) : '',
+          hasLiliScore(c) && liliTierKey(c) ? tierLabel(liliTierKey(c)) : '',
+          (c.liliCaps || []).map(cap => capLabel(cap)).join(' | '),
           c.status,
-          c.exp,
+          c.expUnknown ? 'unknown' : c.exp,
           ...dims.map(dimScore),
           (c.skills || []).join('; '),
           (c.missing || []).join('; '),
           c.takeaway,
-          (c.gaps || []).join(' | ')
+          (c.gaps || []).map(g => anonText(g, c)).join(' | ')
         ].map(csvCell).join(',');
       });
 
@@ -3219,8 +4287,7 @@ ${inbox.recruiterEmail}`;
 
     // COMPARE: side-by-side matrix of selected candidates against the role rubric
     function openCompareModal() {
-      const ids = Array.from(document.querySelectorAll('.candidate-check:checked')).map(cb => cb.dataset.id);
-      const selected = ids.map(id => candidates.find(c => c.id === id)).filter(Boolean).sort((a, b) => b.score - a.score);
+      const selected = getSelectedCandidates().sort((a, b) => effScore(b) - effScore(a));
       if (selected.length < 2) {
         showToast('Select at least 2 candidates to compare.', 'error');
         return;
@@ -3231,7 +4298,6 @@ ${inbox.recruiterEmail}`;
       }
 
       const job = jobs.find(j => j.id === currentJobId) || jobs[0];
-      const isAnon = document.getElementById('anonymize-toggle').checked;
       const cellColor = v => v >= 85 ? 'text-emerald-400' : v >= 70 ? 'text-amber-400' : 'text-rose-400';
       const dimRows = ['tech', 'exp', 'impact', 'lead'].map(key => {
         const label = { tech: 'Technical Stack', exp: 'Experience Depth', impact: 'Production Impact', lead: 'Leadership' }[key];
@@ -3255,6 +4321,9 @@ ${inbox.recruiterEmail}`;
         modal = document.createElement('div');
         modal.id = 'compare-modal';
         modal.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-labelledby', 'compare-modal-title');
         modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
         document.body.appendChild(modal);
       }
@@ -3262,40 +4331,74 @@ ${inbox.recruiterEmail}`;
         <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-4xl w-full p-6 shadow-2xl max-h-[90vh] overflow-auto text-xs">
           <div class="flex items-center justify-between border-b border-zinc-800 pb-3 mb-3">
             <div>
-              <h3 class="font-bold text-sm text-zinc-100">Candidate Comparison Matrix</h3>
-              <p class="text-[11px] text-zinc-400">${escapeHtml(job.title)} · min ${Number(job.minExp)} yrs · best per row underlined</p>
+              <h3 class="font-bold text-sm text-zinc-100" id="compare-modal-title">Candidate Comparison Matrix</h3>
+              <p class="text-[11px] text-zinc-400">${escapeHtml(job.title)} · min ${Number(job.minExp)} yrs · best per row underlined · overall uses Lili's verdict where available</p>
             </div>
-            <button onclick="document.getElementById('compare-modal').remove()" class="text-zinc-500 hover:text-zinc-300"><i data-lucide="x" class="w-4 h-4"></i></button>
+            <button onclick="document.getElementById('compare-modal').remove()" aria-label="Close" class="text-zinc-500 hover:text-zinc-300"><i data-lucide="x" class="w-4 h-4"></i></button>
           </div>
           <table class="w-full border-collapse">
             <thead><tr>
               <th class="p-2 text-left text-zinc-500 font-medium">Criterion</th>
-              ${selected.map(c => `<th class="p-2 text-center text-zinc-100">${escapeHtml(isAnon ? c.id : c.name)}</th>`).join('')}
+              ${selected.map(c => `<th class="p-2 text-center text-zinc-100">${escapeHtml(displayName(c))}</th>`).join('')}
             </tr></thead>
             <tbody>
               <tr class="border-t border-zinc-800 bg-zinc-800/30">
                 <td class="p-2 font-semibold text-zinc-200">Overall Fit Score</td>
-                ${selected.map(c => `<td class="p-2 text-center font-mono font-bold text-base ${cellColor(c.score)}">${Number(c.score)}</td>`).join('')}
+                ${selected.map(c => `<td class="p-2 text-center font-mono font-bold text-base ${cellColor(effScore(c))}">${effScore(c)}<div class="text-[10px] font-normal text-zinc-500">${escapeHtml(tierLabel(effTier(c)))}</div></td>`).join('')}
+              </tr>
+              <tr class="border-t border-zinc-800">
+                <td class="p-2 text-violet-300">Lili <span class="text-zinc-600">(deep evaluation)</span></td>
+                ${selected.map(c => `<td class="p-2 text-center font-mono ${hasLiliScore(c) ? 'text-violet-300' : 'text-zinc-600'}">${hasLiliScore(c) ? `${Number(c.liliScore)} · T${Number(c.liliTier) || '?'}${(c.liliCaps || []).length ? ' <span class="text-amber-300" title="' + escapeHtml((c.liliCaps || []).map(capLabel).join(' | ')) + '">capped</span>' : ''}` : (isQueuedForLili(c) ? 'queued' : '–')}</td>`).join('')}
+              </tr>
+              <tr class="border-t border-zinc-800">
+                <td class="p-2 text-zinc-400">Instant pre-screen</td>
+                ${selected.map(c => `<td class="p-2 text-center font-mono ${cellColor(Number(c.score) || 0)}">${Number(c.score) || 0}</td>`).join('')}
               </tr>
               <tr class="border-t border-zinc-800">
                 <td class="p-2 text-zinc-400">Years of Experience</td>
-                ${selected.map(c => `<td class="p-2 text-center font-mono ${c.exp < job.minExp ? 'text-rose-400' : 'text-zinc-200'}">${Number(c.exp)}</td>`).join('')}
+                ${selected.map(c => `<td class="p-2 text-center font-mono ${c.expUnknown ? 'text-amber-400' : c.exp < job.minExp ? 'text-rose-400' : 'text-zinc-200'}">${c.expUnknown ? 'unknown' : Number(c.exp)}</td>`).join('')}
               </tr>
               ${dimRows}
               <tr><td colspan="${selected.length + 1}" class="pt-3 pb-1 text-[10px] uppercase tracking-wider text-zinc-500 font-semibold">Mandatory Must-Haves</td></tr>
               ${mustHaveRows}
               <tr class="border-t border-zinc-800">
                 <td class="p-2 text-zinc-400">Top Gap to Probe</td>
-                ${selected.map(c => `<td class="p-2 text-zinc-400 align-top">${escapeHtml((c.gaps || [])[0] || '–')}</td>`).join('')}
+                ${selected.map(c => `<td class="p-2 text-zinc-400 align-top">${escapeHtml(anonText((c.gaps || [])[0] || '–', c))}</td>`).join('')}
               </tr>
             </tbody>
           </table>
         </div>`;
-      if (window.lucide) lucide.createIcons();
+      window.lucide?.createIcons();
     }
+
+    // Escape closes the topmost open dialog/drawer
+    function closeTopmostOverlay() {
+      const compare = document.getElementById('compare-modal');
+      if (compare) { compare.remove(); return true; }
+      const modals = [
+        ['dispatch-modal', closeDispatchModal], ['job-modal', closeJobModal], ['view-jd-modal', closeViewJdModal],
+        ['upload-modal', closeUploadModal], ['bulk-upload-modal', closeBulkUploadModal],
+        ['supabase-modal', closeSupabaseModal], ['inbox-modal', closeInboxSettingsModal]
+      ];
+      for (const [id, close] of modals) {
+        const el = document.getElementById(id);
+        if (el && !el.classList.contains('hidden')) {
+          if (id === 'dispatch-modal' && document.getElementById('modal-confirm').disabled) return true; // mid-dispatch
+          close();
+          return true;
+        }
+      }
+      if (drawerIsOpen()) { closeDrawer(); return true; }
+      if (liliFeedOpen) { toggleLiliFeed(false); return true; }
+      return false;
+    }
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && closeTopmostOverlay()) e.preventDefault();
+    });
 
     // Init
     populateRoleDropdown();
+    initImpactPanel();
     renderTable();
     updateSupabaseIndicator();
     initInboxSettings();
