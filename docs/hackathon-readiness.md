@@ -57,7 +57,7 @@ Make a scanned test PDF by printing a CV page to an image and saving that as PDF
 ## 4. Email flows
 
 **Gmail mode (default)**
-- [ ] Drawer → Outreach Email → Send via Inbox → Gmail compose opens pre-filled; status → `Invite Sent ✉️`.
+- [ ] Drawer → Outreach Email → Send via Inbox → Gmail compose opens pre-filled; status → `Draft opened in Gmail` (only Brevo or Lili mark an email as Sent).
 - [ ] Block popups for the site → click again → "Popup blocked" toast, status **not** changed.
 - [ ] Tier 3 candidate opens with the **Rejection & Feedback** template; the first bullet quotes their actual gap.
 - [ ] Batch select 1 → Accept & Send Invites → a single Gmail tab opens (reserved during the click, so Safari/Firefox allow it).
