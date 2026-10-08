@@ -150,7 +150,7 @@ vercel --prod
 ```
 
 **4. Agent (Wesam.ai)**
-1. Create an agent named **Lili**; paste [`agent-instructions/lili-system-prompt.md`](agent-instructions/lili-system-prompt.md) as her instructions.
+1. Create an agent named **Lili**; paste [`agent-instructions/wesam-instructions.md`](agent-instructions/wesam-instructions.md) into **Build → Instructions** (the full version of [`lili-system-prompt.md`](agent-instructions/lili-system-prompt.md)).
 2. Upload the skills in [`wesam-skills/`](wesam-skills). In `skill-ats-sync.md`, replace `{{LILI_API_BASE}}` with `https://<your-app>/api/lili/<LILI_MCP_KEY>` in a **private copy**. Don't commit it; `wesam-skills/private/` is gitignored.
 3. Optionally add `https://<your-app>/api/mcp/<LILI_MCP_KEY>` under **Tools → Add MCP server**.
 4. Run her with: *"Run the ats-sync skill now: screen all pending candidates using the API addresses in the skill, verify GitHub links, write and send the outreach per the skill, then give me the screening report."*
