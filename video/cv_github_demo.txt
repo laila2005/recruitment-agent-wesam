@@ -1,0 +1,31 @@
+NOUR HASSAN
+Senior Frontend Engineer
+Email: nour.hassan@example.com | GitHub: github.com/laila2005 | Location: Remote
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+(Test CV for the demo video: it links a real public GitHub profile so Lili's verify_github check runs against live data.)
+
+EXPERIENCE
+
+Senior Frontend Engineer — BrightLabs
+Jan 2019 – Present (5 years 9 months) | Remote
+• Led a team of 3 engineers building a React 18 + Next.js + TypeScript analytics product used by 40,000 monthly users.
+• Built and documented a Storybook component library adopted by 4 product squads; cut UI bug reports by 35%.
+• Reduced page load time from 4.1s to 1.6s by moving to server components and image optimization.
+
+Frontend Developer — PixelForge Studio
+Jun 2017 – Dec 2018 (1 year 7 months) | Cairo, Egypt
+• Shipped 12 client web apps in React and TypeScript; introduced code review and CI checks.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+OPEN SOURCE
+• Maintainer of an AI recruiting agent: github.com/laila2005/recruitment-agent-wesam
+• My open-source work has earned 500+ GitHub stars.
+
+TECHNICAL SKILLS
+React 18, Next.js, TypeScript, Storybook, Tailwind CSS, Node.js, Supabase, Vercel
+
+EDUCATION
+B.Sc. Computer Science (2017)

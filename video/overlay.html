@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lili · OBS Overlay</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+<!--
+  Transparent caption overlay for OBS. Add it as a Browser Source (1920x1080) on top of a screen capture.
+  URL parameters:
+    step=2            → small "STEP 2" tag
+    text=Lili checks GitHub        → main caption
+    sub=CV claims vs public profile → optional second line
+    speed=4           → "⏩ 4× speed" badge (top right), for sped-up live footage
+    pos=top           → caption at the top instead of the bottom
+  Example: overlay.html?step=3&text=Scores%20from%20evidence&sub=The%20database%20applies%20the%20caps&speed=4
+-->
+<style>
+  html, body { margin: 0; background: transparent; overflow: hidden; font-family: Inter, system-ui, sans-serif; }
+  .lt { position: fixed; left: 64px; bottom: 64px; display: flex; align-items: stretch; gap: 0; opacity: 0; transform: translateY(20px);
+    animation: in .7s .2s cubic-bezier(.2,.8,.2,1) forwards; filter: drop-shadow(0 18px 40px rgba(0,0,0,.55)); }
+  body.top .lt { bottom: auto; top: 64px; }
+  .tag { background: linear-gradient(180deg, #10b981, #059669); color: #022c22; font: 800 22px/1 "JetBrains Mono", monospace; letter-spacing: .14em;
+    padding: 0 22px; display: flex; align-items: center; border-radius: 18px 0 0 18px; }
+  .box { background: rgba(9,9,11,.92); border: 1px solid #27272a; border-left: none; border-radius: 0 18px 18px 0; padding: 18px 30px; backdrop-filter: blur(6px); }
+  .lt.notag .box { border-left: 1px solid #27272a; border-radius: 18px; }
+  .t { color: #fafafa; font-weight: 800; font-size: 38px; letter-spacing: -.01em; }
+  .s { color: #a1a1aa; font-weight: 500; font-size: 24px; margin-top: 6px; }
+  .speed { position: fixed; right: 56px; top: 48px; background: rgba(9,9,11,.9); border: 1px solid #3f3f46; color: #fcd34d;
+    font: 700 26px/1 "JetBrains Mono", monospace; padding: 14px 20px; border-radius: 14px; opacity: 0; animation: in .5s forwards; }
+  @keyframes in { to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body>
+<div class="lt" id="lt"><div class="tag" id="tag"></div><div class="box"><div class="t" id="t"></div><div class="s" id="s"></div></div></div>
+<div class="speed" id="speed" hidden></div>
+<script>
+  const p = new URLSearchParams(location.search);
+  if (p.get('pos') === 'top') document.body.classList.add('top');
+  const step = p.get('step'), text = p.get('text'), sub = p.get('sub'), speed = p.get('speed');
+  if (step) document.getElementById('tag').textContent = 'STEP ' + step; else { document.getElementById('tag').remove(); document.getElementById('lt').classList.add('notag'); }
+  if (text) document.getElementById('t').textContent = text; else document.getElementById('lt').remove();
+  if (sub) document.getElementById('s').textContent = sub; else document.getElementById('s').remove();
+  if (speed) { const el = document.getElementById('speed'); el.hidden = false; el.textContent = '⏩ ' + speed + '× speed'; }
+</script>
+</body>
+</html>
