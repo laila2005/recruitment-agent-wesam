@@ -65,7 +65,7 @@ Small tech companies and boutique recruiting agencies hire like big companies, w
 
 **Lili, the agent (Wesam.ai)**
 - **Finds her own work:** one instruction runs the [`ats-sync`](wesam-skills/skill-ats-sync.md) skill. She plans the run, optionally pulls applications from Gmail, then loops `next → github → submit → outreach → send` until the queue is empty, and reports a shortlist.
-- **Blind second opinion:** Lili never sees the dashboard's rule-based pre-screen score. When her evidence-based score and the pre-screen differ by 15+ points, the candidate is flagged for human review.
+- **Blind second opinion:** Lili never sees the dashboard's rule-based pre-screen score. When her evidence-based verdict and the pre-screen would put a candidate in different tiers (or are 30+ points apart), the candidate is flagged for human review.
 - **Evidence or it didn't happen:** every evaluation stores 2–4 verbatim CV quotes, shown in the candidate drawer.
 - **GitHub verification:** a `verify_github` tool reads the public profile linked in the CV (repos, stars, languages, last push) and checks claimed star counts and linked repos. Contradictions become a `claim_mismatch` flag to probe in the interview. A missing profile is "unverifiable" and never lowers a score.
 - **Prompt-injection resistant:** CV text is labelled untrusted; hidden instructions are flagged, never obeyed. Even a fooled model can't break the rules, because the rules live in the database (below).

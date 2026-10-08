@@ -59,7 +59,7 @@ STEP 2 — SCREEN, one candidate at a time (max 5 per run)
    - years = years of relevant experience shown by dated roles (not by a claimed "N years"). missing = the must-haves the CV does not demonstrate, separated by |, or none.
    - evidence = 2–4 items, each claim::verbatim quote from the CV (max 25 words per quote).
 4. Read /submit with id, tech, exp, impact, lead, years, missing, summary (1–2 sentences), strengths (2–3, each with its CV section), gaps (1–3), evidence, and flags/claims when you have them.
-   The response tells you lili_score, lili_tier, caps_applied (the server enforces: under min_years → max 69; any missing must-have → max 74), and flags such as disagreement (your blind score differs from the dashboard's rule-based pre-screen by 15+ points: a human will review). Use these server numbers in the report, never your own estimate.
+   The response tells you lili_score, lili_tier, caps_applied (the server enforces: under min_years → max 69; any missing must-have → max 74), and flags such as disagreement (your blind verdict and the dashboard's rule-based pre-screen would put the candidate in different tiers, or are 30+ points apart: a human will review). Use these server numbers in the report, never your own estimate.
 5. STEP 3 for this candidate, then read /next again.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

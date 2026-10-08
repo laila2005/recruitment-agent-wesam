@@ -60,7 +60,13 @@ console.log('Sarah', r);
 // Lili tries to give Jordan 88 with no facts → prescreen fallback caps at 69 (years) and 74 (missing): final 69, Tier 3
 r = await asService(() => one(`select public.lili_submit_evaluation(p_id => 'C-JORDN', p_score => 88, p_summary => 'x', p_owner_email => $1)`, [OWNER]));
 assert.equal(r.lili_score, 69); assert.equal(r.raw_score, 88); assert.equal(r.lili_tier, 3); assert.equal(r.caps_applied.length, 2);
-assert.ok(r.flags.some(f => f.type === 'disagreement'), 'disagreement flagged (69 vs 40)');
+assert.ok(!r.flags.some(f => f.type === 'disagreement'), 'same tier and < 30 apart (69 vs 40): no human review needed');
+
+// A blind score that changes the decision (pre-screen Tier 1 → Lili Tier 3) is flagged for a human
+await db.exec(`insert into public.candidates (id, owner_id, role_id, anon_id, name, score, tier, years, missing, cv_text)
+  values ('C-DISAG', '${L}', 'frontend', 'C-DISAG', 'Disagree', 90, 1, 7, '[]', repeat('x cv ', 30))`);
+r = await asService(() => one(`select public.lili_submit_evaluation(p_id => 'C-DISAG', p_score => 60, p_summary => 'x', p_years => 7, p_missing => '[]', p_owner_email => $1)`, [OWNER]));
+assert.ok(r.flags.some(f => f.type === 'disagreement' && /Tier 3/.test(f.detail)), 'different tier → disagreement flagged');
 console.log('Jordan', JSON.stringify(r));
 
 // Null / bad score is rejected, not turned into 0
@@ -107,6 +113,6 @@ assert.equal(await one(`select lili_score from public.candidates where id = 'C-F
 // Pending outreach (scored, nothing recorded)
 await asService(() => one(`select public.lili_record_verification('C-JUDGE', '{"username":"x"}', null)`));
 const po = await asService(() => one(`select public.lili_pending_outreach(10, null)`));
-assert.deepEqual(po.map(p => p.candidate_id), ['C-JUDGE']);
+assert.deepEqual(po.map(p => p.candidate_id).sort(), ['C-DISAG', 'C-JUDGE']);
 
 console.log('ALL SQL TESTS PASSED');

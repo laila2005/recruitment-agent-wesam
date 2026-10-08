@@ -6,7 +6,7 @@
 --      scores; the database computes the weighted total with the role's weights, applies the
 --      69 (under min years) and 74 (missing must-have) caps, and records which cap fired.
 --   2. Blind second opinion: Lili no longer sees the browser pre-screen score. After she submits,
---      the database compares the two and flags disagreements for human review.
+--      the database compares the two and flags a human review when they'd decide differently.
 --   3. Human in the loop: rejections wait for the recruiter's "Approve & send" (invites auto-send).
 --   4. Sending is claimed atomically, so a candidate can never be emailed twice.
 --   5. Every Lili function is pinned to one recruiter (owner), and browsers can't write lili_* columns.
@@ -163,6 +163,7 @@ declare
   v_raw integer;
   v_final integer;
   v_tier integer;
+  v_pre_tier integer;
   v_years numeric;
   v_years_src text;
   v_missing jsonb;
@@ -240,11 +241,15 @@ begin
 
   v_tier := case when v_final >= 85 then 1 when v_final >= 70 then 2 else 3 end;
 
-  -- Independent check: Lili scored blind, so a large gap means a human should look
-  if c.source <> 'email' and c.score is not null and c.score > 0 and abs(v_final - c.score) >= 15 then
-    v_flags := v_flags || jsonb_build_array(jsonb_build_object(
-      'type', 'disagreement',
-      'detail', format('Lili %s vs pre-screen %s: human review recommended', v_final, c.score)));
+  -- Independent check: Lili scored blind. A human reviews when the two layers would make a
+  -- different decision (different tier) or are 30+ points apart.
+  if c.source <> 'email' and c.score is not null and c.score > 0 then
+    v_pre_tier := case when c.score >= 85 then 1 when c.score >= 70 then 2 else 3 end;
+    if v_pre_tier <> v_tier or abs(v_final - c.score) >= 30 then
+      v_flags := v_flags || jsonb_build_array(jsonb_build_object(
+        'type', 'disagreement',
+        'detail', format('Lili %s (Tier %s) vs pre-screen %s (Tier %s): human review recommended', v_final, v_tier, c.score, v_pre_tier)));
+    end if;
   end if;
 
   v_verification := c.lili_verification;
