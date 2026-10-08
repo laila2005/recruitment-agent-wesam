@@ -1,39 +1,28 @@
 // Sends the outreach email Lili recorded for a candidate, via Brevo, and marks the candidate as emailed.
 // Server-side only (service_role). Files under api/_lib are not exposed as routes by Vercel.
 //
+// Safety: the database claims the send atomically (lili_claim_send), so two runs can never email the
+// same candidate twice, and rejections wait for the recruiter's "Approve & send" on the dashboard.
+//
 // Env vars:
-//   BREVO_API_KEY      Brevo API key (xkeysib-...). Required.
-//   BREVO_SENDER       Verified Brevo sender address. Defaults to the recruiter address.
-//   LILI_SEND_MODE     'demo' (default): every email goes to the recruiter's inbox, with the intended
-//                      recipient in the subject. 'live': emails go to the candidate's own address.
-//   LILI_OWNER_EMAIL   Recruiter address (default laila.mohamed.fikry@gmail.com)
+//   BREVO_API_KEY       Brevo API key (xkeysib-...). Required.
+//   BREVO_SENDER        Verified Brevo sender address. Defaults to the recruiter address.
+//   LILI_SEND_MODE      'demo' (default): every email goes to the recruiter's inbox, with the intended
+//                       recipient in the subject. 'live': emails go to the candidate's own address.
+//   LILI_APPROVAL_MODE  'rejections' (default): rejections wait for the recruiter, invites auto-send.
+//                       'all': every email waits. 'none': Lili sends everything.
+//   LILI_OWNER_EMAIL    Recruiter address (default laila.mohamed.fikry@gmail.com)
 
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ppjxzlepqstqvcrkqscz.supabase.co';
-const RECRUITER_EMAIL = process.env.LILI_OWNER_EMAIL || 'laila.mohamed.fikry@gmail.com';
+import { callRpc, RECRUITER_EMAIL } from './supabase.js';
+
 const EMAIL_RE = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]{2,}$/;
+const APPROVAL_MODE = ['rejections', 'all', 'none'].includes(process.env.LILI_APPROVAL_MODE) ? process.env.LILI_APPROVAL_MODE : 'rejections';
 
-function serviceHeaders(extra = {}) {
-  return {
-    apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-    Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-    ...extra
-  };
-}
-
-async function loadCandidate(id) {
-  const url = `${SUPABASE_URL}/rest/v1/candidates?id=eq.${encodeURIComponent(id)}&select=id,name,contact_email,status,email,lili_outreach`;
-  const res = await fetch(url, { headers: serviceHeaders() });
-  if (!res.ok) throw new Error(`Database read failed (HTTP ${res.status})`);
-  const rows = await res.json();
-  if (!rows.length) throw new Error(`Candidate ${id} not found`);
-  return rows[0];
-}
-
-// Outreach is stored either in `email` ("Subject: ...\n\nbody") or in lili_outreach {subject, body}
-function outreachOf(c) {
-  const o = c.lili_outreach || {};
+// Outreach is stored in lili_outreach {subject, body} (migration 004) or in `email` ("Subject: ...\n\nbody")
+function outreachOf(claim) {
+  const o = claim.outreach || {};
   if (o.body) return { type: o.type, subject: o.subject || 'Application update', body: o.body };
-  const m = (c.email || '').match(/^Subject:\s*([^\n]+)\n+([\s\S]*)$/i);
+  const m = (claim.email || '').match(/^Subject:\s*([^\n]+)\n+([\s\S]*)$/i);
   if (m) return { type: o.type, subject: m[1].trim(), body: m[2].trim() };
   return null;
 }
@@ -49,7 +38,8 @@ async function brevoSend({ to, subject, body }) {
       replyTo: { email: RECRUITER_EMAIL },
       subject,
       textContent: body
-    })
+    }),
+    signal: AbortSignal.timeout(15000)
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -61,35 +51,62 @@ async function brevoSend({ to, subject, body }) {
   return data.messageId;
 }
 
-export async function sendOutreach(id) {
+// ownerId: set when a signed-in recruiter approves from the dashboard; otherwise Lili's recruiter (LILI_OWNER_EMAIL)
+export async function sendOutreach(id, { ownerId = null } = {}) {
   if (!process.env.BREVO_API_KEY) throw new Error('Email sending is not configured (BREVO_API_KEY missing on the server).');
 
-  const c = await loadCandidate(id);
-  if ((c.status || '').includes('Sent')) {
-    return { candidate_id: id, already_sent: true, status: c.status };
+  const claim = await callRpc('lili_claim_send', {
+    p_id: id,
+    p_owner_email: ownerId ? null : RECRUITER_EMAIL,
+    p_require_approval: APPROVAL_MODE,
+    p_owner_id: ownerId
+  });
+
+  switch (claim && claim.state) {
+    case 'already_sent':
+      return { candidate_id: id, already_sent: true, status: claim.status };
+    case 'awaiting_approval':
+      return {
+        candidate_id: id,
+        awaiting_approval: true,
+        status: 'Awaiting your approval (Lili)',
+        message: 'Saved for the recruiter: rejections are sent only after they click "Approve & send" on the dashboard.'
+      };
+    case 'in_progress':
+      return { candidate_id: id, in_progress: true, message: 'This email is already being sent. Do not retry.' };
+    case 'hold':
+      throw new Error(`${id} is on hold; there is nothing to send.`);
+    case 'no_outreach':
+      throw new Error(`No outreach recorded for ${id}. Record it with /outreach first.`);
+    case 'claimed':
+      break;
+    default:
+      throw new Error(`Unexpected send state for ${id}`);
   }
-  const email = outreachOf(c);
-  if (!email) throw new Error(`No outreach recorded for ${id}. Record it with /outreach first.`);
-  if (email.type === 'hold') throw new Error(`${id} is on hold; there is nothing to send.`);
 
   const live = process.env.LILI_SEND_MODE === 'live';
-  if (live && !EMAIL_RE.test(c.contact_email || '')) throw new Error(`${id} has no valid email address.`);
-  const to = live ? c.contact_email.trim() : RECRUITER_EMAIL;
-  const subject = live ? email.subject : `[Demo → ${c.contact_email || 'no address'}] ${email.subject}`;
+  let to, email, messageId;
+  try {
+    email = outreachOf(claim);
+    if (!email) throw new Error(`No email text recorded for ${id}.`);
+    if (live && !EMAIL_RE.test(claim.contact_email || '')) throw new Error(`${id} has no valid email address.`);
+    to = live ? claim.contact_email.trim() : RECRUITER_EMAIL;
+    const subject = live ? email.subject : `[Demo → ${claim.contact_email || 'no address'}] ${email.subject}`;
+    messageId = await brevoSend({ to, subject, body: email.body.slice(0, 20000) });
+  } catch (err) {
+    // Nothing was sent: release the claim so a later retry can send it (the error shows on the dashboard)
+    await callRpc('lili_finish_send', { p_id: id, p_ok: false, p_error: err.message }).catch(() => {});
+    throw err;
+  }
 
-  const messageId = await brevoSend({ to, subject, body: email.body.slice(0, 20000) });
-
-  const isInvite = email.type === 'invite' || /interview|invit/i.test(email.subject);
-  const status = isInvite ? 'Invite Sent ✉️' : 'Feedback Sent ✉️';
-  const patch = await fetch(`${SUPABASE_URL}/rest/v1/candidates?id=eq.${encodeURIComponent(id)}`, {
-    method: 'PATCH',
-    headers: serviceHeaders({ 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
-    body: JSON.stringify({
-      status,
-      lili_outreach: { ...(c.lili_outreach || {}), sent_at: new Date().toISOString(), sent_to: to, brevo_message_id: messageId, mode: live ? 'live' : 'demo' }
-    })
-  });
-  if (!patch.ok) throw new Error(`Email sent, but saving the status failed (HTTP ${patch.status}).`);
-
+  // Sent. If saving fails, the claim stays held, so nothing re-sends this email.
+  const status = email.type === 'invite' ? 'Invite Sent ✉️' : 'Feedback Sent ✉️';
+  try {
+    await callRpc('lili_finish_send', {
+      p_id: id, p_ok: true, p_status: status, p_sent_to: to, p_message_id: messageId || null, p_mode: live ? 'live' : 'demo'
+    });
+  } catch (err) {
+    throw new Error(`Email sent to ${to}, but saving the status failed: ${err.message}. Do not resend.`);
+  }
   return { candidate_id: id, sent: true, mode: live ? 'live' : 'demo', to, status };
 }

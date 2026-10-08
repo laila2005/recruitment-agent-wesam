@@ -1,6 +1,6 @@
 # Hackathon Readiness: Test Plan & Demo Guide
 
-Deadline: **October 3, 2026**. Run sections 1–5 on the **deployed** site after pushing, in a fresh incognito window.
+Deadline: **October 10, 2026, 11:59 PM Cairo time** (extended). Run sections 1–5 on the **deployed** site after pushing, in a fresh incognito window.
 
 ## 0. Before you start
 

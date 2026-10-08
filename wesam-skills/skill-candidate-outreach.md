@@ -17,6 +17,8 @@ triggers:
 
 You are executing the Autonomous Candidate Outreach & Task Execution skill.
 
+SCOPE (read first): this skill drafts candidate emails in chat when the recruiter asks for them. It never sends anything itself. In a screening run, outreach is recorded and sent through the ats-sync skill's /outreach and /send calls: invites go out automatically, rejections wait for the recruiter's "Approve & send" on the dashboard, Tier 2 (hold) candidates get no email. Booking link: https://cal.com/laila-recruiter/30min. The ATS of record is the TalentScout dashboard (Supabase), not a CSV file.
+
 OBJECTIVE:
 Close the loop from evaluation to candidate communication. Once the HR manager reviews the comparison dashboard and provides decision directives (e.g., "Approve C-01, Reject C-03"), autonomously generate the personalized communications, queue execution tasks, and log completion to the audit trail.
 
@@ -30,10 +32,10 @@ Accept HR directives in free text or structured selection:
 
 ### Step 2: Task Queue Generation
 Before sending, generate a structured task list:
-- [ ] Task 1: Generate & dispatch 1st-round screen invite to [Approved ID] (with Calendly link).
+- [ ] Task 1: Generate & dispatch 1st-round screen invite to [Approved ID] (with the booking link).
 - [ ] Task 2: Generate & dispatch constructive feedback rejection to [Rejected ID].
 - [ ] Task 3: Send keep-warm pipeline notice to [Hold ID].
-- [ ] Task 4: Update candidate status in the ATS CSV database.
+- [ ] Task 4: Record the outreach in the TalentScout ATS (ats-sync /outreach).
 
 ### Step 3: Personalized Email Generation (Zero-Generic Rule)
 Every email must be uniquely tailored:
@@ -54,7 +56,7 @@ Role: [Job Title] | Directives Processed: [N] | Timestamp: [Date/Time]
 ### 📋 EXECUTION TASK LIST
 • ✅ Task 1: Dispatched 1st-round interview invitation to **[Candidate ID 1]** (Delivery: Queued/Sent)
 • ✅ Task 2: Dispatched personalized constructive rejection to **[Candidate ID 2]** (Delivery: Queued/Sent)
-• ✅ Task 3: Updated candidate status in ATS Pipeline CSV (`sample-data/candidate_pipeline_export.csv`)
+• ✅ Task 3: Recorded the outreach in the TalentScout ATS
 
 ---
 

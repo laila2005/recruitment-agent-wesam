@@ -1,0 +1,23 @@
+TAYLOR KIM
+IT Support Specialist
+Email: taylor.kim@email.com | Location: Remote
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EXPERIENCE
+
+IT Support Specialist — Northwind Logistics
+Jan 2018 – Present (6 years 9 months) | Chicago, IL
+• Resolved 40+ helpdesk tickets a week for a 300-person office (laptops, accounts, printers).
+• Maintained the office Wi-Fi network and onboarded new staff hardware.
+• Wrote an internal how-to wiki for common support issues.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TECHNICAL SKILLS
+React 18, Next.js, TypeScript, Storybook, Kubernetes, Terraform, Docker, AWS
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EDUCATION
+CompTIA A+ certification (2017)
