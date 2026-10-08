@@ -292,6 +292,10 @@
   const stage = document.getElementById('stage');
   const params = new URLSearchParams(location.search);
   let idx = 0, autoplay = params.has('auto'), timer = null;
+  // ?slow=10 plays everything 10x slower (for frame-by-frame rendering to video)
+  const SLOW = Math.max(1, +params.get('slow') || 1);
+  const now = () => performance.now() / SLOW;
+  const slowAnims = el => { if (SLOW > 1) el.getAnimations({ subtree: true }).forEach(a => { a.playbackRate = 1 / SLOW; }); };
 
   function fit() {
     const s = Math.min(innerWidth / 1920, innerHeight / 1080);
@@ -330,30 +334,30 @@
       row.innerHTML = `<div class="av" style="background:${c}">${INITIALS[i % INITIALS.length]}</div>
         <div><div class="s"></div><div class="p"></div></div><div class="tm mono">just now</div>`;
       row.querySelector('.s').textContent = s; row.querySelector('.p').textContent = p;
-      box.prepend(row);
+      box.prepend(row); slowAnims(row);
       while (box.children.length > 12) box.lastChild.remove();
       i++;
     };
-    const t0 = performance.now();
-    (function tick(now) {
+    const t0 = now();
+    (function tick() {
       if (!scenes[0].classList.contains('active')) return;
-      const k = Math.min(1, (now - t0) / 5200);
+      const k = Math.min(1, (now() - t0) / 5200);
       const target = Math.round(147 * (1 - Math.pow(1 - k, 2.2)));
       if (target > n) { n = target; unread.textContent = `${n} unread`; }
       if (Math.random() < .35 + k * .4) add();
       if (k < 1) requestAnimationFrame(tick);
-    })(t0);
+    })();
   }
 
   function playCounts(scene) {
     scene.querySelectorAll('.count').forEach(el => {
-      const to = +el.dataset.to, t0 = performance.now() + 1100, dur = 1600;
+      const to = +el.dataset.to, t0 = now() + 1100, dur = 1600;
       el.textContent = '0';
-      (function tick(now) {
-        const k = Math.max(0, Math.min(1, (now - t0) / dur));
+      (function tick() {
+        const k = Math.max(0, Math.min(1, (now() - t0) / dur));
         el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))).toLocaleString('en-US');
         if (k < 1 && scene.classList.contains('active')) requestAnimationFrame(tick);
-      })(performance.now());
+      })();
     });
   }
 
@@ -362,10 +366,11 @@
     scenes.forEach(s => s.classList.remove('active'));
     void stage.offsetWidth; // restart CSS animations
     const s = scenes[idx]; s.classList.add('active');
+    slowAnims(document.body);
     if (s.id === 's1') playInbox();
     playCounts(s);
     clearTimeout(timer);
-    if (autoplay) timer = setTimeout(() => show(idx + 1), (+s.dataset.dur || 8) * 1000);
+    if (autoplay) timer = setTimeout(() => show(idx + 1), (+s.dataset.dur || 8) * 1000 * SLOW);
   }
 
   addEventListener('keydown', e => {
