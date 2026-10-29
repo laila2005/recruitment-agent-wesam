@@ -2,7 +2,7 @@
 import { PGlite } from '@electric-sql/pglite';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const repo = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
 const read = p => readFileSync(`${repo}/${p}`, 'utf8');
@@ -61,9 +61,9 @@ globalThis.fetch = async (url, opts = {}) => {
   throw new Error('unexpected fetch ' + url);
 };
 
-const { default: lili } = await import(new URL('file://' + repo + '/api/lili/%5Bkey%5D/%5Baction%5D.js').href);
-const { default: mcp } = await import(`${repo}/api/mcp.js`);
-const { default: approve } = await import(`${repo}/api/approve-outreach.js`);
+const { default: lili } = await import(pathToFileURL(`${repo}/api/lili/[key]/[action].js`).href);
+const { default: mcp } = await import(pathToFileURL(`${repo}/api/mcp.js`).href);
+const { default: approve } = await import(pathToFileURL(`${repo}/api/approve-outreach.js`).href);
 
 function mockRes() {
   const r = { statusCode: 200, headers: {}, body: undefined };
